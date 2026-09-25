@@ -1,9 +1,11 @@
 /* ==========================================================================
-   BAYAPANI KHAJA GHAR (बयापानी खाजा घर) - PRODUCTION STYLESHEET
+   BAYAPANI KHAJA GHAR (बयापानी खाजा घर) - ULTIMATE ALL-DEVICE STYLESHEET
+   Supports: Wearables, Smartwatches, Foldables, Mobiles, Tablets, Laptops,
+   Desktops, Ultra-Wide 4K/8K TVs, Print & Accessibility Modes.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   1. DESIGN TOKENS & CUSTOM PROPERTIES
+   1. DESIGN TOKENS & FLUID CUSTOM PROPERTIES
    -------------------------------------------------------------------------- */
 :root {
   /* Color Palette - Earthy, Warm Nepali Eatery Palette */
@@ -26,35 +28,56 @@
   --color-border: #E5DFC8;
   --color-border-dark: #3D4441;
 
-  /* Typography */
-  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  /* Typography Families */
+  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, blinkmacsystemfont, sans-serif;
   --font-body: 'Plus Jakarta Sans', 'Noto Sans Devanagari', system-ui, sans-serif;
   --font-nepali: 'Noto Sans Devanagari', sans-serif;
 
+  /* Fluid Typography Scaling (Dynamic across all screen resolutions) */
+  --font-size-xs: clamp(0.7rem, 0.65rem + 0.25vw, 0.85rem);
+  --font-size-sm: clamp(0.8rem, 0.75rem + 0.35vw, 0.95rem);
+  --font-size-base: clamp(0.95rem, 0.9rem + 0.4vw, 1.1rem);
+  --font-size-md: clamp(1.1rem, 1rem + 0.6vw, 1.35rem);
+  --font-size-lg: clamp(1.35rem, 1.2rem + 1vw, 1.85rem);
+  --font-size-xl: clamp(1.75rem, 1.4rem + 1.6vw, 2.75rem);
+  --font-size-xxl: clamp(2.2rem, 1.7rem + 2.4vw, 3.8rem);
+
   /* Layout & Spacing */
-  --container-max-width: 1200px;
-  --border-radius-sm: 6px;
-  --border-radius-md: 12px;
-  --border-radius-lg: 20px;
+  --container-max-width: 1280px;
+  --container-padding: clamp(0.85rem, 3vw, 2.5rem);
+  
+  --border-radius-sm: clamp(4px, 1vw, 6px);
+  --border-radius-md: clamp(8px, 1.5vw, 14px);
+  --border-radius-lg: clamp(14px, 2.5vw, 24px);
   --transition-speed: 0.25s ease-in-out;
   
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.12);
+
+  /* Dynamic Viewport & Safe Area Dimensions (Mobile & Notch Support) */
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
 }
 
 /* --------------------------------------------------------------------------
-   2. CSS RESET & BASE STYLES
+   2. UNIVERSAL RESET & ADVANCED BASE STYLES
    -------------------------------------------------------------------------- */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
   scroll-behavior: smooth;
-  font-size: 16px;
+  font-size: 100%;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: clamp(60px, 10vh, 100px);
 }
 
 body {
@@ -62,11 +85,18 @@ body {
   background-color: var(--color-bg-light);
   color: var(--color-text-main);
   line-height: 1.6;
+  font-size: var(--font-size-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-left: var(--sal);
+  padding-right: var(--sar);
 }
 
-img {
+img, video, iframe, svg {
   max-width: 100%;
   height: auto;
   display: block;
@@ -76,30 +106,44 @@ a {
   color: var(--color-primary);
   text-decoration: none;
   transition: color var(--transition-speed);
+  touch-action: manipulation;
 }
 
 a:hover {
   color: var(--color-primary-dark);
 }
 
-ul {
+ul, ol {
   list-style: none;
 }
 
-button {
+button, input, select, textarea {
   font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+button {
   cursor: pointer;
   border: none;
   background: none;
+  touch-action: manipulation;
 }
 
+:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+  border-radius: var(--border-radius-sm);
+}
+
+/* Layout Container */
 .container {
   width: 100%;
   max-width: var(--container-max-width);
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
+  padding-left: var(--container-padding);
+  padding-right: var(--container-padding);
 }
 
 .hidden {
@@ -116,9 +160,11 @@ button {
 .announcement-bar {
   background-color: var(--color-dark);
   color: #E2E8E4;
-  font-size: 0.85rem;
-  padding: 0.5rem 0;
+  font-size: var(--font-size-xs);
+  padding: calc(0.4rem + var(--sat)) 0 0.4rem 0;
   border-bottom: 1px solid var(--color-border-dark);
+  position: relative;
+  z-index: 1001;
 }
 
 .announcement-content {
@@ -132,6 +178,7 @@ button {
 .announcement-phone {
   color: var(--color-secondary);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .site-header {
@@ -139,9 +186,10 @@ button {
   top: 0;
   z-index: 1000;
   background-color: rgba(250, 248, 245, 0.95);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(229, 223, 200, 0.6);
-  padding: 0.85rem 0;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(229, 223, 200, 0.7);
+  padding: clamp(0.5rem, 1.5vh, 1rem) 0;
   transition: all var(--transition-speed);
 }
 
@@ -149,18 +197,20 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
 }
 
 .brand-logo {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: clamp(0.5rem, 2vw, 0.85rem);
   text-decoration: none;
   color: var(--color-dark);
+  flex-shrink: 0;
 }
 
 .logo-img {
-  height: 48px;
+  height: clamp(36px, 6vw, 52px);
   width: auto;
   object-fit: contain;
   border-radius: var(--border-radius-sm);
@@ -174,7 +224,7 @@ button {
 .brand-title {
   font-family: var(--font-heading);
   font-weight: 800;
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
   line-height: 1.1;
   color: var(--color-dark);
   letter-spacing: -0.02em;
@@ -182,7 +232,7 @@ button {
 
 .brand-nepali {
   font-family: var(--font-nepali);
-  font-size: 0.85rem;
+  font-size: clamp(0.75rem, 1.8vw, 0.9rem);
   color: var(--color-primary);
   font-weight: 600;
 }
@@ -190,21 +240,22 @@ button {
 .primary-nav {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: clamp(1rem, 3vw, 2.5rem);
 }
 
 .nav-list {
   display: flex;
   align-items: center;
-  gap: 1.75rem;
+  gap: clamp(1rem, 2vw, 1.75rem);
 }
 
 .nav-link {
   font-weight: 600;
   color: var(--color-dark);
-  font-size: 0.95rem;
-  padding: 0.35rem 0;
+  font-size: var(--font-size-sm);
+  padding: 0.4rem 0;
   position: relative;
+  white-space: nowrap;
 }
 
 .nav-link:hover, .nav-link.active {
@@ -217,7 +268,7 @@ button {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 2px;
+  height: 2.5px;
   background-color: var(--color-primary);
   border-radius: 2px;
 }
@@ -225,21 +276,36 @@ button {
 .mobile-nav-toggle {
   display: none;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
   gap: 5px;
-  padding: 0.5rem;
-  z-index: 1001;
+  padding: 0.6rem;
+  z-index: 1002;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .hamburger-line {
-  width: 24px;
+  width: 26px;
   height: 2.5px;
   background-color: var(--color-dark);
   border-radius: 2px;
   transition: all var(--transition-speed);
 }
 
+/* Hamburger Active State */
+.mobile-nav-toggle.is-active .hamburger-line:nth-child(1) {
+  transform: translateY(7.5px) rotate(45deg);
+}
+.mobile-nav-toggle.is-active .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+.mobile-nav-toggle.is-active .hamburger-line:nth-child(3) {
+  transform: translateY(-7.5px) rotate(-45deg);
+}
+
 /* --------------------------------------------------------------------------
-   4. BUTTONS & UI ELEMENTS
+   4. BUTTONS, TAGS & UI ELEMENTS
    -------------------------------------------------------------------------- */
 .btn {
   display: inline-flex;
@@ -247,13 +313,16 @@ button {
   justify-content: center;
   gap: 0.5rem;
   font-weight: 700;
-  font-size: 0.95rem;
-  padding: 0.75rem 1.4rem;
+  font-size: var(--font-size-sm);
+  padding: clamp(0.6rem, 1.5vh, 0.85rem) clamp(1rem, 3vw, 1.6rem);
   border-radius: var(--border-radius-sm);
   transition: all var(--transition-speed);
   text-decoration: none;
   cursor: pointer;
   text-align: center;
+  white-space: nowrap;
+  min-height: 44px; /* Optimal Mobile Touch Area */
+  box-sizing: border-box;
 }
 
 .btn-primary {
@@ -265,7 +334,8 @@ button {
 .btn-primary:hover {
   background-color: var(--color-primary-dark);
   color: #FFFFFF;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(200, 90, 50, 0.35);
 }
 
 .btn-whatsapp {
@@ -276,7 +346,7 @@ button {
 .btn-whatsapp:hover {
   background-color: var(--color-whatsapp-dark);
   color: #FFFFFF;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .btn-outline {
@@ -303,8 +373,8 @@ button {
 
 .btn-sm {
   padding: 0.45rem 0.85rem;
-  font-size: 0.85rem;
-  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  min-height: 36px;
 }
 
 .badge-tag {
@@ -314,7 +384,7 @@ button {
   background-color: rgba(200, 90, 50, 0.1);
   color: var(--color-primary);
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: var(--font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.35rem 0.75rem;
@@ -331,13 +401,14 @@ button {
   height: 7px;
   border-radius: 50%;
   background-color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 /* --------------------------------------------------------------------------
-   5. SECTIONS & LAYOUT DECORATION
+   5. SECTIONS & GENERAL LAYOUT DECORATION
    -------------------------------------------------------------------------- */
 .section {
-  padding: 4.5rem 0;
+  padding: clamp(2.5rem, 6vw, 5.5rem) 0;
 }
 
 .section-light {
@@ -353,15 +424,15 @@ button {
 
 .section-header-centered {
   text-align: center;
-  max-width: 650px;
-  margin: 0 auto 3rem auto;
+  max-width: 680px;
+  margin: 0 auto clamp(2rem, 4vw, 3.5rem) auto;
 }
 
 .section-header-flex {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 2.5rem;
+  margin-bottom: clamp(1.75rem, 3.5vw, 2.75rem);
   flex-wrap: wrap;
   gap: 1rem;
 }
@@ -370,7 +441,7 @@ button {
   display: block;
   color: var(--color-primary);
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 0.4rem;
@@ -378,7 +449,7 @@ button {
 
 .section-title {
   font-family: var(--font-heading);
-  font-size: 2.1rem;
+  font-size: var(--font-size-lg);
   font-weight: 800;
   color: var(--color-dark);
   line-height: 1.25;
@@ -390,7 +461,7 @@ button {
 
 .section-desc {
   color: var(--color-text-muted);
-  font-size: 1.05rem;
+  font-size: var(--font-size-base);
   margin-top: 0.5rem;
 }
 
@@ -399,24 +470,24 @@ button {
    -------------------------------------------------------------------------- */
 .hero-section {
   position: relative;
-  padding: 3.5rem 0 4.5rem 0;
-  background: linear-gradient(135deg, rgba(250, 248, 245, 0.9) 0%, rgba(244, 239, 234, 0.95) 100%),
+  padding: clamp(2.5rem, 5vw, 5rem) 0;
+  background: linear-gradient(135deg, rgba(250, 248, 245, 0.92) 0%, rgba(244, 239, 234, 0.96) 100%),
               url('https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
   border-bottom: 1px solid var(--color-border);
 }
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 2.5rem;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
   align-items: center;
 }
 
 .hero-title {
   font-family: var(--font-heading);
-  font-size: 2.75rem;
+  font-size: var(--font-size-xxl);
   font-weight: 800;
-  line-height: 1.18;
+  line-height: 1.15;
   color: var(--color-dark);
   margin-top: 0.85rem;
   margin-bottom: 1rem;
@@ -427,17 +498,17 @@ button {
   display: block;
   font-family: var(--font-nepali);
   color: var(--color-primary);
-  font-size: 1.85rem;
+  font-size: var(--font-size-xl);
   font-weight: 700;
   margin-top: 0.25rem;
 }
 
 .hero-description {
-  font-size: 1.1rem;
+  font-size: var(--font-size-base);
   color: var(--color-text-muted);
-  line-height: 1.6;
+  line-height: 1.65;
   margin-bottom: 1.75rem;
-  max-width: 580px;
+  max-width: 600px;
 }
 
 .hero-cta-group {
@@ -450,9 +521,9 @@ button {
 
 .service-pills {
   display: flex;
-  gap: 1.25rem;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
   flex-wrap: wrap;
-  font-size: 0.85rem;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--color-text-main);
   padding-top: 1rem;
@@ -462,20 +533,22 @@ button {
 .pill-item {
   display: inline-flex;
   align-items: center;
+  gap: 0.35rem;
 }
 
-/* Countdown Visual Card */
+/* Visual Card Container Query Ready */
 .hero-visual-card {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  container-type: inline-size;
 }
 
 .countdown-card {
   background-color: var(--color-dark);
   color: #FFFFFF;
   border-radius: var(--border-radius-md);
-  padding: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.75rem);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--color-border-dark);
 }
@@ -487,49 +560,50 @@ button {
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--color-border-dark);
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .countdown-status-badge {
   background-color: var(--color-secondary);
   color: var(--color-dark);
   font-weight: 800;
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   text-transform: uppercase;
   padding: 0.25rem 0.6rem;
   border-radius: 4px;
 }
 
 .countdown-date-str {
-  font-size: 0.8rem;
+  font-size: var(--font-size-xs);
   color: var(--color-light-muted);
 }
 
 .countdown-timer-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
+  gap: clamp(0.4rem, 1.5vw, 0.75rem);
   text-align: center;
 }
 
 .timer-box {
   background-color: rgba(255, 255, 255, 0.06);
   border-radius: var(--border-radius-sm);
-  padding: 0.75rem 0.5rem;
+  padding: clamp(0.5rem, 1.5vw, 0.85rem) 0.3rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .timer-value {
   display: block;
   font-family: var(--font-heading);
-  font-size: 1.75rem;
+  font-size: clamp(1.2rem, 3vw, 1.85rem);
   font-weight: 800;
   color: #FFFFFF;
   line-height: 1;
-
 }
 
 .timer-label {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-light-muted);
@@ -539,13 +613,13 @@ button {
 
 .open-status-message h3 {
   color: var(--color-whatsapp);
-  font-size: 1.25rem;
+  font-size: var(--font-size-md);
   margin-bottom: 0.35rem;
 }
 
 .open-status-message p {
   color: var(--color-light-muted);
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
 }
 
 .hero-image-frame {
@@ -558,7 +632,7 @@ button {
 
 .hero-featured-img {
   width: 100%;
-  height: 260px;
+  height: clamp(200px, 30vh, 320px);
   object-fit: cover;
 }
 
@@ -567,10 +641,10 @@ button {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.8));
+  background: linear-gradient(transparent, rgba(0,0,0,0.85));
   color: #FFFFFF;
   padding: 1rem;
-  font-size: 0.85rem;
+  font-size: var(--font-size-xs);
   font-weight: 600;
 }
 
@@ -579,42 +653,44 @@ button {
    -------------------------------------------------------------------------- */
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(220px, 30vw, 280px), 1fr));
+  gap: clamp(1rem, 2.5vw, 2rem);
 }
 
 .feature-card {
   background-color: var(--color-bg-light);
-  padding: 1.75rem;
+  padding: clamp(1.25rem, 3vw, 1.85rem);
   border-radius: var(--border-radius-md);
   border: 1px solid var(--color-border);
-  transition: transform var(--transition-speed);
+  transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+  container-type: inline-size;
 }
 
 .feature-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-sm);
 }
 
 .feature-icon-wrapper {
-  font-size: 2rem;
-  margin-bottom: 1rem;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  margin-bottom: 0.85rem;
 }
 
 .feature-card h3 {
-  font-size: 1.15rem;
+  font-size: var(--font-size-md);
   margin-bottom: 0.5rem;
   color: var(--color-dark);
 }
 
 .feature-card p {
   color: var(--color-text-muted);
-  font-size: 0.92rem;
+  font-size: var(--font-size-sm);
 }
 
 .dish-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(260px, 30vw, 340px), 1fr));
+  gap: clamp(1.25rem, 2.5vw, 2rem);
 }
 
 .dish-card {
@@ -625,6 +701,7 @@ button {
   display: flex;
   flex-direction: column;
   transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+  container-type: inline-size;
 }
 
 .dish-card:hover {
@@ -634,7 +711,7 @@ button {
 
 .dish-img-wrapper {
   position: relative;
-  height: 200px;
+  height: clamp(170px, 25vh, 220px);
   overflow: hidden;
   background-color: var(--color-card-bg);
 }
@@ -647,7 +724,7 @@ button {
 }
 
 .dish-card:hover .dish-img-wrapper img {
-  transform: scale(1.04);
+  transform: scale(1.05);
 }
 
 .dish-badge {
@@ -656,10 +733,11 @@ button {
   right: 12px;
   background-color: var(--color-dark);
   color: #FFFFFF;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   padding: 0.25rem 0.6rem;
   border-radius: 4px;
+  z-index: 2;
 }
 
 .special-badge {
@@ -667,7 +745,7 @@ button {
 }
 
 .dish-info {
-  padding: 1.35rem;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
   display: flex;
   flex-direction: column;
   flex-grow: 1;
@@ -682,7 +760,7 @@ button {
 }
 
 .dish-title-row h3 {
-  font-size: 1.15rem;
+  font-size: var(--font-size-md);
   font-weight: 700;
   color: var(--color-dark);
 }
@@ -691,12 +769,12 @@ button {
   font-family: var(--font-nepali);
   color: var(--color-primary);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
 }
 
 .dish-desc {
   color: var(--color-text-muted);
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
   line-height: 1.5;
   margin-bottom: 1.25rem;
   flex-grow: 1;
@@ -708,12 +786,14 @@ button {
   justify-content: space-between;
   padding-top: 0.85rem;
   border-top: 1px solid var(--color-card-bg);
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .dish-price {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-main);
 }
 
 /* --------------------------------------------------------------------------
@@ -722,13 +802,13 @@ button {
 .page-banner {
   background-color: var(--color-dark);
   color: #FFFFFF;
-  padding: 3rem 0;
+  padding: clamp(2rem, 4vw, 3.5rem) 0;
   border-bottom: 1px solid var(--color-border-dark);
 }
 
 .page-title {
   font-family: var(--font-heading);
-  font-size: 2.4rem;
+  font-size: var(--font-size-xl);
   font-weight: 800;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
@@ -736,8 +816,8 @@ button {
 
 .page-subtitle {
   color: var(--color-light-muted);
-  font-size: 1.05rem;
-  max-width: 600px;
+  font-size: var(--font-size-base);
+  max-width: 650px;
 }
 
 .menu-filter-wrapper {
@@ -749,14 +829,15 @@ button {
 }
 
 .filter-btn {
-  padding: 0.6rem 1.1rem;
+  padding: 0.55rem 1.25rem;
   border-radius: 50px;
   background-color: var(--color-surface-light);
   border: 1px solid var(--color-border);
   color: var(--color-dark);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
   transition: all var(--transition-speed);
+  min-height: 40px;
 }
 
 .filter-btn:hover, .filter-btn.active {
@@ -774,11 +855,12 @@ button {
   border-radius: var(--border-radius-sm);
   padding: 1rem 1.25rem;
   margin-bottom: 2.5rem;
-  font-size: 0.92rem;
+  font-size: var(--font-size-sm);
 }
 
 .notice-icon {
   font-size: 1.4rem;
+  flex-shrink: 0;
 }
 
 .ordering-info-card {
@@ -786,7 +868,7 @@ button {
   background-color: var(--color-card-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-md);
-  padding: 2rem;
+  padding: clamp(1.25rem, 3vw, 2.25rem);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -795,14 +877,14 @@ button {
 }
 
 .ordering-info-content h3 {
-  font-size: 1.25rem;
+  font-size: var(--font-size-md);
   margin-bottom: 0.35rem;
 }
 
 .ordering-info-content p {
   color: var(--color-text-muted);
-  max-width: 550px;
-  font-size: 0.95rem;
+  max-width: 580px;
+  font-size: var(--font-size-sm);
 }
 
 .ordering-info-actions {
@@ -816,13 +898,13 @@ button {
    -------------------------------------------------------------------------- */
 .about-grid {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 3rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: clamp(1.75rem, 4vw, 3.5rem);
   align-items: center;
 }
 
 .about-text-content h2 {
-  font-size: 2rem;
+  font-size: var(--font-size-lg);
   margin-top: 0.5rem;
   margin-bottom: 1.25rem;
 }
@@ -830,27 +912,27 @@ button {
 .about-text-content p {
   margin-bottom: 1rem;
   color: var(--color-text-muted);
-  font-size: 1.02rem;
+  font-size: var(--font-size-base);
 }
 
 .motto-box {
   background-color: var(--color-card-bg);
   border-left: 4px solid var(--color-primary);
-  padding: 1.25rem;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
   margin-top: 1.75rem;
   border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
 }
 
 .motto-nepali {
   font-family: var(--font-nepali);
-  font-size: 1.15rem;
+  font-size: var(--font-size-md);
   font-weight: 700;
   color: var(--color-primary-dark);
   margin-bottom: 0.25rem;
 }
 
 .motto-author {
-  font-size: 0.85rem;
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   font-weight: 600;
 }
@@ -864,20 +946,21 @@ button {
 
 .about-img {
   width: 100%;
-  height: 380px;
+  height: clamp(260px, 45vh, 420px);
   object-fit: cover;
 }
 
 .about-img-badge {
   position: absolute;
-  bottom: 1.5rem;
-  left: 1.5rem;
+  bottom: 1.25rem;
+  left: 1.25rem;
   background-color: var(--color-dark);
   color: #FFFFFF;
   padding: 0.75rem 1.25rem;
   border-radius: var(--border-radius-sm);
   display: flex;
   flex-direction: column;
+  font-size: var(--font-size-xs);
 }
 
 .about-img-badge strong {
@@ -886,13 +969,13 @@ button {
 
 .values-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(200px, 25vw, 250px), 1fr));
+  gap: clamp(1rem, 2vw, 1.75rem);
 }
 
 .value-card {
   background-color: var(--color-bg-light);
-  padding: 1.75rem;
+  padding: clamp(1.25rem, 2.5vw, 1.85rem);
   border-radius: var(--border-radius-md);
   border: 1px solid var(--color-border);
 }
@@ -900,7 +983,7 @@ button {
 .value-number {
   font-family: var(--font-heading);
   font-weight: 800;
-  font-size: 1.75rem;
+  font-size: var(--font-size-lg);
   color: var(--color-primary);
   margin-bottom: 0.5rem;
 }
@@ -910,13 +993,13 @@ button {
    -------------------------------------------------------------------------- */
 .location-banner-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.5rem, 4vw, 3.5rem);
   align-items: center;
 }
 
 .location-text-col h2 {
-  font-size: 2.2rem;
+  font-size: var(--font-size-lg);
   margin-top: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -935,11 +1018,13 @@ button {
 }
 
 .contact-icon {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   line-height: 1;
   background-color: var(--color-dark-surface);
+  color: #FFFFFF;
   padding: 0.5rem;
   border-radius: var(--border-radius-sm);
+  flex-shrink: 0;
 }
 
 .location-btn-group {
@@ -950,20 +1035,20 @@ button {
 
 .contact-page-grid {
   display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: 2.5rem;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(1.5rem, 3.5vw, 3rem);
   align-items: start;
 }
 
 .contact-info-card {
   background-color: var(--color-surface-light);
-  padding: 2rem;
+  padding: clamp(1.25rem, 3vw, 2.25rem);
   border-radius: var(--border-radius-md);
   border: 1px solid var(--color-border);
 }
 
 .contact-info-card h2 {
-  font-size: 1.6rem;
+  font-size: var(--font-size-lg);
   margin-bottom: 0.5rem;
 }
 
@@ -980,10 +1065,10 @@ button {
 }
 
 .detail-icon {
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   background-color: var(--color-card-bg);
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -993,7 +1078,7 @@ button {
 
 .landmark-text {
   color: var(--color-primary-dark);
-  font-size: 0.9rem;
+  font-size: var(--font-size-xs);
   margin-top: 0.25rem;
 }
 
@@ -1006,7 +1091,7 @@ button {
   border-top: 1px solid var(--color-border);
 }
 
-/* Google Map Embed Container Styling */
+/* Google Map Embed Responsive Container */
 .contact-map-card, .location-map-preview {
   background-color: var(--color-surface-light);
   border-radius: var(--border-radius-md);
@@ -1018,27 +1103,29 @@ button {
 }
 
 .map-card-header {
-  padding: 1.25rem;
+  padding: 1rem 1.25rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background-color: var(--color-card-bg);
   border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .map-card-header h3 {
-  font-size: 1.05rem;
+  font-size: var(--font-size-sm);
   color: var(--color-dark);
 }
 
 .map-link-btn {
-  font-size: 0.85rem;
+  font-size: var(--font-size-xs);
   font-weight: 700;
 }
 
 .map-embed-container, .map-embed-wrapper {
   width: 100%;
-  height: 420px;
+  height: clamp(280px, 45vh, 460px);
   position: relative;
   background-color: #E5E3DF;
 }
@@ -1050,10 +1137,10 @@ button {
 }
 
 .map-card-footer {
-  padding: 1rem 1.25rem;
+  padding: 0.85rem 1.25rem;
   background-color: var(--color-bg-light);
   border-top: 1px solid var(--color-border);
-  font-size: 0.88rem;
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
 
@@ -1063,15 +1150,15 @@ button {
 .site-footer {
   background-color: var(--color-dark);
   color: #FFFFFF;
-  padding: 4rem 0 2rem 0;
+  padding: clamp(2.5rem, 5vw, 4.5rem) 0 calc(1.5rem + var(--sab)) 0;
   border-top: 1px solid var(--color-border-dark);
 }
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
-  gap: 2.5rem;
-  margin-bottom: 3rem;
+  grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 1fr)) minmax(0, 1.2fr);
+  gap: clamp(1.5rem, 3vw, 2.75rem);
+  margin-bottom: clamp(2rem, 4vw, 3rem);
 }
 
 .footer-brand {
@@ -1082,38 +1169,38 @@ button {
 }
 
 .footer-logo {
-  height: 42px;
+  height: clamp(34px, 5vw, 44px);
   width: auto;
 }
 
 .footer-brand h3 {
-  font-size: 1.15rem;
+  font-size: var(--font-size-md);
   line-height: 1.1;
 }
 
 .nepali-sub {
   font-family: var(--font-nepali);
   color: var(--color-secondary);
-  font-size: 0.85rem;
+  font-size: var(--font-size-xs);
 }
 
 .tagline {
   color: var(--color-secondary);
   font-style: italic;
-  font-size: 0.9rem;
+  font-size: var(--font-size-xs);
   margin-bottom: 0.75rem;
   font-weight: 600;
 }
 
 .footer-desc {
   color: var(--color-light-muted);
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: var(--font-size-xs);
+  line-height: 1.55;
 }
 
 .footer-col h4 {
   color: #FFFFFF;
-  font-size: 1.05rem;
+  font-size: var(--font-size-sm);
   margin-bottom: 1.2rem;
   position: relative;
   padding-bottom: 0.4rem;
@@ -1135,7 +1222,7 @@ button {
 
 .footer-links a {
   color: var(--color-light-muted);
-  font-size: 0.9rem;
+  font-size: var(--font-size-xs);
 }
 
 .footer-links a:hover {
@@ -1144,8 +1231,9 @@ button {
 
 .footer-contact-item {
   color: var(--color-light-muted);
-  font-size: 0.9rem;
+  font-size: var(--font-size-xs);
   margin-bottom: 0.65rem;
+  word-break: break-word;
 }
 
 .footer-contact-item a {
@@ -1153,41 +1241,111 @@ button {
 }
 
 .footer-bottom {
-  padding-top: 2rem;
+  padding-top: 1.75rem;
   border-top: 1px solid var(--color-border-dark);
   text-align: center;
   color: var(--color-light-muted);
-  font-size: 0.85rem;
+  font-size: var(--font-size-xs);
 }
 
 .footer-subtext {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   margin-top: 0.25rem;
   opacity: 0.75;
 }
 
+/* ==========================================================================
+   12. DEVICE-SPECIFIC & BREAKPOINT MEDIA QUERIES
+   ========================================================================== */
+
 /* --------------------------------------------------------------------------
-   12. RESPONSIVE DESIGN (MOBILE & TABLET)
+   A. ULTRA-WIDE SCREENS & 4K/8K TV DISPLAYS ( >= 1920px )
+   -------------------------------------------------------------------------- */
+@media (min-width: 1920px) {
+  :root {
+    --container-max-width: 1600px;
+  }
+  
+  .hero-featured-img {
+    height: 380px;
+  }
+
+  .dish-img-wrapper {
+    height: 250px;
+  }
+}
+
+@media (min-width: 2560px) {
+  :root {
+    --container-max-width: 2000px;
+  }
+
+  html {
+    font-size: 18px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   B. STANDARD LAPTOPS & DESKTOPS ( 1200px - 1440px )
+   -------------------------------------------------------------------------- */
+@media (max-width: 1200px) {
+  .footer-grid {
+    grid-template-columns: 1.2fr 1fr 1fr 1.1fr;
+    gap: 1.75rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   C. SMALL LAPTOPS & LANDSCAPE TABLETS ( 993px - 1199px )
+   -------------------------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .hero-grid {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+
+  .contact-page-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   D. PORTRAIT TABLETS & LARGE MOBILE PHONES ( 769px - 992px )
    -------------------------------------------------------------------------- */
 @media (max-width: 992px) {
-  .hero-grid, .location-banner-grid, .about-grid, .contact-page-grid {
+  .hero-grid,
+  .location-banner-grid,
+  .about-grid,
+  .contact-page-grid {
     grid-template-columns: 1fr;
     gap: 2.5rem;
   }
 
   .footer-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2.25rem;
   }
 
-  .hero-title {
-    font-size: 2.25rem;
+  .about-image-card {
+    order: -1;
   }
 
-  .hero-title-nepali {
-    font-size: 1.5rem;
+  .ordering-info-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ordering-info-actions {
+    width: 100%;
+  }
+
+  .ordering-info-actions .btn {
+    flex: 1;
   }
 }
 
+/* --------------------------------------------------------------------------
+   E. TABLETS / LARGE MOBILE PHONES ( 577px - 768px )
+   -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
   .mobile-nav-toggle {
     display: flex;
@@ -1197,16 +1355,18 @@ button {
     position: fixed;
     top: 0;
     right: -100%;
-    width: 280px;
+    width: min(82vw, 320px);
     height: 100vh;
+    height: 100dvh;
     background-color: var(--color-dark);
     flex-direction: column;
     justify-content: flex-start;
     align-items: flex-start;
-    padding: 5rem 1.75rem 2rem 1.75rem;
+    padding: calc(4.5rem + var(--sat)) 1.75rem calc(2rem + var(--sab)) 1.75rem;
     transition: right var(--transition-speed);
-    box-shadow: -5px 0 20px rgba(0,0,0,0.3);
+    box-shadow: -8px 0 24px rgba(0,0,0,0.4);
     z-index: 1000;
+    overflow-y: auto;
   }
 
   .primary-nav.is-open {
@@ -1225,46 +1385,43 @@ button {
     font-size: 1.1rem;
     width: 100%;
     display: block;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .nav-actions {
-    margin-top: 2rem;
-    width: 100%;
+  .nav-link.active::after {
+    display: none;
   }
 
-  .header-cta {
-    width: 100%;
+  .nav-link.active {
+    color: var(--color-secondary);
+    font-weight: 800;
   }
 
   .announcement-hours {
     display: none;
   }
 
+  .hero-cta-group {
+    flex-direction: row;
+  }
+
   .dish-cards-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }
 
-  .footer-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .ordering-info-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .ordering-info-actions {
-    width: 100%;
-  }
-
-  .ordering-info-actions .btn {
+  .contact-actions-row .btn {
     flex: 1;
   }
 }
 
-@media (max-width: 480px) {
-  .hero-title {
-    font-size: 1.85rem;
+/* --------------------------------------------------------------------------
+   F. COMPACT MOBILE PHONES ( 361px - 576px )
+   -------------------------------------------------------------------------- */
+@media (max-width: 576px) {
+  .announcement-content {
+    justify-content: center;
+    text-align: center;
   }
 
   .hero-cta-group {
@@ -1276,25 +1433,232 @@ button {
     width: 100%;
   }
 
-  .countdown-timer-grid {
-    gap: 0.4rem;
+  .countdown-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .timer-value {
-    font-size: 1.35rem;
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
   }
 
-  .section {
-    padding: 3rem 0;
+  .location-btn-group {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .location-btn-group .btn {
+    width: 100%;
+  }
+
+  .map-card-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
-/* Accessibility & Reduced Motion */
+/* --------------------------------------------------------------------------
+   G. NARROW FOLDABLES & SMALL PHONES ( 281px - 360px )
+   (e.g., Samsung Galaxy Z Fold Outer Screen)
+   -------------------------------------------------------------------------- */
+@media (max-width: 360px) {
+  :root {
+    --container-padding: 0.75rem;
+  }
+
+  .brand-title {
+    font-size: 0.95rem;
+  }
+
+  .brand-nepali {
+    font-size: 0.7rem;
+  }
+
+  .logo-img {
+    height: 32px;
+  }
+
+  .countdown-timer-grid {
+    gap: 0.25rem;
+  }
+
+  .timer-box {
+    padding: 0.4rem 0.1rem;
+  }
+
+  .timer-value {
+    font-size: 1.1rem;
+  }
+
+  .timer-label {
+    font-size: 0.58rem;
+  }
+
+  .dish-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+  }
+
+  .filter-btn {
+    padding: 0.4rem 0.85rem;
+    font-size: 0.8rem;
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   H. EXTRA SMALL DEVICES & SMARTWATCHES ( <= 280px )
+   (e.g., Apple Watch, Galaxy Watch, Tiny Wearables)
+   -------------------------------------------------------------------------- */
+@media (max-width: 280px) {
+  html {
+    font-size: 85%;
+  }
+
+  .header-inner {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .service-pills {
+    flex-direction: column;
+  }
+
+  .countdown-timer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 0.5rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   I. LANDSCAPE ORIENTATION FOR MOBILE/TABLET (Max Height <= 500px)
+   -------------------------------------------------------------------------- */
+@media (max-height: 500px) and (orientation: landscape) {
+  .site-header {
+    padding: 0.35rem 0;
+  }
+
+  .hero-section {
+    padding: 1.5rem 0;
+  }
+
+  .hero-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .primary-nav {
+    padding-top: 3.5rem;
+  }
+
+  .hero-featured-img {
+    height: 160px;
+  }
+
+  .map-embed-container, .map-embed-wrapper {
+    height: 220px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   J. POINTER & HOVER ACCESSIBILITY OPTIMIZATIONS
+   -------------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover, .feature-card:hover, .dish-card:hover, .filter-btn:hover {
+    will-change: transform;
+  }
+}
+
+@media (hover: none) or (pointer: coarse) {
+  /* Disable translation shifts on touch to prevent scroll jitter */
+  .btn-primary:hover, .feature-card:hover, .dish-card:hover {
+    transform: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   K. DARK COLOR SCHEME / HIGH CONTRAST ACCESSIBILITY
+   -------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg-light: #161A18;
+    --color-surface-light: #1F2421;
+    --color-card-bg: #272D2A;
+    --color-text-main: #E2E8E4;
+    --color-text-muted: #A0AAA5;
+    --color-border: #38403C;
+    --color-dark-surface: #141816;
+  }
+
+  .site-header {
+    background-color: rgba(22, 26, 24, 0.95);
+    border-bottom-color: rgba(56, 64, 60, 0.8);
+  }
+
+  .brand-title {
+    color: #FFFFFF;
+  }
+
+  .btn-outline {
+    border-color: #E2E8E4;
+    color: #E2E8E4;
+  }
+
+  .btn-outline:hover {
+    background-color: #E2E8E4;
+    color: var(--color-dark);
+  }
+
+  .filter-btn {
+    background-color: var(--color-card-bg);
+    color: var(--color-text-main);
+    border-color: var(--color-border);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   L. REDUCED MOTION PREFERENCE
+   -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   M. PRINT STYLESHEET (For Menu / Receipt Printing)
+   -------------------------------------------------------------------------- */
+@media print {
+  .site-header, .announcement-bar, .mobile-nav-toggle, 
+  .hero-cta-group, .menu-filter-wrapper, .site-footer, 
+  .contact-map-card, .btn {
+    display: none !important;
+  }
+
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-size: 12pt;
+  }
+
+  .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .dish-card, .feature-card, .contact-info-card {
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
   }
 }
