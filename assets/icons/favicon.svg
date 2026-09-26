@@ -1,4 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect width="64" height="64" rx="4" fill="#1c2536"/>
-  <text x="32" y="46" font-family="Cormorant Garamond, Georgia, serif" font-size="36" font-weight="600" fill="#c9a463" text-anchor="middle">ब</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <image href="../images/favicon_io (2)/android-chrome-512x512.png" width="512" height="512" preserveAspectRatio="xMidYMid slice" />
 </svg>
