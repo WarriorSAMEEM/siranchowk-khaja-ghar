@@ -495,115 +495,354 @@ git push
 
 
 
-  <!-- PWA Install Popup UI -->
+  
+  
+  <!-- PWA Popup UI Container -->
 <div id="pwaInstallModal" class="pwa-modal">
-  <div class="pwa-modal-content">
-    <img src="https://i.postimg.cc/HnL4h5rL/siranchowkpng-logo.png" alt="App Logo" class="pwa-app-logo">
-    <div class="pwa-text">
-      <strong>Install Siranchowk App</strong>
-      <p>Get a faster & better app experience!</p>
+  <div class="pwa-content">
+    <div class="pwa-header">
+      <img src="https://i.postimg.cc/HnL4h5rL/siranchowkpng-logo.png" alt="App Logo" class="pwa-logo">
+      <div class="pwa-text-group">
+        <strong class="pwa-title">Install Siranchowk App</strong>
+        <p id="pwaNormalDesc" class="pwa-desc">Get a faster & better app experience on your phone!</p>
+      </div>
     </div>
-    <button id="pwaInstallBtn" class="pwa-btn">Install</button>
+
+    <!-- Late Return / Custom Message Box -->
+    <div id="pwaLateMsg" class="pwa-late-msg" style="display: none;"></div>
+
+    <!-- Action Buttons & Dropdown -->
+    <div class="pwa-actions">
+      <div class="pwa-remind-box">
+        <select id="pwaTimeSelect" class="pwa-select">
+          <!-- Seconds -->
+          <option value="30" data-label="30 seconds">In 30 seconds</option>
+          <option value="120" data-label="2 minutes">In 120 seconds</option>
+          <option value="300" data-label="5 minutes">In 300 seconds</option>
+          <!-- Minutes -->
+          <option value="600" data-label="10 minutes">In 10 minutes</option>
+          <option value="1800" data-label="30 minutes">In 30 minutes</option>
+          <option value="2700" data-label="45 minutes">In 45 minutes</option>
+          <!-- Hours -->
+          <option value="3600" data-label="1 hour">In 1 hour</option>
+          <option value="7200" data-label="2 hours">In 2 hours</option>
+          <option value="18000" data-label="5 hours">In 5 hours</option>
+          <option value="43200" data-label="12 hours">In 12 hours</option>
+          <option value="57600" data-label="16 hours">In 16 hours</option>
+          <!-- Days -->
+          <option value="86400" data-label="24 hours" selected>In 24 hours (1 day)</option>
+          <option value="172800" data-label="2 days">In 2 days</option>
+          <option value="259200" data-label="3 days">In 3 days</option>
+        </select>
+        <button id="pwaRemindBtn" class="pwa-btn pwa-btn-secondary">Remind Later</button>
+      </div>
+
+      <button id="pwaInstallBtn" class="pwa-btn pwa-btn-primary">Install Now</button>
+    </div>
   </div>
 </div>
 
 <style>
+/* Modal Base Styling */
 .pwa-modal {
   position: fixed;
   bottom: 20px;
   left: 50%;
-  transform: translateX(-50%) translateY(150%);
-  width: 90%;
-  max-width: 380px;
+  transform: translateX(-50%) translateY(160%);
+  width: 92%;
+  max-width: 400px;
   background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  padding: 12px 16px;
-  z-index: 9999;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 18px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.22);
+  padding: 16px;
+  z-index: 99999;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  opacity: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .pwa-modal.show {
   transform: translateX(-50%) translateY(0);
+  opacity: 1;
 }
 
-.pwa-modal-content {
+.pwa-modal.hide-anim {
+  transform: translateX(-50%) translateY(160%);
+  opacity: 0;
+}
+
+.pwa-header {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 10px;
 }
 
-.pwa-app-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+.pwa-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   object-fit: cover;
+  flex-shrink: 0;
 }
 
-.pwa-text {
-  flex: 1;
+.pwa-text-group {
+  display: flex;
+  flex-direction: column;
 }
 
-.pwa-text strong {
-  font-size: 0.95rem;
-  color: #1f2937;
-  display: block;
+.pwa-title {
+  font-size: 1.02rem;
+  color: #111827;
+  font-weight: 700;
 }
 
-.pwa-text p {
-  font-size: 0.78rem;
+.pwa-desc {
+  font-size: 0.8rem;
   color: #6b7280;
   margin: 2px 0 0 0;
+  line-height: 1.3;
+}
+
+/* Custom Simple English Message Style */
+.pwa-late-msg {
+  background: #eff6ff;
+  border-left: 4px solid #2563eb;
+  color: #1e40af;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+/* Actions Layout */
+.pwa-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pwa-remind-box {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.pwa-select {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  background: #f9fafb;
+  color: #374151;
+  outline: none;
+  cursor: pointer;
 }
 
 .pwa-btn {
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.pwa-btn:active {
+  transform: scale(0.97);
+}
+
+.pwa-btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.pwa-btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.pwa-btn-primary {
   background: #2563eb;
   color: #ffffff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
+  width: 100%;
+  text-align: center;
+}
+
+.pwa-btn-primary:hover {
+  background: #1d4ed8;
 }
 </style>
 
 <script>
-let deferredPrompt;
-const modal = document.getElementById('pwaInstallModal');
-const installBtn = document.getElementById('pwaInstallBtn');
+(() => {
+  let deferredPrompt = null;
+  let autoHideTimer = null;
+  let scheduledTimer = null;
 
-// Check if app is running as installed PWA (Standalone)
-const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const modal = document.getElementById('pwaInstallModal');
+  const installBtn = document.getElementById('pwaInstallBtn');
+  const remindBtn = document.getElementById('pwaRemindBtn');
+  const timeSelect = document.getElementById('pwaTimeSelect');
+  const normalDesc = document.getElementById('pwaNormalDesc');
+  const lateMsgBox = document.getElementById('pwaLateMsg');
 
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
+  // Check Standalone Mode (Already installed check)
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-  // Show popup only if on mobile and NOT already installed
-  if (isMobile && !isStandalone) {
+  // Helper function to format time passed into simple English
+  function formatPassedTime(ms) {
+    const totalSecs = Math.floor(ms / 1000);
+    const mins = Math.floor(totalSecs / 60);
+    const hours = Math.floor(mins / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days >= 1) return `${days} day${days > 1 ? 's' : ''}`;
+    if (hours >= 1) return `${hours} hour${hours > 1 ? 's' : ''}`;
+    if (mins >= 1) return `${mins} minute${mins > 1 ? 's' : ''}`;
+    return `${totalSecs} seconds`;
+  }
+
+  // Show Popup Function
+  function showPopup(customEnglishMsg = null) {
+    if (isStandalone) return;
+
+    if (customEnglishMsg) {
+      lateMsgBox.innerText = customEnglishMsg;
+      lateMsgBox.style.display = 'block';
+      normalDesc.style.display = 'none';
+    } else {
+      lateMsgBox.style.display = 'none';
+      normalDesc.style.display = 'block';
+    }
+
+    modal.classList.remove('hide-anim');
+    modal.classList.add('show');
+
+    // Auto disappear after 9 seconds
+    clearTimeout(autoHideTimer);
+    autoHideTimer = setTimeout(() => {
+      closePopup();
+    }, 9000); // 9 seconds
+  }
+
+  // Close Popup Function with smooth animation
+  function closePopup() {
+    clearTimeout(autoHideTimer);
+    modal.classList.add('hide-anim');
     setTimeout(() => {
-      modal.classList.add('show');
-
-      // Auto hide popup after 5 seconds
-      setTimeout(() => {
-        modal.classList.remove('show');
-      }, 5000);
-
-    }, 12000); // 12 seconds delay
+      modal.classList.remove('show', 'hide-anim');
+    }, 450); // match CSS animation time
   }
-});
 
-// Install Button Action
-installBtn.addEventListener('click', async () => {
-  if (deferredPrompt) {
-    modal.classList.remove('show');
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    deferredPrompt = null;
+  // Main Logic for Scheduled Reminders
+  function checkAndTriggerPopup() {
+    if (!isMobile || isStandalone) return;
+
+    const targetTimestamp = localStorage.getItem('pwa_remind_time');
+    const requestedText = localStorage.getItem('pwa_requested_text');
+    const setAtTimestamp = localStorage.getItem('pwa_set_at');
+
+    const now = Date.now();
+
+    if (targetTimestamp) {
+      const targetTime = parseInt(targetTimestamp, 10);
+      const setAtTime = parseInt(setAtTimestamp, 10) || now;
+
+      if (now >= targetTime) {
+        // Scheduled time has passed or user came back late!
+        localStorage.removeItem('pwa_remind_time');
+        localStorage.removeItem('pwa_requested_text');
+        localStorage.removeItem('pwa_set_at');
+
+        const totalElapsedMs = now - setAtTime;
+        const actualPassedText = formatPassedTime(totalElapsedMs);
+        const reqText = requestedText || 'earlier';
+
+        // Custom Simple English Message as requested
+        const simpleMsg = `You asked to be reminded in ${reqText}, but you are back after ${actualPassedText}. Let's install now!`;
+
+        // Show immediately (with tiny 1.5 second delay for smooth page load)
+        setTimeout(() => {
+          showPopup(simpleMsg);
+        }, 1500);
+
+      } else {
+        // User is still online, set timer for remaining time
+        const remainingMs = targetTime - now;
+        clearTimeout(scheduledTimer);
+        scheduledTimer = setTimeout(() => {
+          showPopup();
+        }, remainingMs);
+      }
+    } else {
+      // First visit / No pending reminder -> Show after 12 seconds
+      clearTimeout(scheduledTimer);
+      scheduledTimer = setTimeout(() => {
+        showPopup();
+      }, 12000); // 12 seconds
+    }
   }
-});
+
+  // Event Listener for PWA Prompt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    checkAndTriggerPopup();
+  });
+
+  // Fallback trigger if beforeinstallprompt fired earlier
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(checkAndTriggerPopup, 500);
+  });
+
+  // Remind Later Button Click Logic
+  remindBtn.addEventListener('click', () => {
+    const selectedOption = timeSelect.options[timeSelect.selectedIndex];
+    const delaySeconds = parseInt(selectedOption.value, 10);
+    const labelText = selectedOption.getAttribute('data-label');
+
+    const now = Date.now();
+    const futureTime = now + (delaySeconds * 1000);
+
+    // Save data to localStorage
+    localStorage.setItem('pwa_remind_time', futureTime.toString());
+    localStorage.setItem('pwa_requested_text', labelText);
+    localStorage.setItem('pwa_set_at', now.toString());
+
+    // Trigger smooth exit animation
+    closePopup();
+
+    // Set active JavaScript timer in case user stays on the page
+    clearTimeout(scheduledTimer);
+    scheduledTimer = setTimeout(() => {
+      showPopup();
+    }, delaySeconds * 1000);
+  });
+
+  // Install Button Click Logic
+  installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      closePopup();
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      if (outcome === 'accepted') {
+        localStorage.removeItem('pwa_remind_time');
+        localStorage.removeItem('pwa_requested_text');
+        localStorage.removeItem('pwa_set_at');
+      }
+    }
+  });
+})();
 </script>
+
 </body>
 </html>
