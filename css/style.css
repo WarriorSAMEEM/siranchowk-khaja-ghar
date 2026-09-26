@@ -9,24 +9,24 @@
    -------------------------------------------------------------------------- */
 :root {
   /* Color Palette - Earthy, Warm Nepali Eatery Palette */
-  --color-primary: #C85A32;        /* Muted Warm Terracotta */
-  --color-primary-dark: #A44321;   /* Deep Terracotta */
-  --color-secondary: #D48B38;      /* Earthy Warm Gold / Mustard */
-  --color-dark: #1F2421;           /* Deep Charcoal */
-  --color-dark-surface: #2A2F2D;   /* Dark Slate */
-  --color-bg-light: #FAF8F5;       /* Warm Cream */
+  --color-primary: #B94A2C;        /* Muted Warm Terracotta */
+  --color-primary-dark: #8F351F;   /* Deep Terracotta */
+  --color-secondary: #D49A3A;      /* Earthy Warm Gold / Mustard */
+  --color-dark: #24352B;           /* Deep Charcoal */
+  --color-dark-surface: #31503E;   /* Dark Slate */
+  --color-bg-light: #FFF9F2;       /* Warm Cream */
   --color-surface-light: #FFFFFF;  /* Pure White Surface */
-  --color-card-bg: #F4EFEA;        /* Soft Off-White Accent */
+  --color-card-bg: #FFF1E2;        /* Soft Off-White Accent */
   
-  --color-text-main: #2C3330;      /* Dark Charcoal Text */
-  --color-text-muted: #626A66;     /* Muted Grey Text */
-  --color-light-muted: #B0B8B4;    /* Light Muted Text for dark bg */
+  --color-text-main: #26322C;      /* Dark Charcoal Text */
+  --color-text-muted: #66716B;     /* Muted Grey Text */
+  --color-light-muted: #E8E0D5;    /* Light Muted Text for dark bg */
   
   --color-whatsapp: #25D366;       /* Official WhatsApp Green */
   --color-whatsapp-dark: #1DA851;
 
-  --color-border: #E5DFC8;
-  --color-border-dark: #3D4441;
+  --color-border: #E8D8C4;
+  --color-border-dark: #C9B69D;
 
   /* Typography Families */
   --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, blinkmacsystemfont, sans-serif;
@@ -185,10 +185,10 @@ button {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background-color: rgba(250, 248, 245, 0.95);
+  background-color: rgba(255, 249, 242, 0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(229, 223, 200, 0.7);
+  border-bottom: 1px solid rgba(232, 216, 196, 0.78);
   padding: clamp(0.5rem, 1.5vh, 1rem) 0;
   transition: all var(--transition-speed);
 }
@@ -362,7 +362,7 @@ button {
 
 .btn-outline-light {
   border: 2px solid rgba(255, 255, 255, 0.3);
-  color: #FFFFFF;
+  color: #f1f1f1;
   background-color: transparent;
 }
 
@@ -418,8 +418,10 @@ button {
 }
 
 .section-dark {
-  background-color: var(--color-dark);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFFDF9 52%, #F8EFE4 100%);
+  color: var(--color-text-main);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .section-header-centered {
@@ -545,8 +547,8 @@ button {
 }
 
 .countdown-card {
-  background-color: var(--color-dark);
-  color: #FFFFFF;
+  background: linear-gradient(145deg, #FFF8EF 0%, #F6E7D5 100%);
+  color: var(--color-text-main);
   border-radius: var(--border-radius-md);
   padding: clamp(1rem, 3vw, 1.75rem);
   box-shadow: var(--shadow-md);
@@ -587,10 +589,10 @@ button {
 }
 
 .timer-box {
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: rgba(185, 74, 44, 0.07);
   border-radius: var(--border-radius-sm);
   padding: clamp(0.5rem, 1.5vw, 0.85rem) 0.3rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(185, 74, 44, 0.13);
 }
 
 .timer-value {
@@ -800,8 +802,8 @@ button {
    8. MENU PAGE SPECIFICS
    -------------------------------------------------------------------------- */
 .page-banner {
-  background-color: var(--color-dark);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, #FFF8EF 0%, #F2E1CF 100%);
+  color: var(--color-text-main);
   padding: clamp(2rem, 4vw, 3.5rem) 0;
   border-bottom: 1px solid var(--color-border-dark);
 }
@@ -1148,7 +1150,7 @@ button {
    11. FOOTER STYLES
    -------------------------------------------------------------------------- */
 .site-footer {
-  background-color: var(--color-dark);
+  background: linear-gradient(160deg, #24352B 0%, #31503E 100%);
   color: #FFFFFF;
   padding: clamp(2.5rem, 5vw, 4.5rem) 0 calc(1.5rem + var(--sab)) 0;
   border-top: 1px solid var(--color-border-dark);
@@ -1363,7 +1365,11 @@ button {
     justify-content: flex-start;
     align-items: flex-start;
     padding: calc(4.5rem + var(--sat)) 1.75rem calc(2rem + var(--sab)) 1.75rem;
-    transition: right var(--transition-speed);
+    visibility: hidden;
+     opacity: 0;
+     pointer-events: none;
+     transform: translateX(18px);
+     transition: opacity .28s ease, transform .28s ease, visibility .28s ease;
     box-shadow: -8px 0 24px rgba(0,0,0,0.4);
     z-index: 1000;
     overflow-y: auto;
@@ -1660,5 +1666,2557 @@ button {
     border: 1px solid #000000 !important;
     box-shadow: none !important;
     page-break-inside: avoid;
+  }
+}
+/* ==========================================================================
+   BAYAPANI KHAJA GHAR — PREMIUM LIGHT UI ENHANCEMENT LAYER
+   --------------------------------------------------------------------------
+   This layer intentionally stays compatible with the existing HTML classes.
+   It adds:
+   - Premium warm Nepali eatery palette
+   - No automatic dark-mode conversion
+   - Scroll-responsive header/background treatment
+   - Hidden-by-default mobile navigation
+   - Safer overflow behavior
+   - Strong responsive behavior from 240px to ultra-wide displays
+   - Better cards, buttons, forms, focus states and touch targets
+   - Reduced-motion and high-contrast fallbacks
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   01. EXTENDED DESIGN TOKENS
+   -------------------------------------------------------------------------- */
+:root {
+  --brand-red: #B94A2C;
+  --brand-red-deep: #8F351F;
+  --brand-gold: #D49A3A;
+  --brand-green: #31503E;
+  --brand-green-deep: #24352B;
+  --brand-cream: #FFF9F2;
+  --brand-cream-2: #FFF3E7;
+  --brand-white: #FFFFFF;
+  --brand-ink: #26322C;
+  --brand-muted: #66716B;
+  --brand-line: #E8D8C4;
+
+  --surface-0: #FFFDF9;
+  --surface-1: #FFF9F2;
+  --surface-2: #FFF1E2;
+  --surface-3: #F6E7D5;
+
+  --success: #208A57;
+  --success-soft: #E9F7EF;
+  --warning: #B97816;
+  --warning-soft: #FFF4DC;
+  --danger: #B73A32;
+  --danger-soft: #FCEAE8;
+
+  --header-bg: rgba(255, 249, 242, 0.92);
+  --header-bg-scrolled: rgba(255, 255, 255, 0.98);
+  --header-line: rgba(232, 216, 196, 0.78);
+  --header-line-scrolled: rgba(220, 203, 185, 0.95);
+
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-strong: rgba(255, 255, 255, 0.90);
+  --glass-line: rgba(255, 255, 255, 0.70);
+
+  --shadow-xs: 0 1px 3px rgba(36, 53, 43, 0.05);
+  --shadow-sm: 0 5px 18px rgba(36, 53, 43, 0.07);
+  --shadow-md: 0 12px 32px rgba(36, 53, 43, 0.10);
+  --shadow-lg: 0 22px 55px rgba(36, 53, 43, 0.14);
+  --shadow-xl: 0 35px 85px rgba(36, 53, 43, 0.18);
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+
+  --ease-standard: cubic-bezier(.2, .65, .25, 1);
+  --ease-spring: cubic-bezier(.16, 1, .3, 1);
+  --ease-soft: cubic-bezier(.22, .61, .36, 1);
+
+  --section-space: clamp(3.25rem, 7vw, 6.75rem);
+  --content-width: min(100% - 2 * var(--container-padding), var(--container-max-width));
+
+  color-scheme: light;
+}
+
+/* --------------------------------------------------------------------------
+   02. GLOBAL LIGHT THEME LOCK
+   -------------------------------------------------------------------------- */
+html {
+  background: var(--brand-cream);
+  color-scheme: light;
+}
+
+body {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(212, 154, 58, 0.055), transparent 30rem),
+    radial-gradient(circle at 100% 12%, rgba(185, 74, 44, 0.045), transparent 28rem),
+    var(--brand-cream);
+  color: var(--brand-ink);
+  overflow-x: clip;
+}
+
+body::selection {
+  background: rgba(185, 74, 44, 0.18);
+  color: var(--brand-green-deep);
+}
+
+::selection {
+  background: rgba(185, 74, 44, 0.18);
+  color: var(--brand-green-deep);
+}
+
+img,
+video,
+iframe {
+  max-width: 100%;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a {
+  touch-action: manipulation;
+}
+
+/* --------------------------------------------------------------------------
+   03. SCROLL-RESPONSIVE HEADER
+   -------------------------------------------------------------------------- */
+.site-header {
+  background: var(--header-bg);
+  border-bottom-color: var(--header-line);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  will-change: background-color, box-shadow, backdrop-filter;
+  animation: headerScrollTreatment linear both;
+  animation-timeline: scroll(root block);
+  animation-range: 0 220px;
+}
+
+@keyframes headerScrollTreatment {
+  from {
+    background-color: rgba(255, 249, 242, 0.92);
+    border-bottom-color: rgba(232, 216, 196, 0.78);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(8px);
+  }
+
+  to {
+    background-color: rgba(255, 255, 255, 0.98);
+    border-bottom-color: rgba(220, 203, 185, 0.95);
+    box-shadow: 0 8px 28px rgba(36, 53, 43, 0.08);
+    backdrop-filter: blur(18px);
+  }
+}
+
+@supports not (animation-timeline: scroll()) {
+  .site-header {
+    background: var(--header-bg);
+  }
+}
+
+.site-header.is-scrolled,
+.site-header.scrolled {
+  background: var(--header-bg-scrolled);
+  border-bottom-color: var(--header-line-scrolled);
+  box-shadow: 0 8px 28px rgba(36, 53, 43, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   04. BRAND / LOGO POLISH
+   -------------------------------------------------------------------------- */
+.brand-logo {
+  color: var(--brand-green-deep);
+}
+
+.brand-logo:hover {
+  color: var(--brand-red);
+}
+
+.logo-img {
+  filter: drop-shadow(0 3px 7px rgba(36, 53, 43, 0.10));
+}
+
+.brand-title {
+  color: var(--brand-green-deep);
+}
+
+.brand-nepali {
+  color: var(--brand-red);
+}
+
+.footer-brand h3 {
+  color: #FFFFFF;
+}
+
+/* --------------------------------------------------------------------------
+   05. NAVIGATION
+   -------------------------------------------------------------------------- */
+.primary-nav {
+  z-index: 1100;
+}
+
+.nav-link {
+  color: var(--brand-green-deep);
+  transition:
+    color .22s var(--ease-standard),
+    transform .22s var(--ease-standard);
+}
+
+.nav-link::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.1rem;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--brand-red), var(--brand-gold));
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform .24s var(--ease-spring);
+}
+
+.nav-link:hover::before,
+.nav-link.active::before {
+  transform: scaleX(1);
+}
+
+.nav-link.active::after {
+  display: none;
+}
+
+.nav-link:hover {
+  color: var(--brand-red);
+  transform: translateY(-1px);
+}
+
+.mobile-nav-toggle {
+  border-radius: var(--radius-sm);
+  background: rgba(185, 74, 44, 0.06);
+  border: 1px solid rgba(185, 74, 44, 0.10);
+  transition:
+    background-color .22s var(--ease-standard),
+    box-shadow .22s var(--ease-standard),
+    transform .22s var(--ease-standard);
+}
+
+.mobile-nav-toggle:hover {
+  background: rgba(185, 74, 44, 0.11);
+  box-shadow: var(--shadow-xs);
+}
+
+.mobile-nav-toggle:active {
+  transform: scale(.96);
+}
+
+.hamburger-line {
+  background: var(--brand-green-deep);
+}
+
+/* --------------------------------------------------------------------------
+   06. MOBILE NAV — HIDDEN UNTIL USER OPENS IT
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .primary-nav {
+    display: flex;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(20px);
+    right: 0;
+    width: min(88vw, 370px);
+    max-width: 370px;
+    height: 100dvh;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(255, 249, 242, 0.99));
+    border-left: 1px solid var(--brand-line);
+    box-shadow: -18px 0 45px rgba(36, 53, 43, 0.12);
+    transition:
+      opacity .26s var(--ease-standard),
+      transform .30s var(--ease-spring),
+      visibility .30s linear;
+  }
+
+  .primary-nav.is-open,
+  .primary-nav.open,
+  .primary-nav[aria-hidden="false"] {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+
+  .nav-list {
+    width: 100%;
+    gap: .25rem;
+  }
+
+  .nav-link {
+    color: var(--brand-green-deep);
+    border-bottom: 1px solid rgba(232, 216, 196, 0.75);
+    border-radius: var(--radius-sm);
+    padding: .85rem .7rem;
+  }
+
+  .nav-link:hover,
+  .nav-link.active {
+    color: var(--brand-red);
+    background: rgba(185, 74, 44, 0.055);
+  }
+
+  .nav-link::before {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   07. BUTTON SYSTEM
+   -------------------------------------------------------------------------- */
+.btn {
+  border-radius: var(--radius-pill);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+  transition:
+    transform .22s var(--ease-spring),
+    box-shadow .22s var(--ease-standard),
+    background-color .22s var(--ease-standard),
+    border-color .22s var(--ease-standard),
+    color .22s var(--ease-standard);
+}
+
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    120deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.20) 48%,
+    transparent 76%
+  );
+  transform: translateX(-120%);
+  transition: transform .55s var(--ease-standard);
+}
+
+.btn:hover::after {
+  transform: translateX(120%);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--brand-red), #C85A32);
+  color: #FFFFFF;
+  border: 1px solid rgba(143, 53, 31, 0.25);
+  box-shadow: 0 8px 20px rgba(185, 74, 44, 0.20);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--brand-red-deep), var(--brand-red));
+  box-shadow: 0 12px 26px rgba(185, 74, 44, 0.27);
+}
+
+.btn-whatsapp {
+  background: linear-gradient(135deg, #20B85A, #25D366);
+  color: #FFFFFF;
+  box-shadow: 0 8px 20px rgba(37, 211, 102, 0.18);
+}
+
+.btn-whatsapp:hover {
+  background: linear-gradient(135deg, #159A48, #20B85A);
+  box-shadow: 0 12px 26px rgba(37, 211, 102, 0.24);
+}
+
+.btn-outline {
+  border: 1.5px solid rgba(49, 80, 62, 0.30);
+  color: var(--brand-green-deep);
+  background: rgba(255, 255, 255, 0.60);
+}
+
+.btn-outline:hover {
+  background: var(--brand-green);
+  border-color: var(--brand-green);
+  color: #FFFFFF;
+  box-shadow: 0 10px 24px rgba(49, 80, 62, 0.18);
+}
+
+.btn-outline-light {
+  border: 1px solid rgba(110, 255, 160, 0.35);
+  color: #f2fff7;
+  background: linear-gradient(
+    145deg,
+    rgba(33, 61, 45, 0.72),
+    rgba(12, 25, 18, 0.88)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 6px 20px rgba(0, 0, 0, 0.20);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
+}
+
+.btn-outline-light:hover {
+  color: #ffffff;
+  background: linear-gradient(
+    145deg,
+    #24b866,
+    var(--brand-green-deep)
+  );
+  border-color: rgba(160, 255, 190, 0.75);
+  box-shadow:
+    0 0 0 3px rgba(65, 220, 125, 0.10),
+    0 8px 26px rgba(20, 180, 90, 0.30);
+  transform: translateY(-2px);
+}
+
+/* --------------------------------------------------------------------------
+   08. SECTION BACKGROUNDS — SUBTLE COLOR CHANGE THROUGH THE PAGE
+   -------------------------------------------------------------------------- */
+.section {
+  position: relative;
+  isolation: isolate;
+  padding-block: var(--section-space);
+}
+
+.section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .85;
+}
+
+.section:nth-of-type(odd)::before {
+  background:
+    radial-gradient(circle at 12% 15%, rgba(212, 154, 58, 0.07), transparent 25rem),
+    linear-gradient(180deg, #FFF9F2 0%, #FFFDF9 100%);
+}
+
+.section:nth-of-type(even)::before {
+  background:
+    radial-gradient(circle at 88% 30%, rgba(185, 74, 44, 0.055), transparent 28rem),
+    linear-gradient(180deg, #FFFDF9 0%, #FFF3E7 100%);
+}
+
+.section-light {
+  background: transparent;
+  border-color: var(--brand-line);
+}
+
+.section-dark {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(212, 154, 58, 0.10), transparent 28rem),
+    linear-gradient(135deg, #FFF8EF, #FFFDF9);
+  color: var(--brand-ink);
+}
+
+/* --------------------------------------------------------------------------
+   09. HERO
+   -------------------------------------------------------------------------- */
+.hero-section {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(212, 154, 58, 0.14), transparent 24rem),
+    radial-gradient(circle at 90% 35%, rgba(185, 74, 44, 0.10), transparent 28rem),
+    linear-gradient(135deg, #FFF9F2 0%, #FFFDF9 48%, #F8EBDD 100%);
+  border-bottom-color: var(--brand-line);
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: "";
+  position: absolute;
+  width: clamp(180px, 28vw, 430px);
+  height: clamp(180px, 28vw, 430px);
+  right: -8%;
+  top: -18%;
+  border-radius: 50%;
+  background: rgba(212, 154, 58, 0.10);
+  filter: blur(3px);
+  z-index: 0;
+}
+
+.hero-section > * {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  color: var(--brand-green-deep);
+}
+
+.hero-title-nepali {
+  color: var(--brand-red);
+}
+
+.hero-description {
+  color: var(--brand-muted);
+}
+
+.service-pills {
+  color: var(--brand-ink);
+  border-top-color: var(--brand-line);
+}
+
+.pill-item::first-letter {
+  color: var(--brand-red);
+}
+
+/* --------------------------------------------------------------------------
+   10. COUNTDOWN CARD — LIGHT PREMIUM CARD
+   -------------------------------------------------------------------------- */
+.countdown-card {
+  background:
+    radial-gradient(circle at 90% 0%, rgba(212, 154, 58, 0.15), transparent 15rem),
+    linear-gradient(145deg, #FFF8EF 0%, #F7E8D6 100%);
+  color: var(--brand-ink);
+  border: 1px solid rgba(185, 74, 44, 0.12);
+  box-shadow: var(--shadow-lg);
+}
+
+.countdown-header {
+  border-bottom-color: rgba(185, 74, 44, 0.14);
+}
+
+.countdown-status-badge {
+  background: var(--brand-red);
+  color: #FFFFFF;
+  border-radius: var(--radius-pill);
+}
+
+.countdown-date-str {
+  color: var(--brand-muted);
+}
+
+.timer-box {
+  background: rgba(255, 255, 255, 0.70);
+  border-color: rgba(185, 74, 44, 0.12);
+  box-shadow: var(--shadow-xs);
+}
+
+.timer-value {
+  color: var(--brand-green-deep);
+}
+
+.timer-label {
+  color: var(--brand-muted);
+}
+
+.open-status-message h3 {
+  color: var(--success);
+}
+
+.open-status-message p {
+  color: var(--brand-muted);
+}
+
+/* --------------------------------------------------------------------------
+   11. IMAGE FRAMES
+   -------------------------------------------------------------------------- */
+.hero-image-frame,
+.about-image-card {
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-lg);
+}
+
+.hero-image-frame::after,
+.about-image-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent 55%,
+    rgba(36, 53, 43, 0.20) 100%
+  );
+}
+
+.hero-featured-img,
+.about-img {
+  transition: transform .6s var(--ease-soft);
+}
+
+.hero-image-frame:hover .hero-featured-img,
+.about-image-card:hover .about-img {
+  transform: scale(1.025);
+}
+
+/* --------------------------------------------------------------------------
+   12. FEATURE CARDS
+   -------------------------------------------------------------------------- */
+.features-grid,
+.values-grid {
+  align-items: stretch;
+}
+
+.feature-card,
+.value-card {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(255, 243, 231, 0.82));
+  border-color: rgba(232, 216, 196, 0.90);
+  box-shadow: var(--shadow-xs);
+  transition:
+    transform .28s var(--ease-spring),
+    box-shadow .28s var(--ease-standard),
+    border-color .28s var(--ease-standard);
+}
+
+.feature-card:hover,
+.value-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(185, 74, 44, 0.22);
+  box-shadow: var(--shadow-md);
+}
+
+.feature-icon-wrapper {
+  width: 3.2rem;
+  height: 3.2rem;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(185, 74, 44, 0.11), rgba(212, 154, 58, 0.16));
+}
+
+.feature-card h3 {
+  color: var(--brand-green-deep);
+}
+
+.feature-card p {
+  color: var(--brand-muted);
+}
+
+/* --------------------------------------------------------------------------
+   13. DISH CARDS
+   -------------------------------------------------------------------------- */
+.dish-card {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(232, 216, 196, 0.92);
+  box-shadow: var(--shadow-xs);
+  transition:
+    transform .30s var(--ease-spring),
+    box-shadow .30s var(--ease-standard),
+    border-color .30s var(--ease-standard);
+}
+
+.dish-card:hover {
+  transform: translateY(-7px);
+  border-color: rgba(185, 74, 44, 0.20);
+  box-shadow: var(--shadow-lg);
+}
+
+.dish-img-wrapper {
+  background:
+    linear-gradient(135deg, #FFF1E2, #F6E7D5);
+}
+
+.dish-img-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 60%, rgba(36, 53, 43, 0.13));
+}
+
+.dish-card:hover .dish-img-wrapper img {
+  transform: scale(1.055);
+}
+
+.dish-badge {
+  background: rgba(36, 53, 43, 0.90);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-pill);
+}
+
+.special-badge {
+  background: linear-gradient(135deg, var(--brand-red), #D0643F);
+}
+
+.dish-title-row h3 {
+  color: var(--brand-green-deep);
+}
+
+.dish-nepali {
+  color: var(--brand-red);
+}
+
+.dish-desc {
+  color: var(--brand-muted);
+}
+
+.dish-footer {
+  border-top-color: rgba(232, 216, 196, 0.85);
+}
+
+.dish-price {
+  color: var(--brand-green-deep);
+  font-weight: 800;
+}
+
+/* --------------------------------------------------------------------------
+   14. MENU PAGE
+   -------------------------------------------------------------------------- */
+.page-banner {
+  background:
+    radial-gradient(circle at 88% 15%, rgba(212, 154, 58, 0.15), transparent 20rem),
+    linear-gradient(135deg, #FFF8EF 0%, #F2E1CF 100%);
+  color: var(--brand-green-deep);
+  border-bottom-color: var(--brand-line);
+}
+
+.page-title {
+  color: var(--brand-green-deep);
+}
+
+.page-subtitle {
+  color: var(--brand-muted);
+}
+
+.filter-btn {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: var(--brand-line);
+  color: var(--brand-green-deep);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-xs);
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+  background: linear-gradient(135deg, var(--brand-red), #C85A32);
+  color: #FFFFFF;
+  border-color: var(--brand-red);
+  box-shadow: 0 7px 18px rgba(185, 74, 44, 0.16);
+}
+
+.menu-notice-box {
+  background: var(--warning-soft);
+  border-color: rgba(185, 120, 22, 0.22);
+  color: var(--brand-ink);
+  border-radius: var(--radius-md);
+}
+
+.ordering-info-card {
+  background:
+    linear-gradient(135deg, #FFF5E9, #FFFDF9);
+  border-color: var(--brand-line);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --------------------------------------------------------------------------
+   15. ABOUT PAGE
+   -------------------------------------------------------------------------- */
+.about-text-content h2,
+.location-text-col h2,
+.contact-info-card h2 {
+  color: var(--brand-green-deep);
+}
+
+.about-text-content p {
+  color: var(--brand-muted);
+}
+
+.motto-box {
+  background: linear-gradient(135deg, #FFF1E2, #FFF9F2);
+  border-left-color: var(--brand-red);
+  box-shadow: var(--shadow-xs);
+}
+
+.motto-nepali {
+  color: var(--brand-red-deep);
+}
+
+.about-img-badge {
+  background: rgba(36, 53, 43, 0.91);
+  backdrop-filter: blur(10px);
+}
+
+.about-img-badge strong {
+  color: var(--brand-gold);
+}
+
+.value-number {
+  color: var(--brand-red);
+}
+
+/* --------------------------------------------------------------------------
+   16. CONTACT PAGE
+   -------------------------------------------------------------------------- */
+.contact-icon {
+  background: linear-gradient(135deg, var(--brand-green), #416A52);
+  color: #FFFFFF;
+  box-shadow: 0 6px 15px rgba(49, 80, 62, 0.14);
+}
+
+.contact-info-card {
+  background: rgba(255, 255, 255, 0.90);
+  border-color: var(--brand-line);
+  box-shadow: var(--shadow-sm);
+}
+
+.detail-icon {
+  background: var(--brand-cream-2);
+  color: var(--brand-red);
+}
+
+.landmark-text {
+  color: var(--brand-red-deep);
+}
+
+.contact-actions-row {
+  border-top-color: var(--brand-line);
+}
+
+.contact-map-card,
+.location-map-preview {
+  background: #FFFFFF;
+  border-color: var(--brand-line);
+  box-shadow: var(--shadow-md);
+}
+
+.map-card-header {
+  background: linear-gradient(135deg, #FFF5E9, #FFFDF9);
+  border-bottom-color: var(--brand-line);
+}
+
+.map-card-header h3 {
+  color: var(--brand-green-deep);
+}
+
+.map-embed-container,
+.map-embed-wrapper {
+  background: #EEEAE3;
+}
+
+.map-card-footer {
+  background: var(--brand-cream);
+  border-top-color: var(--brand-line);
+}
+
+/* --------------------------------------------------------------------------
+   17. FOOTER
+   -------------------------------------------------------------------------- */
+.site-footer {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(212, 154, 58, 0.12), transparent 24rem),
+    linear-gradient(160deg, #24352B 0%, #31503E 100%);
+  border-top-color: rgba(255, 255, 255, 0.10);
+}
+
+.footer-col h4 {
+  color: #FFFFFF;
+}
+
+.footer-col h4::after {
+  background: linear-gradient(90deg, var(--brand-gold), var(--brand-red));
+}
+
+.footer-links a,
+.footer-contact-item,
+.footer-desc,
+.footer-bottom {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.footer-links a:hover,
+.footer-contact-item a:hover {
+  color: #FFFFFF;
+}
+
+.nepali-sub,
+.tagline {
+  color: var(--brand-gold);
+}
+
+.footer-bottom {
+  border-top-color: rgba(255, 255, 255, 0.13);
+}
+
+/* --------------------------------------------------------------------------
+   18. INPUTS / FORMS — SAFE ADDITIONS FOR CONTACT & ORDER FORMS
+   -------------------------------------------------------------------------- */
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--brand-line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--brand-ink);
+  padding: .72rem .85rem;
+  outline: none;
+  transition:
+    border-color .20s var(--ease-standard),
+    box-shadow .20s var(--ease-standard),
+    background-color .20s var(--ease-standard);
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #89928D;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: rgba(185, 74, 44, 0.35);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--brand-red);
+  box-shadow: 0 0 0 4px rgba(185, 74, 44, 0.10);
+  background: #FFFFFF;
+}
+
+/* --------------------------------------------------------------------------
+   19. GENERIC UTILITY CARDS
+   -------------------------------------------------------------------------- */
+.card,
+.panel,
+.surface-card,
+.info-card {
+  background: rgba(255, 255, 255, 0.90);
+  border: 1px solid var(--brand-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.card:hover,
+.panel:hover,
+.surface-card:hover,
+.info-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.glass,
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-line);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* --------------------------------------------------------------------------
+   20. SCROLLBAR
+   -------------------------------------------------------------------------- */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(49, 80, 62, 0.34) transparent;
+}
+
+html::-webkit-scrollbar {
+  width: 10px;
+}
+
+html::-webkit-scrollbar-track {
+  background: #FFF9F2;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #B94A2C, #D49A3A);
+  border-radius: 999px;
+  border: 2px solid #FFF9F2;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #8F351F, #B97816);
+}
+
+/* --------------------------------------------------------------------------
+   21. RESPONSIVE CONTAINER
+   -------------------------------------------------------------------------- */
+.container {
+  width: min(100% - 2 * var(--container-padding), var(--container-max-width));
+  max-width: var(--container-max-width);
+  margin-inline: auto;
+}
+
+@media (max-width: 1200px) {
+  :root {
+    --container-padding: clamp(1rem, 3vw, 2rem);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --container-padding: clamp(.9rem, 4vw, 1.35rem);
+    --section-space: clamp(2.75rem, 9vw, 4.5rem);
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --container-padding: .9rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   22. RESPONSIVE TYPOGRAPHY
+   -------------------------------------------------------------------------- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+
+p,
+li {
+  text-wrap: pretty;
+}
+
+@media (max-width: 576px) {
+  .hero-title {
+    font-size: clamp(2rem, 10vw, 3rem);
+    line-height: 1.08;
+  }
+
+  .hero-title-nepali {
+    font-size: clamp(1.55rem, 7vw, 2.25rem);
+  }
+
+  .section-title {
+    font-size: clamp(1.4rem, 6vw, 1.85rem);
+  }
+
+  .page-title {
+    font-size: clamp(1.75rem, 8vw, 2.45rem);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   23. RESPONSIVE GRID SAFETY
+   -------------------------------------------------------------------------- */
+.hero-grid,
+.about-grid,
+.location-banner-grid,
+.contact-page-grid {
+  min-width: 0;
+}
+
+.hero-grid > *,
+.about-grid > *,
+.location-banner-grid > *,
+.contact-page-grid > * {
+  min-width: 0;
+}
+
+.features-grid,
+.dish-cards-grid,
+.values-grid,
+.footer-grid {
+  width: 100%;
+}
+
+@media (max-width: 992px) {
+  .hero-grid,
+  .about-grid,
+  .location-banner-grid,
+  .contact-page-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .about-image-card {
+    order: -1;
+  }
+}
+
+@media (max-width: 680px) {
+  .features-grid,
+  .dish-cards-grid,
+  .values-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .footer-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   24. MOBILE TOUCH TARGETS
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .btn,
+  .filter-btn,
+  .mobile-nav-toggle,
+  .nav-link {
+    min-height: 44px;
+  }
+
+  .btn {
+    padding-inline: 1rem;
+  }
+
+  .dish-card,
+  .feature-card,
+  .value-card,
+  .contact-info-card {
+    border-radius: var(--radius-md);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   25. VERY SMALL DEVICES
+   -------------------------------------------------------------------------- */
+@media (max-width: 390px) {
+  .container {
+    padding-inline: .78rem;
+  }
+
+  .hero-cta-group,
+  .location-btn-group,
+  .ordering-info-actions {
+    width: 100%;
+  }
+
+  .hero-cta-group .btn,
+  .location-btn-group .btn,
+  .ordering-info-actions .btn {
+    width: 100%;
+  }
+
+  .countdown-timer-grid {
+    gap: .3rem;
+  }
+
+  .timer-box {
+    padding-inline: .15rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .brand-title {
+    font-size: .90rem;
+  }
+
+  .brand-nepali {
+    font-size: .66rem;
+  }
+
+  .logo-img {
+    max-width: 34px;
+  }
+
+  .mobile-nav-toggle {
+    min-width: 42px;
+    min-height: 42px;
+  }
+
+  .timer-value {
+    font-size: 1rem;
+  }
+
+  .timer-label {
+    font-size: .55rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   26. LARGE DESKTOP
+   -------------------------------------------------------------------------- */
+@media (min-width: 1440px) {
+  .hero-grid {
+    gap: clamp(3rem, 5vw, 5.5rem);
+  }
+
+  .section-header-centered {
+    max-width: 760px;
+  }
+
+  .features-grid,
+  .dish-cards-grid {
+    gap: clamp(1.5rem, 2vw, 2.5rem);
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --container-max-width: 1640px;
+    --container-padding: 2.5rem;
+  }
+
+  .hero-featured-img {
+    height: 400px;
+  }
+
+  .dish-img-wrapper {
+    height: 260px;
+  }
+}
+
+@media (min-width: 2560px) {
+  :root {
+    --container-max-width: 2000px;
+    --container-padding: 3.5rem;
+  }
+
+  body {
+    font-size: 1.08rem;
+  }
+
+  .hero-featured-img {
+    height: 480px;
+  }
+
+  .dish-img-wrapper {
+    height: 300px;
+  }
+}
+
+@media (min-width: 3840px) {
+  :root {
+    --container-max-width: 2800px;
+    --container-padding: 5rem;
+  }
+
+  html {
+    font-size: 19px;
+  }
+
+  .hero-featured-img {
+    height: 560px;
+  }
+
+  .dish-img-wrapper {
+    height: 340px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   27. FOLDABLE / NARROW VIEWPORT SAFETY
+   -------------------------------------------------------------------------- */
+@media (max-width: 280px) {
+  :root {
+    --container-padding: .55rem;
+    --section-space: 2rem;
+  }
+
+  .header-inner {
+    gap: .4rem;
+  }
+
+  .brand-text {
+    max-width: 130px;
+  }
+
+  .brand-title {
+    white-space: normal;
+  }
+
+  .hero-grid,
+  .about-grid,
+  .contact-page-grid,
+  .location-banner-grid {
+    gap: 1.5rem;
+  }
+
+  .countdown-timer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .btn,
+  .filter-btn {
+    white-space: normal;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   28. LANDSCAPE MOBILE
+   -------------------------------------------------------------------------- */
+@media (max-height: 520px) and (orientation: landscape) {
+  .hero-section {
+    padding-block: 1.5rem;
+  }
+
+  .hero-grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+  }
+
+  .hero-featured-img {
+    height: 190px;
+  }
+
+  .primary-nav {
+    padding-top: calc(3.75rem + var(--sat));
+  }
+
+  .section {
+    padding-block: 2.5rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   29. HOVER ONLY ON REAL POINTER DEVICES
+   -------------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+  .dish-card,
+  .feature-card,
+  .value-card,
+  .btn,
+  .filter-btn {
+    will-change: transform;
+  }
+
+  .dish-card:hover,
+  .feature-card:hover,
+  .value-card:hover {
+    will-change: transform, box-shadow;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .dish-card:hover,
+  .feature-card:hover,
+  .value-card:hover {
+    transform: none;
+  }
+
+  .dish-card:hover .dish-img-wrapper img,
+  .hero-image-frame:hover .hero-featured-img,
+  .about-image-card:hover .about-img {
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   30. ACCESSIBILITY
+   -------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 3px solid rgba(185, 74, 44, 0.35);
+  outline-offset: 3px;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-radius: var(--radius-xs);
+}
+
+[aria-disabled="true"],
+.is-disabled,
+button:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+@media (forced-colors: active) {
+  .btn,
+  .filter-btn,
+  .dish-card,
+  .feature-card,
+  .value-card {
+    border: 1px solid ButtonText;
+  }
+
+  :focus-visible {
+    outline: 2px solid Highlight;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   31. REDUCED MOTION
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .site-header {
+    animation: none;
+  }
+
+  .btn,
+  .dish-card,
+  .feature-card,
+  .value-card,
+  .dish-img-wrapper img,
+  .hero-featured-img,
+  .about-img {
+    transition: none !important;
+  }
+
+  .btn::after,
+  .hero-section::before {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   32. PRINT SAFETY
+   -------------------------------------------------------------------------- */
+@media print {
+  html,
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+
+  .section,
+  .section-dark,
+  .hero-section,
+  .page-banner,
+  .site-footer {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
+
+  .dish-card,
+  .feature-card,
+  .value-card,
+  .contact-info-card,
+  .contact-map-card {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  .site-header,
+  .primary-nav,
+  .mobile-nav-toggle,
+  .announcement-bar,
+  .hero-cta-group,
+  .menu-filter-wrapper {
+    display: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   33. OPTIONAL JS SCROLL HOOK
+   --------------------------------------------------------------------------
+   If the existing JavaScript adds `.is-scrolled` or `.scrolled` to the header,
+   these rules give it an instant fallback in browsers without scroll timelines.
+   -------------------------------------------------------------------------- */
+.site-header.is-scrolled .brand-title,
+.site-header.scrolled .brand-title {
+  color: var(--brand-green-deep);
+}
+
+.site-header.is-scrolled .brand-nepali,
+.site-header.scrolled .brand-nepali {
+  color: var(--brand-red);
+}
+
+.site-header.is-scrolled .nav-link,
+.site-header.scrolled .nav-link {
+  color: var(--brand-green-deep);
+}
+
+/* --------------------------------------------------------------------------
+   34. EXTRA BACKGROUND UTILITIES
+   -------------------------------------------------------------------------- */
+.bg-cream {
+  background: var(--brand-cream);
+}
+
+.bg-white {
+  background: #FFFFFF;
+}
+
+.bg-warm {
+  background: linear-gradient(135deg, #FFF9F2, #FFF1E2);
+}
+
+.bg-green {
+  background: var(--brand-green);
+  color: #FFFFFF;
+}
+
+.bg-red {
+  background: var(--brand-red);
+  color: #FFFFFF;
+}
+
+.text-brand {
+  color: var(--brand-red);
+}
+
+.text-green {
+  color: var(--brand-green);
+}
+
+.text-muted {
+  color: var(--brand-muted);
+}
+
+.border-brand {
+  border-color: var(--brand-red);
+}
+
+.shadow-soft {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-card {
+  box-shadow: var(--shadow-md);
+}
+
+.rounded-card {
+  border-radius: var(--radius-md);
+}
+
+.rounded-large {
+  border-radius: var(--radius-lg);
+}
+
+/* --------------------------------------------------------------------------
+   35. LAYOUT HELPERS
+   -------------------------------------------------------------------------- */
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.stack-sm {
+  gap: .5rem;
+}
+
+.stack-md {
+  gap: 1rem;
+}
+
+.stack-lg {
+  gap: 1.75rem;
+}
+
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem;
+}
+
+.cluster-center {
+  justify-content: center;
+}
+
+.cluster-between {
+  justify-content: space-between;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.min-width-0 {
+  min-width: 0;
+}
+
+.no-overflow {
+  overflow: hidden;
+}
+
+.overflow-clip {
+  overflow: clip;
+}
+
+/* --------------------------------------------------------------------------
+   36. SAFE IMAGE PRESENTATION
+   -------------------------------------------------------------------------- */
+.object-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.object-contain {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ratio-square {
+  aspect-ratio: 1 / 1;
+}
+
+.ratio-video {
+  aspect-ratio: 16 / 9;
+}
+
+.ratio-food {
+  aspect-ratio: 4 / 3;
+}
+
+/* --------------------------------------------------------------------------
+   37. FOOD IMAGE TREATMENT
+   -------------------------------------------------------------------------- */
+.food-image,
+.menu-image,
+.dish-image {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--brand-cream-2);
+}
+
+.food-image img,
+.menu-image img,
+.dish-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .55s var(--ease-soft);
+}
+
+.food-image:hover img,
+.menu-image:hover img,
+.dish-image:hover img {
+  transform: scale(1.045);
+}
+
+/* --------------------------------------------------------------------------
+   38. BADGE VARIATIONS
+   -------------------------------------------------------------------------- */
+.badge-success {
+  background: var(--success-soft);
+  color: #176A43;
+  border: 1px solid rgba(32, 138, 87, 0.14);
+}
+
+.badge-warning {
+  background: var(--warning-soft);
+  color: #8B5B0C;
+  border: 1px solid rgba(185, 120, 22, 0.16);
+}
+
+.badge-danger {
+  background: var(--danger-soft);
+  color: #8F2D28;
+  border: 1px solid rgba(183, 58, 50, 0.16);
+}
+
+/* --------------------------------------------------------------------------
+   39. SECTION DIVIDER
+   -------------------------------------------------------------------------- */
+.section-divider {
+  width: min(100%, 7rem);
+  height: 3px;
+  margin: 1rem auto 0;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--brand-red), var(--brand-gold));
+}
+
+.section-header-centered .section-divider {
+  margin-inline: auto;
+}
+
+/* --------------------------------------------------------------------------
+   40. FINAL OVERFLOW GUARANTEES
+   -------------------------------------------------------------------------- */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+main,
+header,
+footer,
+section,
+article,
+aside,
+nav {
+  max-width: 100%;
+}
+
+img,
+video,
+iframe,
+svg,
+canvas {
+  max-width: 100%;
+}
+
+table {
+  max-width: 100%;
+}
+
+pre,
+code {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .primary-nav {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ==========================================================================
+   41–70. RESPONSIVE HARDENING & COMPONENT STATES
+   --------------------------------------------------------------------------
+   The following small, explicit rules are intentionally verbose so future
+   edits remain easy to locate and override. They avoid changing the user's
+   existing HTML structure while covering common real-world edge cases.
+   ========================================================================== */
+
+.header-inner,
+.announcement-content,
+.section-header-flex,
+.ordering-info-card,
+.map-card-header,
+.dish-title-row,
+.dish-footer,
+.footer-brand,
+.quick-contact-list li,
+.detail-item {
+  min-width: 0;
+}
+
+.brand-text,
+.dish-title-row h3,
+.section-title,
+.hero-title,
+.page-title,
+.footer-contact-item,
+.footer-desc {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .section-header-flex {
+    align-items: flex-start;
+  }
+
+  .ordering-info-card {
+    align-items: stretch;
+  }
+
+  .ordering-info-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .section-header-flex {
+    flex-direction: column;
+  }
+
+  .section-header-flex .btn {
+    width: 100%;
+  }
+
+  .dish-title-row {
+    align-items: flex-start;
+  }
+
+  .dish-footer {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .announcement-content {
+    gap: .3rem;
+  }
+
+  .service-pills {
+    gap: .65rem;
+  }
+
+  .menu-notice-box {
+    align-items: flex-start;
+  }
+
+  .contact-actions-row {
+    flex-direction: column;
+  }
+
+  .contact-actions-row .btn {
+    width: 100%;
+  }
+}
+
+/* ==========================================================================
+   42. COMPONENT STATE CONSISTENCY
+   ========================================================================== */
+.is-hidden,
+[hidden] {
+  display: none !important;
+}
+
+.is-visible {
+  display: block !important;
+}
+
+.is-active {
+  position: relative;
+}
+
+.is-loading {
+  pointer-events: none;
+  opacity: .7;
+}
+
+.is-loading::after {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-left: .45em;
+  vertical-align: -.15em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: bayapaniSpin .7s linear infinite;
+}
+
+@keyframes bayapaniSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   43. RESPONSIVE COUNTDOWN
+   ========================================================================== */
+@media (max-width: 576px) {
+  .countdown-card {
+    padding: 1rem;
+  }
+
+  .countdown-timer-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .timer-value {
+    font-size: clamp(1.05rem, 5vw, 1.5rem);
+  }
+}
+
+@media (max-width: 360px) {
+  .countdown-timer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .timer-box {
+    padding: .55rem .2rem;
+  }
+}
+
+/* ==========================================================================
+   44. RESPONSIVE FOOTER
+   ========================================================================== */
+@media (max-width: 992px) {
+  .footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .footer-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .footer-col h4 {
+    margin-bottom: .8rem;
+  }
+}
+
+/* ==========================================================================
+   45. RESPONSIVE MAP
+   ========================================================================== */
+.map-embed-container,
+.map-embed-wrapper {
+  min-height: 260px;
+}
+
+@media (max-width: 576px) {
+  .map-embed-container,
+  .map-embed-wrapper {
+    height: min(68vh, 380px);
+    min-height: 240px;
+  }
+}
+
+@media (max-width: 360px) {
+  .map-embed-container,
+  .map-embed-wrapper {
+    height: 240px;
+  }
+}
+
+/* ==========================================================================
+   46. RESPONSIVE HERO
+   ========================================================================== */
+@media (max-width: 992px) {
+  .hero-grid {
+    text-align: center;
+  }
+
+  .hero-description {
+    margin-inline: auto;
+  }
+
+  .hero-cta-group {
+    justify-content: center;
+  }
+
+  .service-pills {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-grid {
+    gap: 1.75rem;
+  }
+
+  .hero-cta-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-cta-group .btn {
+    width: 100%;
+  }
+}
+
+/* ==========================================================================
+   47. CARD WIDTH GUARD
+   ========================================================================== */
+.feature-card,
+.dish-card,
+.value-card,
+.contact-info-card,
+.contact-map-card,
+.location-map-preview,
+.ordering-info-card {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* ==========================================================================
+   48. LINKS
+   ========================================================================== */
+a {
+  text-underline-offset: .16em;
+}
+
+.footer-links a,
+.footer-contact-item a {
+  text-decoration: none;
+}
+
+.text-link {
+  color: var(--brand-red);
+  font-weight: 700;
+}
+
+.text-link:hover {
+  color: var(--brand-red-deep);
+}
+
+/* ==========================================================================
+   49. ICON BUTTON
+   ========================================================================== */
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--brand-line);
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: var(--brand-green-deep);
+  transition:
+    transform .2s var(--ease-spring),
+    background-color .2s var(--ease-standard),
+    color .2s var(--ease-standard),
+    border-color .2s var(--ease-standard);
+}
+
+.icon-btn:hover {
+  transform: translateY(-2px);
+  background: var(--brand-red);
+  color: #FFFFFF;
+  border-color: var(--brand-red);
+}
+
+/* ==========================================================================
+   50. END OF PREMIUM OVERRIDE LAYER
+   ========================================================================== */
+
+/* ==========================================================================
+   BAYAPANI KHAJA GHAR — LUXURY NEUTRAL FINISH v2
+   Targeted visual refinement:
+   • Removes green from contact/info icon surfaces
+   • Replaces footer green with deep espresso / warm charcoal
+   • Adds champagne-gold, ivory, stone and terracotta accents
+   • Keeps the existing layout, components and responsive behavior intact
+   ========================================================================== */
+
+:root {
+  --lux-ivory: #fbf8f2;
+  --lux-cream: #f4eee4;
+  --lux-stone: #e8dfd2;
+  --lux-stone-2: #d8cbb9;
+  --lux-taupe: #9b8a76;
+  --lux-charcoal: #282522;
+  --lux-espresso: #201b18;
+  --lux-brown: #4a3b31;
+  --lux-gold: #b28a4a;
+  --lux-gold-soft: #d7bb82;
+  --lux-gold-pale: #f1e5ca;
+  --lux-terracotta: #b96f50;
+  --lux-terracotta-soft: #e4b9a4;
+  --lux-shadow: 0 18px 50px rgba(53, 43, 34, .10);
+  --lux-shadow-soft: 0 10px 30px rgba(53, 43, 34, .07);
+}
+
+/* ---------- HOURS / PHONE / ADDRESS INFO ICONS ---------- */
+.hours-icon,
+.phone-icon,
+.address-icon,
+.contact-icon,
+.info-icon,
+.info-item .icon,
+.contact-item .icon,
+.contact-info .icon,
+.hours .icon,
+.phone .icon,
+.address .icon {
+  background: linear-gradient(145deg, #fffdf9 0%, #eee6da 100%) !important;
+  color: var(--lux-gold) !important;
+  border: 1px solid rgba(178, 138, 74, .24) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.92),
+    0 7px 22px rgba(61, 48, 37, .08) !important;
+}
+
+.hours-icon svg,
+.phone-icon svg,
+.address-icon svg,
+.contact-icon svg,
+.info-icon svg,
+.info-item .icon svg,
+.contact-item .icon svg,
+.contact-info .icon svg,
+.hours .icon svg,
+.phone .icon svg,
+.address .icon svg {
+  color: var(--lux-gold) !important;
+  fill: currentColor;
+}
+
+/* Common icon wrappers used by many card/contact implementations */
+.contact-card .icon,
+.contact-card .contact-icon,
+.info-card .icon,
+.info-card .info-icon,
+.contact-details .icon,
+.contact-details .info-icon {
+  background: linear-gradient(145deg, #fffdf9, #eee6da) !important;
+  color: var(--lux-gold) !important;
+  border-color: rgba(178, 138, 74, .25) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 8px 24px rgba(60,48,38,.08) !important;
+}
+
+/* ---------- FOOTER: GREEN REMOVED ---------- */
+.site-footer,
+footer,
+.footer,
+.footer-section,
+.footer-main {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(175, 225, 235, .18), transparent 28%),
+    radial-gradient(circle at 88% 82%, rgba(215, 187, 130, .12), transparent 30%),
+    linear-gradient(135deg, #fffdf9 0%, #f5f1e9 52%, #eef5f3 100%) !important;
+  color: #4a433c !important;
+  border-top: 1px solid rgba(178, 138, 74, .16);
+  box-shadow: 0 -12px 35px rgba(70, 60, 50, .055);
+}
+
+.site-footer::before,
+.site-footer::after,
+footer::before,
+footer::after {
+  background: transparent;
+  border-color: rgba(215,187,130,.10);
+}
+
+.site-footer a,
+footer a,
+.footer a {
+  color: #e8dccb !important;
+}
+
+.site-footer a:hover,
+footer a:hover,
+.footer a:hover {
+  color: #e0bf7c !important;
+}
+
+.site-footer h1,
+.site-footer h2,
+.site-footer h3,
+.site-footer h4,
+.site-footer h5,
+.site-footer h6,
+footer h1,
+footer h2,
+footer h3,
+footer h4,
+footer h5,
+footer h6,
+.footer h1,
+.footer h2,
+.footer h3,
+.footer h4,
+.footer h5,
+.footer h6 {
+  color: #fffaf2 !important;
+}
+
+.site-footer p,
+.site-footer li,
+.site-footer span,
+footer p,
+footer li,
+footer span,
+.footer p,
+.footer li,
+.footer span {
+  color: rgba(247,241,232,.78);
+}
+
+/* Footer social/icon buttons: neutral luxury, not green */
+.site-footer .social-icon,
+.site-footer .social-link,
+.site-footer .footer-icon,
+footer .social-icon,
+footer .social-link,
+footer .footer-icon,
+.footer .social-icon,
+.footer .social-link,
+.footer .footer-icon {
+  background: rgba(255,250,242,.07) !important;
+  color: #e0bf7c !important;
+  border: 1px solid rgba(215,187,130,.18) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.site-footer .social-icon:hover,
+.site-footer .social-link:hover,
+footer .social-icon:hover,
+footer .social-link:hover,
+.footer .social-icon:hover,
+.footer .social-link:hover {
+  background: rgba(215,187,130,.14) !important;
+  color: #fff8eb !important;
+  border-color: rgba(215,187,130,.38) !important;
+  transform: translateY(-2px);
+}
+
+/* ---------- PREMIUM INFO CARDS ---------- */
+.hours-card,
+.phone-card,
+.address-card,
+.contact-card,
+.info-card,
+.info-item,
+.contact-item {
+  background: linear-gradient(145deg, rgba(255,253,249,.98), rgba(245,238,228,.94)) !important;
+  border-color: rgba(122,101,79,.14) !important;
+  box-shadow: var(--lux-shadow-soft);
+}
+
+.hours-card:hover,
+.phone-card:hover,
+.address-card:hover,
+.contact-card:hover,
+.info-card:hover,
+.info-item:hover,
+.contact-item:hover {
+  border-color: rgba(178,138,74,.30) !important;
+  box-shadow: 0 18px 42px rgba(54,43,33,.12), 0 0 0 1px rgba(215,187,130,.08);
+}
+
+/* ---------- BUTTONS / ACCENTS: MORE LUXURIOUS ---------- */
+.btn-primary,
+.button-primary,
+.primary-btn,
+.cta-button,
+.btn-gold {
+  background: linear-gradient(135deg, #a9793f 0%, #c49b5b 52%, #a9793f 100%) !important;
+  color: #fffaf1 !important;
+  border: 1px solid rgba(122,82,35,.18) !important;
+  box-shadow: 0 10px 25px rgba(126,91,48,.18), inset 0 1px 0 rgba(255,255,255,.25);
+}
+
+.btn-primary:hover,
+.button-primary:hover,
+.primary-btn:hover,
+.cta-button:hover,
+.btn-gold:hover {
+  filter: brightness(1.04);
+  box-shadow: 0 14px 32px rgba(126,91,48,.24), inset 0 1px 0 rgba(255,255,255,.28);
+}
+
+/* ---------- GREEN ACCENTS IN CONTACT/FOOTER AREAS ---------- */
+.contact-section .badge,
+.contact-section .tag,
+.contact-section .accent,
+.contact-section .icon-wrap,
+.contact-section .icon-box {
+  background: linear-gradient(145deg, #fffdf9, #eee6da) !important;
+  color: var(--lux-gold) !important;
+  border-color: rgba(178,138,74,.20) !important;
+}
+
+/* ---------- SUBTLE PREMIUM SURFACES ---------- */
+.section-light,
+.section-white,
+.bg-light,
+.bg-white {
+  background:
+    radial-gradient(circle at 92% 8%, rgba(215,187,130,.08), transparent 25%),
+    linear-gradient(180deg, #fffdf9 0%, #f8f3eb 100%);
+}
+
+.section-alt,
+.section-cream {
+  background:
+    radial-gradient(circle at 8% 18%, rgba(185,111,80,.055), transparent 24%),
+    linear-gradient(180deg, #f6efe5 0%, #eee5d8 100%);
+}
+
+/* ---------- FOOTER SEPARATOR ---------- */
+.site-footer hr,
+footer hr,
+.footer hr {
+  border: 0 !important;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(215,187,130,.30), transparent) !important;
+}
+
+/* ---------- SMALL-SCREEN POLISH ---------- */
+@media (max-width: 640px) {
+  .hours-icon,
+  .phone-icon,
+  .address-icon,
+  .contact-icon,
+  .info-icon,
+  .info-item .icon,
+  .contact-item .icon {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 5px 16px rgba(61,48,37,.07) !important;
+  }
+
+  .site-footer,
+  footer,
+  .footer {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(215,187,130,.09), transparent 35%),
+      linear-gradient(180deg, #2b241f 0%, #1d1917 100%) !important;
+  }
+}
+
+/* ---------- EXTRA FINE DETAIL ---------- */
+::selection {
+  background: rgba(178,138,74,.22);
+  color: #2b241f;
+}
+
+*:focus-visible {
+  outline-color: rgba(178,138,74,.72) !important;
+  outline-offset: 3px;
+}
+
+
+
+/* ==========================================================================
+   LIGHT LUXURY + SOFT AQUA INTERACTION FINISH v3
+   ========================================================================== */
+
+/* Text selection: translucent aqua / cyan / sky-blue, never harsh */
+::selection {
+  background: rgba(88, 196, 218, .30) !important;
+  color: #284852 !important;
+  text-shadow: none !important;
+}
+
+::-moz-selection {
+  background: rgba(88, 196, 218, .30) !important;
+  color: #284852 !important;
+  text-shadow: none !important;
+}
+
+/* Softer, airy brand palette */
+:root {
+  --lux-aqua: #58c4da;
+  --lux-aqua-soft: #dff5f8;
+  --lux-sky: #76bfe0;
+  --lux-sky-soft: #e6f4fa;
+  --lux-mint: #dcefeb;
+  --lux-ivory: #fbf9f5;
+  --lux-cream: #f6f1e8;
+  --lux-gold: #b89458;
+  --lux-gold-soft: #e6d2a9;
+  --lux-terracotta: #c27b5e;
+}
+
+/* Footer — light only */
+.site-footer,
+footer,
+.footer,
+.footer-section,
+.footer-main {
+  background:
+    radial-gradient(circle at 10% 12%, rgba(118,191,224,.12), transparent 25%),
+    radial-gradient(circle at 88% 88%, rgba(88,196,218,.10), transparent 28%),
+    linear-gradient(135deg, #fffdf9 0%, #f7f2e9 48%, #edf7f6 100%) !important;
+  color: #5a5148 !important;
+  border-top: 1px solid rgba(178,148,88,.18) !important;
+  box-shadow: 0 -10px 32px rgba(75,64,52,.055) !important;
+}
+
+.site-footer h1,
+.site-footer h2,
+.site-footer h3,
+.site-footer h4,
+.site-footer h5,
+.site-footer h6,
+footer h1,
+footer h2,
+footer h3,
+footer h4,
+footer h5,
+footer h6,
+.footer h1,
+.footer h2,
+.footer h3,
+.footer h4,
+.footer h5,
+.footer h6 {
+  color: #3f3832 !important;
+}
+
+.site-footer p,
+.site-footer li,
+.site-footer span,
+footer p,
+footer li,
+footer span,
+.footer p,
+.footer li,
+.footer span {
+  color: #6d645b !important;
+}
+
+.site-footer a,
+footer a,
+.footer a {
+  color: #5c6f70 !important;
+}
+
+.site-footer a:hover,
+footer a:hover,
+.footer a:hover {
+  color: #3daabd !important;
+}
+
+.site-footer .social-icon,
+.site-footer .social-link,
+.site-footer .footer-icon,
+footer .social-icon,
+footer .social-link,
+footer .footer-icon,
+.footer .social-icon,
+.footer .social-link,
+.footer .footer-icon {
+  background: rgba(255,255,255,.72) !important;
+  color: #55b9cf !important;
+  border: 1px solid rgba(88,196,218,.20) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    0 7px 20px rgba(69,94,99,.07) !important;
+}
+
+.site-footer .social-icon:hover,
+.site-footer .social-link:hover,
+footer .social-icon:hover,
+footer .social-link:hover,
+.footer .social-icon:hover,
+.footer .social-link:hover {
+  background: rgba(223,245,248,.88) !important;
+  color: #299bb3 !important;
+  border-color: rgba(88,196,218,.38) !important;
+}
+
+/* Footer separators stay soft and light */
+.site-footer hr,
+footer hr,
+.footer hr {
+  background: linear-gradient(90deg, transparent, rgba(88,196,218,.22), rgba(215,187,130,.22), transparent) !important;
+}
+
+/* Aqua/sSky interaction states */
+a:hover,
+button:hover,
+.btn:hover,
+button:focus-visible,
+a:focus-visible {
+  outline-color: rgba(88,196,218,.52);
+}
+
+/* Soft aqua highlight for active/focus surfaces */
+.nav-link.active,
+.nav-link[aria-current="page"],
+.menu-link.active,
+.menu-item.active {
+  color: #319fb6 !important;
+}
+
+.nav-link.active::after,
+.menu-link.active::after,
+.menu-item.active::after {
+  background: linear-gradient(90deg, rgba(88,196,218,.45), rgba(118,191,224,.75)) !important;
+}
+
+/* Premium aqua micro-accent on cards without turning the design blue */
+.card:hover,
+.menu-card:hover,
+.food-card:hover,
+.feature-card:hover {
+  border-color: rgba(88,196,218,.18) !important;
+  box-shadow:
+    0 18px 42px rgba(65,83,82,.10),
+    0 0 0 1px rgba(88,196,218,.045) !important;
+}
+
+/* Contact icons: airy aqua/ivory instead of green */
+.hours-icon,
+.phone-icon,
+.address-icon,
+.contact-icon,
+.info-icon,
+.info-item .icon,
+.contact-item .icon,
+.contact-info .icon,
+.hours .icon,
+.phone .icon,
+.address .icon,
+.contact-card .icon,
+.contact-card .contact-icon,
+.info-card .icon,
+.info-card .info-icon,
+.contact-details .icon,
+.contact-details .info-icon {
+  background:
+    linear-gradient(145deg, #ffffff 0%, #edf8f8 100%) !important;
+  color: #53b9cf !important;
+  border: 1px solid rgba(88,196,218,.20) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),
+    0 7px 22px rgba(67,91,95,.075) !important;
+}
+
+.hours-icon svg,
+.phone-icon svg,
+.address-icon svg,
+.contact-icon svg,
+.info-icon svg,
+.info-item .icon svg,
+.contact-item .icon svg,
+.contact-info .icon svg,
+.hours .icon svg,
+.phone .icon svg,
+.address .icon svg,
+.contact-card .icon svg,
+.info-card .icon svg {
+  color: #4fb4ca !important;
+}
+
+/* Small badges / chips become refined aqua-neutral */
+.badge,
+.tag,
+.chip,
+.pill {
+  background: rgba(223,245,248,.70) !important;
+  color: #397f8b !important;
+  border-color: rgba(88,196,218,.16) !important;
+}
+
+/* Form focus */
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: rgba(88,196,218,.48) !important;
+  box-shadow: 0 0 0 4px rgba(88,196,218,.10) !important;
+}
+
+/* Scrollbar thumb: subtle aqua instead of strong brand green */
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(88,196,218,.62), rgba(118,191,224,.62)) !important;
+  border: 2px solid #f7f3eb;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(62,174,198,.78), rgba(91,174,211,.78)) !important;
+}
+
+/* Buttons: gold remains the main CTA; aqua is secondary interaction */
+.btn-secondary,
+.button-secondary,
+.secondary-btn,
+.btn-outline {
+  color: #4d9eae !important;
+  border-color: rgba(88,196,218,.30) !important;
+  background: rgba(255,255,255,.70) !important;
+}
+
+.btn-secondary:hover,
+.button-secondary:hover,
+.secondary-btn:hover,
+.btn-outline:hover {
+  color: #287f90 !important;
+  background: rgba(223,245,248,.72) !important;
+  border-color: rgba(88,196,218,.48) !important;
+}
+
+/* Ensure no accidental dark footer survives at mobile */
+@media (max-width: 640px) {
+  .site-footer,
+  footer,
+  .footer,
+  .footer-section,
+  .footer-main {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(118,191,224,.12), transparent 34%),
+      linear-gradient(180deg, #fffdf9 0%, #edf7f6 100%) !important;
+    color: #5a5148 !important;
+  }
+}
+
+/* Reduced motion stays comfortable */
+@media (prefers-reduced-motion: reduce) {
+  ::selection {
+    transition: none !important;
   }
 }
