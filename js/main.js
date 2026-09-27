@@ -13,8 +13,8 @@ const SITE_CONFIG = {
   address: "Khairahani 6, Parsa, Chitwan, Nepal",
   landmark: "Behind Chaudhary Medical",
   hours: "6:30 AM – 9:00 PM",
-  // Target Grand Opening Time: 28 September 2026, 06:30:00 Nepal Standard Time (UTC+5:45)
-  openingTime: "2026-09-28T06:30:00+05:45",
+  // Target Grand Opening Time: 28 September 2026, 09:00:00 Nepal Standard Time (UTC+5:45)
+  openingTime: "2026-09-28T09:00:00+05:45",
   timezone: "Asia/Kathmandu",
   mapsUrl: "https://share.google/TQzV5f70BfISX9l1h"
 };
@@ -32,7 +32,7 @@ const menuItems = [
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Prepared fresh daily",
-    image: "https://images.unsplash.com/photo-1625220194771-7ebdea0b70b9?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/B67vSQNg/chicken-momo.jpg",
     alt: "Steamed Nepali Chicken Momo served with spicy chutney"
   },
   {
@@ -45,7 +45,7 @@ const menuItems = [
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Prepared fresh daily",
-    image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/3ryGkPpY/buff-momo.jpg",
     alt: "Steamed Nepali Buff Momo with spicy sauce"
   },
 
@@ -60,7 +60,7 @@ const menuItems = [
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Prepared fresh daily",
-    image: "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/5yGj3NCL/veg-choumin.jpg",
     alt: "Nepali Vegetable Chowmein noodles"
   },
   {
@@ -73,7 +73,7 @@ const menuItems = [
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Prepared fresh daily",
-    image: "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/MTHWFJxD/chicken-choumin.jpg",
     alt: "Nepali Chicken Chowmein noodles"
   },
 
@@ -88,7 +88,7 @@ const menuItems = [
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Available all day",
-    image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/qqYgLM3x/roti.jpg",
     alt: "Fresh hot whole wheat Nepali Roti"
   },
   {
@@ -101,7 +101,7 @@ const menuItems = [
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Available all day",
-    image: "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/6617wz1b/parathaa.jpg",
     alt: "Golden crispy Nepali Paratha"
   },
 
@@ -116,7 +116,7 @@ const menuItems = [
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Freshly brewed",
-    image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/sx1v7Z1t/milk-tea.jpg",
     alt: "Hot Nepali milk tea in a glass cup"
   },
   {
@@ -129,7 +129,7 @@ const menuItems = [
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Freshly brewed",
-    image: "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/FFfSY2cL/black-tea.jpg",
     alt: "Fresh hot black tea in a glass"
   },
 
@@ -144,7 +144,7 @@ const menuItems = [
     priceNote: "Available on Fridays and special days",
     available: true,
     availabilityNote: "Friday & Special Days Only",
-    image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/wMs9951T/biryani.jpg",
     alt: "Special Chicken Biryani rice dish"
   },
 
@@ -159,7 +159,7 @@ const menuItems = [
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Great with hot tea",
-    image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/Dmkn0WGQ/chana.jpg",
     alt: "Spiced Nepali Chana snack"
   },
   {
@@ -172,7 +172,7 @@ const menuItems = [
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Prepared fresh",
-    image: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/CxbdG0LF/keema.jpg",
     alt: "Spiced Keema fry"
   },
   {
@@ -185,7 +185,7 @@ const menuItems = [
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Local favorite",
-    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/5yGj3NCL/veg-choumin.jpg",
     alt: "Nepali local snack dish"
   },
   {
@@ -198,7 +198,7 @@ const menuItems = [
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Quick healthy option",
-    image: "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/hjZGDPMz/egg.jpg",
     alt: "Fresh Boiled Eggs with salt and pepper"
   },
   {
@@ -211,7 +211,7 @@ const menuItems = [
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Crispy and fresh",
-    image: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?auto=format&fit=crop&w=600&q=80",
+    image: "https://i.postimg.cc/d1V1cTR8/fried-chicken.jpg",
     alt: "Golden crispy fried chicken"
   }
 ];
