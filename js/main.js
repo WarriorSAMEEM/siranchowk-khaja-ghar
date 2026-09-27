@@ -176,16 +176,16 @@ const menuItems = [
     alt: "Spiced Keema fry"
   },
   {
-    id: "snack-suputi",
+    id: "snack-sukuti",
     category: "snacks",
     categoryLabel: "Snacks / Other",
-    name: "Suputi",
-    nepaliName: "सुपुटी",
+    name: "Sukuti",
+    nepaliName: "सुकुटी",
     description: "Traditional seasoned local fried dish enjoyed with tea or snacks.",
     priceNote: "Price available at counter",
     available: true,
     availabilityNote: "Local favorite",
-    image: "https://i.postimg.cc/5yGj3NCL/veg-choumin.jpg",
+    image: "https://i.postimg.cc/YCg6PT8C/sukuti.jpg",
     alt: "Nepali local snack dish"
   },
   {
