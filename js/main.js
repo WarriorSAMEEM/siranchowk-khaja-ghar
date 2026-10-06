@@ -4,15 +4,14 @@
 // Website functionality + Firebase Realtime Database integration
 // ============================================================================
 
-import { db } from "./firebase.js";
-
 import {
+    db,
     ref,
     get,
     child,
     push,
     set
-} from "firebase/database";
+} from "./firebase.js";
 
 console.log("Firebase initialized successfully:", db);
 
@@ -305,12 +304,9 @@ function initMobileNav() {
 // ============================================================================
 // 5. OPENING STATUS
 // ============================================================================
-//
+
 // Business is already open.
-// Countdown is retained only as a compatibility fallback for older HTML.
-// If the countdown elements exist and the opening date has passed,
-// the UI switches to NOW OPEN.
-// ============================================================================
+// Countdown remains only as compatibility support for older HTML.
 
 function initCountdown() {
     const timerDays = document.getElementById("timer-days");
@@ -368,17 +364,17 @@ function initCountdown() {
 
         const hours = Math.floor(
             (timeDifference % (1000 * 60 * 60 * 24)) /
-                (1000 * 60 * 60)
+            (1000 * 60 * 60)
         );
 
         const minutes = Math.floor(
             (timeDifference % (1000 * 60 * 60)) /
-                (1000 * 60)
+            (1000 * 60)
         );
 
         const seconds = Math.floor(
             (timeDifference % (1000 * 60)) /
-                1000
+            1000
         );
 
         timerDays.textContent =
@@ -395,7 +391,6 @@ function initCountdown() {
     }
 
     updateTimer();
-
     setInterval(updateTimer, 1000);
 }
 
@@ -461,8 +456,8 @@ function renderMenuItems(category) {
         category === "all"
             ? menuItems
             : menuItems.filter(
-                  (item) => item.category === category
-              );
+                (item) => item.category === category
+            );
 
     if (filteredItems.length === 0) {
         menuContainer.innerHTML = `
@@ -519,13 +514,11 @@ function renderMenuItems(category) {
                 <div class="dish-info">
 
                     <div class="dish-title-row">
-
                         <h3>${item.name}</h3>
 
                         <span class="dish-nepali">
                             ${item.nepaliName}
                         </span>
-
                     </div>
 
                     <p class="dish-desc">
@@ -565,23 +558,11 @@ function renderMenuItems(category) {
 // 8. FIREBASE REALTIME DATABASE
 // ============================================================================
 //
-// IMPORTANT:
+// Realtime Database functions are imported from ./firebase.js.
 //
-// This project uses Firebase Realtime Database.
+// This avoids browser module-resolution errors such as:
+// "Failed to resolve module specifier firebase/database"
 //
-// Realtime Database functions:
-//     ref()
-//     get()
-//     child()
-//     push()
-//     set()
-//
-// Firestore functions such as:
-//     collection()
-//     addDoc()
-//     getDocs()
-//
-// are NOT used here.
 // ============================================================================
 
 // ============================================================================
@@ -714,16 +695,6 @@ function highlightActiveNav() {
 
 // ============================================================================
 // 13. OPTIONAL GLOBAL ACCESS FOR TESTING
-// ============================================================================
-//
-// These functions are NOT executed automatically.
-//
-// Browser console:
-//     addSampleMenu()
-//     fetchMenu()
-//
-// This prevents the website from creating a new menu item
-// every time a visitor opens the website.
 // ============================================================================
 
 window.addSampleMenu = addSampleMenu;
