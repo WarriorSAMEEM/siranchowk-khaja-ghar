@@ -1,5 +1,5 @@
 /* ==========================================================================
-   BAYAPANI KHAJA GHAR (बयापानी खाजा घर) - ULTIMATE ALL-DEVICE STYLESHEET
+   Siranchowk KHAJA GHAR (सिरानचोक खाजा घर) - ULTIMATE ALL-DEVICE STYLESHEET
    Supports: Wearables, Smartwatches, Foldables, Mobiles, Tablets, Laptops,
    Desktops, Ultra-Wide 4K/8K TVs, Print & Accessibility Modes.
    ========================================================================== */
@@ -362,7 +362,7 @@ button {
 
 .btn-outline-light {
   border: 2px solid rgba(255, 255, 255, 0.3);
-  color: #f1f1f1;
+  color: #FFFFFF;
   background-color: transparent;
 }
 
@@ -1669,7 +1669,7 @@ button {
   }
 }
 /* ==========================================================================
-   BAYAPANI KHAJA GHAR — PREMIUM LIGHT UI ENHANCEMENT LAYER
+   Siranchowk KHAJA GHAR — PREMIUM LIGHT UI ENHANCEMENT LAYER
    --------------------------------------------------------------------------
    This layer intentionally stays compatible with the existing HTML classes.
    It adds:
@@ -2052,37 +2052,14 @@ a {
 }
 
 .btn-outline-light {
-  border: 1px solid rgba(110, 255, 160, 0.35);
-  color: #f2fff7;
-  background: linear-gradient(
-    145deg,
-    rgba(33, 61, 45, 0.72),
-    rgba(12, 25, 18, 0.88)
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.10),
-    0 6px 20px rgba(0, 0, 0, 0.20);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition:
-    background 0.3s ease,
-    border-color 0.3s ease,
-    box-shadow 0.3s ease,
-    transform 0.3s ease;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .btn-outline-light:hover {
-  color: #ffffff;
-  background: linear-gradient(
-    145deg,
-    #24b866,
-    var(--brand-green-deep)
-  );
-  border-color: rgba(160, 255, 190, 0.75);
-  box-shadow:
-    0 0 0 3px rgba(65, 220, 125, 0.10),
-    0 8px 26px rgba(20, 180, 90, 0.30);
-  transform: translateY(-2px);
+  background: #FFFFFF;
+  color: var(--brand-green-deep);
 }
 
 /* --------------------------------------------------------------------------
@@ -3484,10 +3461,10 @@ code {
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: 50%;
-  animation: bayapaniSpin .7s linear infinite;
+  animation: SiranchowkSpin .7s linear infinite;
 }
 
-@keyframes bayapaniSpin {
+@keyframes SiranchowkSpin {
   to {
     transform: rotate(360deg);
   }
@@ -3664,7 +3641,7 @@ a {
    ========================================================================== */
 
 /* ==========================================================================
-   BAYAPANI KHAJA GHAR — LUXURY NEUTRAL FINISH v2
+   Siranchowk KHAJA GHAR — LUXURY NEUTRAL FINISH v2
    Targeted visual refinement:
    • Removes green from contact/info icon surfaces
    • Replaces footer green with deep espresso / warm charcoal
@@ -4218,5 +4195,275 @@ select:focus {
 @media (prefers-reduced-motion: reduce) {
   ::selection {
     transition: none !important;
+  }
+}
+
+/* ==========================================================================
+   SIRANCHOWK KHAJA GHAR — PREMIUM MOBILE-FIRST V5
+   Refined mobile UI, organic background, glass cards, food presentation,
+   clean navigation, accessible interactions, and non-extreme themes.
+   ========================================================================== */
+
+:root{
+  --v5-bg:#f3f7f5;--v5-bg-soft:#eaf2ef;--v5-text:#173536;--v5-muted:#607171;
+  --v5-aqua:#159b92;--v5-aqua-deep:#087d76;--v5-aqua-soft:#d9f1ed;
+  --v5-gold:#b99150;--v5-border:rgba(31,93,88,.13);
+  --v5-shadow:0 16px 42px rgba(24,65,62,.09);
+  --v5-shadow-hover:0 22px 54px rgba(24,65,62,.14);
+  --v5-radius:28px;--v5-ease:cubic-bezier(.22,.61,.36,1);
+}
+
+html{scroll-behavior:smooth;background:var(--v5-bg)}
+body{
+  background:
+    radial-gradient(circle at 8% 8%,rgba(21,155,146,.09),transparent 26rem),
+    radial-gradient(circle at 92% 18%,rgba(185,145,80,.07),transparent 24rem),
+    linear-gradient(180deg,#f6f9f7 0%,#f3f7f5 48%,#edf4f1 100%);
+  color:var(--v5-text);overflow-x:hidden;isolation:isolate;
+}
+body::before,body::after{
+  content:"";position:fixed;z-index:-1;pointer-events:none;border-radius:999px;
+  filter:blur(2px);opacity:.55;
+}
+body::before{
+  width:25rem;height:25rem;top:12rem;left:-15rem;
+  background:radial-gradient(circle,rgba(21,155,146,.12),transparent 70%);
+}
+body::after{
+  width:30rem;height:30rem;right:-18rem;top:48rem;
+  background:radial-gradient(circle,rgba(185,145,80,.10),transparent 70%);
+}
+main{position:relative}
+main::before{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.28;
+  background-image:radial-gradient(rgba(21,155,146,.10) .7px,transparent .7px);
+  background-size:22px 22px;
+  mask-image:linear-gradient(to bottom,transparent,black 10%,black 88%,transparent);
+}
+
+body,button,input,textarea,select{
+  font-family:"Plus Jakarta Sans","Noto Sans Devanagari",system-ui,-apple-system,
+  BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+h1,h2,h3,h4{letter-spacing:-.025em;text-wrap:balance}
+p{text-wrap:pretty}
+
+header,.site-header,.navbar,.main-header{
+  background:rgba(250,253,252,.76);
+  border-bottom:1px solid rgba(31,93,88,.10);
+  backdrop-filter:blur(18px) saturate(125%);
+  -webkit-backdrop-filter:blur(18px) saturate(125%);
+}
+header.scrolled,.site-header.scrolled,.navbar.scrolled,.main-header.scrolled{
+  background:rgba(247,251,249,.90);
+  box-shadow:0 10px 30px rgba(24,65,62,.07);
+}
+
+.hero,.hero-section{
+  position:relative;overflow:clip;
+  background:
+    radial-gradient(circle at 88% 18%,rgba(21,155,146,.12),transparent 23rem),
+    radial-gradient(circle at 12% 78%,rgba(185,145,80,.08),transparent 22rem);
+}
+.hero::before,.hero-section::before{
+  content:"";position:absolute;width:18rem;height:18rem;top:6%;right:-9rem;
+  border:1px solid rgba(21,155,146,.14);
+  border-radius:42% 58% 65% 35% / 48% 38% 62% 52%;
+  transform:rotate(18deg);pointer-events:none;
+}
+.hero::after,.hero-section::after{
+  content:"";position:absolute;width:12rem;height:12rem;bottom:4%;left:-7rem;
+  border-radius:55% 45% 32% 68% / 60% 34% 66% 40%;
+  background:rgba(21,155,146,.045);pointer-events:none;
+}
+
+/* Premium cards */
+.feature-card,.dish-card,.menu-card,.food-card,.info-card,.contact-card,
+.offer-card,.review-card,.gallery-card,.location-card,.service-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(245,250,248,.72));
+  border:1px solid var(--v5-border);border-radius:var(--v5-radius);
+  box-shadow:var(--v5-shadow);overflow:hidden;
+  transition:transform .32s var(--v5-ease),box-shadow .32s var(--v5-ease),
+  border-color .32s var(--v5-ease);
+}
+.feature-card:hover,.dish-card:hover,.menu-card:hover,.food-card:hover,.info-card:hover,
+.contact-card:hover,.offer-card:hover,.review-card:hover,.gallery-card:hover,
+.location-card:hover,.service-card:hover{
+  transform:translateY(-5px);box-shadow:var(--v5-shadow-hover);
+  border-color:rgba(21,155,146,.24);
+}
+
+/* Food image treatment */
+.dish-img-wrapper,.food-image,.menu-image,.card-image{
+  position:relative;overflow:hidden;background:#e6eeeb;
+}
+.dish-img-wrapper img,.food-image img,.menu-image img,.card-image img{
+  display:block;width:100%;aspect-ratio:4/3;object-fit:cover;object-position:center;
+  transition:transform .55s var(--v5-ease),filter .35s ease;
+}
+.dish-card:hover img,.menu-card:hover img,.food-card:hover img,.gallery-card:hover img{
+  transform:scale(1.035);
+}
+.dish-img-wrapper::after,.food-image::after,.menu-image::after,.card-image::after{
+  content:"";position:absolute;inset:auto 0 0;height:38%;
+  background:linear-gradient(to top,rgba(11,37,35,.20),transparent);pointer-events:none;
+}
+.hero-featured-img,.hero-image{
+  border-radius:34px;overflow:hidden;
+  box-shadow:0 24px 65px rgba(18,62,59,.14);
+}
+.hero-featured-img img,.hero-image img{
+  display:block;width:100%;aspect-ratio:16/10;object-fit:cover;
+}
+
+/* Subtle glass treatment for trust / halal blocks */
+.halal-badge,.trust-card{
+  background:linear-gradient(135deg,rgba(255,255,255,.84),rgba(230,246,242,.72));
+  border:1px solid rgba(21,155,146,.15);box-shadow:var(--v5-shadow);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+
+/* Touch targets + microinteractions */
+button,.btn,.button,a.btn{min-height:44px;transition:transform .22s var(--v5-ease),
+box-shadow .22s var(--v5-ease),background-color .22s ease,border-color .22s ease}
+button:hover,.btn:hover,.button:hover,a.btn:hover{transform:translateY(-2px)}
+button:active,.btn:active,.button:active,a.btn:active{transform:translateY(0)}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+  outline:3px solid rgba(21,155,146,.25);outline-offset:3px;
+}
+input,textarea,select{
+  border-color:rgba(31,93,88,.16);background:rgba(255,255,255,.78);
+  border-radius:14px;min-height:44px;
+}
+textarea{min-height:120px}
+::selection{background:rgba(94,211,202,.34);color:#143331}
+
+/* MOBILE FIRST */
+@media(max-width:767px){
+  html{scroll-padding-top:76px}
+  body{
+    font-size:15px;
+    background:
+      radial-gradient(circle at 100% 0%,rgba(21,155,146,.10),transparent 18rem),
+      radial-gradient(circle at 0% 52%,rgba(185,145,80,.06),transparent 17rem),
+      linear-gradient(180deg,#f6f9f7,#edf4f1);
+  }
+  main::before{opacity:.20;background-size:20px 20px}
+  .hero,.hero-section{min-height:auto;padding-top:2rem;padding-bottom:2.75rem}
+  .hero::before{width:12rem;height:12rem;right:-7rem;top:3rem}
+  .hero::after{width:9rem;height:9rem;left:-5rem}
+  h1{font-size:clamp(2rem,10vw,3.1rem);line-height:1.04}
+  h2{font-size:clamp(1.55rem,7vw,2.2rem);line-height:1.12}
+  h3{font-size:clamp(1.15rem,5vw,1.45rem)}
+  .feature-card,.dish-card,.menu-card,.food-card,.info-card,.contact-card,
+  .offer-card,.review-card,.gallery-card,.location-card,.service-card{
+    border-radius:22px;box-shadow:0 12px 30px rgba(24,65,62,.075);
+  }
+  .feature-card:hover,.dish-card:hover,.menu-card:hover,.food-card:hover,.info-card:hover,
+  .contact-card:hover,.offer-card:hover,.review-card:hover,.gallery-card:hover,
+  .location-card:hover,.service-card:hover{transform:none}
+  .dish-img-wrapper img,.food-image img,.menu-image img,.card-image img{aspect-ratio:5/4}
+  .hero-featured-img,.hero-image{border-radius:24px;box-shadow:0 16px 42px rgba(18,62,59,.12)}
+  .hero-featured-img img,.hero-image img{aspect-ratio:4/3}
+  nav a,.nav-links a,.navigation-links a{
+    min-height:44px;display:inline-flex;align-items:center;border-radius:12px;
+  }
+  .mobile-menu,.menu-toggle,.nav-toggle{
+    width:44px;height:44px;min-width:44px;border-radius:13px;display:inline-grid;place-items:center;
+  }
+  a,button,[role="button"],input[type="submit"]{-webkit-tap-highlight-color:transparent}
+  .container,.section-container{width:min(100% - 28px,1180px);margin-inline:auto}
+  .section,section{padding-block:3.25rem}
+  .section-header{margin-bottom:1.6rem}
+  .grid,.cards-grid,.menu-grid,.dish-grid,.feature-grid{gap:1rem}
+  .trust-card,.halal-badge{border-radius:18px}
+}
+@media(max-width:380px){
+  .container,.section-container{width:min(100% - 22px,1180px)}
+  h1{font-size:1.9rem}h2{font-size:1.5rem}
+  .feature-card,.dish-card,.menu-card,.food-card{border-radius:19px}
+}
+
+/* Tablet */
+@media(min-width:768px) and (max-width:1023px){
+  .container,.section-container{width:min(100% - 44px,1180px);margin-inline:auto}
+  .hero-featured-img img,.hero-image img{aspect-ratio:16/11}
+}
+
+/* Desktop: preserve existing V3 layout while adding polish */
+@media(min-width:1024px){
+  .container,.section-container{width:min(100% - 64px,1220px);margin-inline:auto}
+  .feature-card,.dish-card,.menu-card,.food-card,.info-card,.contact-card,
+  .offer-card,.review-card,.gallery-card,.location-card,.service-card{border-radius:26px}
+}
+@media(min-width:1440px){
+  .container,.section-container{width:min(100% - 96px,1320px)}
+}
+
+/* DARK THEME — deep blue-green, never pure black */
+.dark-theme,[data-theme="dark"]{
+  --v5-bg:#182827;--v5-bg-soft:#203331;--v5-text:#eef8f5;--v5-muted:#b9ceca;
+  --v5-border:rgba(183,224,217,.13);
+  --v5-shadow:0 18px 48px rgba(0,0,0,.20);
+}
+.dark-theme body,[data-theme="dark"] body{
+  background:
+    radial-gradient(circle at 8% 8%,rgba(21,155,146,.13),transparent 25rem),
+    radial-gradient(circle at 92% 18%,rgba(185,145,80,.08),transparent 23rem),
+    linear-gradient(180deg,#1d302e 0%,#182827 55%,#152321 100%);
+  color:var(--v5-text);
+}
+.dark-theme main::before,[data-theme="dark"] main::before{
+  opacity:.18;background-image:radial-gradient(rgba(130,218,208,.15) .7px,transparent .7px);
+}
+.dark-theme header,.dark-theme .site-header,.dark-theme .navbar,.dark-theme .main-header,
+[data-theme="dark"] header,[data-theme="dark"] .site-header,[data-theme="dark"] .navbar,[data-theme="dark"] .main-header{
+  background:rgba(24,40,39,.78);border-bottom-color:rgba(183,224,217,.10);
+}
+.dark-theme .feature-card,.dark-theme .dish-card,.dark-theme .menu-card,.dark-theme .food-card,
+.dark-theme .info-card,.dark-theme .contact-card,.dark-theme .offer-card,.dark-theme .review-card,
+.dark-theme .gallery-card,.dark-theme .location-card,.dark-theme .service-card,
+[data-theme="dark"] .feature-card,[data-theme="dark"] .dish-card,[data-theme="dark"] .menu-card,
+[data-theme="dark"] .food-card,[data-theme="dark"] .info-card,[data-theme="dark"] .contact-card,
+[data-theme="dark"] .offer-card,[data-theme="dark"] .review-card,[data-theme="dark"] .gallery-card,
+[data-theme="dark"] .location-card,[data-theme="dark"] .service-card{
+  background:linear-gradient(145deg,rgba(43,64,61,.86),rgba(31,49,47,.80));
+  border-color:rgba(183,224,217,.12);
+}
+.dark-theme input,.dark-theme textarea,.dark-theme select,
+[data-theme="dark"] input,[data-theme="dark"] textarea,[data-theme="dark"] select{
+  background:rgba(38,57,54,.88);color:#eef8f5;border-color:rgba(183,224,217,.14);
+}
+.dark-theme .halal-badge,.dark-theme .trust-card,
+[data-theme="dark"] .halal-badge,[data-theme="dark"] .trust-card{
+  background:linear-gradient(135deg,rgba(41,68,64,.88),rgba(30,51,49,.78));
+  border-color:rgba(94,211,202,.18);
+}
+.dark-theme ::selection,[data-theme="dark"] ::selection{background:rgba(94,211,202,.28);color:#f2fffc}
+
+footer,.site-footer{
+  background:#e8f0ed;color:#294746;border-top:1px solid rgba(31,93,88,.10);
+}
+.dark-theme footer,.dark-theme .site-footer,[data-theme="dark"] footer,[data-theme="dark"] .site-footer{
+  background:#203331;color:#d9ebe7;border-top-color:rgba(183,224,217,.10);
+}
+
+/* Reduced motion */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important;
+  }
+}
+
+/* Print */
+@media print{
+  body,.dark-theme body,[data-theme="dark"] body{background:#fff!important;color:#111!important}
+  body::before,body::after,main::before,.hero::before,.hero::after,
+  .hero-section::before,.hero-section::after{display:none!important}
+  .feature-card,.dish-card,.menu-card,.food-card,.info-card,.contact-card,
+  .offer-card,.review-card,.gallery-card,.location-card,.service-card{
+    box-shadow:none!important;border:1px solid #ddd!important;
   }
 }
