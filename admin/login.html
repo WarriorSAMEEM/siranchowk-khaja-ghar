@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="robots"
+    content="noindex, nofollow, noarchive"
+  >
+
+  <title>Admin Login | Siranchowk Khaja Ghar</title>
+
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <style>
+    :root {
+      --bg-1: #eafcff;
+      --bg-2: #dff7f7;
+      --bg-3: #f5fcfc;
+
+      --text: #102a2e;
+      --muted: #647b7f;
+
+      --primary: #159ca5;
+      --primary-dark: #087f89;
+
+      --border: rgba(21, 156, 165, 0.18);
+      --glass: rgba(255, 255, 255, 0.68);
+
+      --danger: #c0392b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: "Inter", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(
+          circle at 15% 20%,
+          rgba(91, 220, 226, 0.28),
+          transparent 30%
+        ),
+        radial-gradient(
+          circle at 85% 80%,
+          rgba(83, 190, 200, 0.22),
+          transparent 30%
+        ),
+        linear-gradient(
+          135deg,
+          var(--bg-1),
+          var(--bg-2),
+          var(--bg-3)
+        );
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 24px;
+
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Organic background shapes */
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      z-index: 0;
+      pointer-events: none;
+
+      filter: blur(2px);
+      opacity: 0.45;
+    }
+
+    body::before {
+      width: 420px;
+      height: 420px;
+
+      top: -180px;
+      left: -140px;
+
+      border-radius: 48% 52% 63% 37% / 44% 38% 62% 56%;
+
+      background:
+        linear-gradient(
+          135deg,
+          rgba(74, 202, 211, 0.26),
+          rgba(255, 255, 255, 0.05)
+        );
+
+      transform: rotate(18deg);
+    }
+
+    body::after {
+      width: 480px;
+      height: 480px;
+
+      right: -200px;
+      bottom: -210px;
+
+      border-radius: 57% 43% 34% 66% / 48% 59% 41% 52%;
+
+      background:
+        linear-gradient(
+          135deg,
+          rgba(21, 156, 165, 0.18),
+          rgba(255, 255, 255, 0.04)
+        );
+
+      transform: rotate(-22deg);
+    }
+
+    .login-wrapper {
+      width: 100%;
+      max-width: 440px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .login-card {
+      width: 100%;
+
+      padding: 38px;
+
+      border: 1px solid var(--border);
+      border-radius: 28px;
+
+      background: var(--glass);
+
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+
+      box-shadow:
+        0 30px 80px rgba(16, 72, 77, 0.13),
+        0 8px 25px rgba(16, 72, 77, 0.06);
+
+      animation: cardIn 0.65s ease both;
+    }
+
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .shield {
+      width: 68px;
+      height: 68px;
+
+      margin: 0 auto 18px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 20px;
+
+      background:
+        linear-gradient(
+          135deg,
+          rgba(21, 156, 165, 0.16),
+          rgba(255, 255, 255, 0.72)
+        );
+
+      border: 1px solid rgba(21, 156, 165, 0.18);
+
+      box-shadow:
+        0 12px 30px rgba(21, 156, 165, 0.12);
+    }
+
+    .shield span {
+      font-size: 29px;
+    }
+
+    .brand h1 {
+      font-size: 25px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .brand p {
+      margin-top: 8px;
+
+      color: var(--muted);
+
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+
+      margin-bottom: 8px;
+
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+
+      height: 54px;
+
+      padding: 0 16px 0 17px;
+
+      border: 1px solid rgba(16, 42, 46, 0.12);
+      border-radius: 14px;
+
+      outline: none;
+
+      background: rgba(255, 255, 255, 0.66);
+
+      color: var(--text);
+
+      font: inherit;
+      font-size: 14px;
+
+      transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        background 0.25s ease;
+    }
+
+    .input-wrapper input::placeholder {
+      color: #91a4a7;
+    }
+
+    .input-wrapper input:focus {
+      border-color: rgba(21, 156, 165, 0.65);
+
+      background: rgba(255, 255, 255, 0.9);
+
+      box-shadow:
+        0 0 0 4px rgba(21, 156, 165, 0.11),
+        0 8px 25px rgba(21, 156, 165, 0.07);
+    }
+
+    .password-toggle {
+      position: absolute;
+
+      top: 50%;
+      right: 14px;
+
+      transform: translateY(-50%);
+
+      border: 0;
+      background: transparent;
+
+      color: #71888c;
+
+      cursor: pointer;
+
+      font-size: 13px;
+      font-weight: 600;
+
+      padding: 7px;
+    }
+
+    .password-toggle:hover {
+      color: var(--primary-dark);
+    }
+
+    .submit-btn {
+      width: 100%;
+      height: 54px;
+
+      margin-top: 6px;
+
+      border: 0;
+      border-radius: 14px;
+
+      background:
+        linear-gradient(
+          135deg,
+          var(--primary),
+          var(--primary-dark)
+        );
+
+      color: #fff;
+
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+
+      cursor: pointer;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+
+      box-shadow:
+        0 12px 25px rgba(21, 156, 165, 0.22);
+
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        opacity 0.2s ease;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+
+      box-shadow:
+        0 17px 34px rgba(21, 156, 165, 0.27);
+    }
+
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+
+    .submit-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+      transform: none;
+    }
+
+    .error-alert {
+      display: none;
+
+      margin-bottom: 18px;
+
+      padding: 12px 14px;
+
+      border-radius: 12px;
+
+      border: 1px solid rgba(192, 57, 43, 0.18);
+
+      background: rgba(192, 57, 43, 0.07);
+
+      color: var(--danger);
+
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .error-alert.show {
+      display: block;
+      animation: shake 0.3s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% {
+        transform: translateX(0);
+      }
+
+      25% {
+        transform: translateX(-5px);
+      }
+
+      75% {
+        transform: translateX(5px);
+      }
+    }
+
+    .security-note {
+      margin-top: 23px;
+
+      text-align: center;
+
+      color: #7b8f92;
+
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .security-note strong {
+      color: #557276;
+    }
+
+    .loading {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .loading.active {
+      display: flex;
+    }
+
+    .loading-dot {
+      width: 7px;
+      height: 7px;
+
+      border-radius: 50%;
+
+      background: #fff;
+
+      animation: loading 0.8s infinite alternate;
+    }
+
+    .loading-dot:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    .loading-dot:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    @keyframes loading {
+      from {
+        opacity: 0.3;
+        transform: translateY(0);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(-3px);
+      }
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 16px;
+      }
+
+      .login-card {
+        padding: 28px 22px;
+        border-radius: 23px;
+      }
+
+      .brand h1 {
+        font-size: 22px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="login-wrapper">
+
+    <section class="login-card">
+
+      <div class="brand">
+
+        <div class="shield" aria-hidden="true">
+          <span>🛡️</span>
+        </div>
+
+        <h1>Admin Portal</h1>
+
+        <p>
+          Siranchowk Khaja Ghar<br>
+          Secure Management System
+        </p>
+
+      </div>
+
+      <div
+        id="login-error"
+        class="error-alert"
+        role="alert"
+        aria-live="polite"
+      >
+        <span id="error-text">
+          Invalid email or password.
+        </span>
+      </div>
+
+      <form id="admin-login-form" novalidate>
+
+        <div class="form-group">
+
+          <label for="admin-email">
+            Email Address
+          </label>
+
+          <div class="input-wrapper">
+
+            <input
+              type="email"
+              id="admin-email"
+              name="email"
+              placeholder="admin@example.com"
+              autocomplete="username"
+              required
+            >
+
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="admin-password">
+            Password
+          </label>
+
+          <div class="input-wrapper">
+
+            <input
+              type="password"
+              id="admin-password"
+              name="password"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              minlength="6"
+              required
+            >
+
+            <button
+              type="button"
+              class="password-toggle"
+              id="toggle-password"
+              aria-label="Show password"
+            >
+              Show
+            </button>
+
+          </div>
+
+        </div>
+
+        <button
+          type="submit"
+          class="submit-btn"
+          id="btn-submit"
+        >
+
+          <span id="submit-text">
+            Sign in securely
+          </span>
+
+          <span
+            id="loading"
+            class="loading"
+            aria-hidden="true"
+          >
+            <span class="loading-dot"></span>
+            <span class="loading-dot"></span>
+            <span class="loading-dot"></span>
+          </span>
+
+        </button>
+
+      </form>
+
+      <p class="security-note">
+        🔒 <strong>Protected area.</strong>
+        Authorized administrators only.
+      </p>
+
+    </section>
+
+  </main>
+
+  <script type="module" src="./js/login-handler.js"></script>
+
+</body>
+</html>
