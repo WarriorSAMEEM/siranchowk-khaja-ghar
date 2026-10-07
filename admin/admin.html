@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
@@ -19,11 +21,22 @@
         content="noindex, nofollow, noarchive, nosnippet"
     >
 
-    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta
+        name="referrer"
+        content="strict-origin-when-cross-origin"
+    >
 
     <!-- Typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
 
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
@@ -31,11 +44,26 @@
     >
 
     <!-- Admin Styles -->
-    <link rel="stylesheet" href="css/admin.css">
-    <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/responsive.css">
+    <link
+        rel="stylesheet"
+        href="./css/admin.css"
+    >
 
-    <!-- Prevent dashboard flash before authentication -->
+    <link
+        rel="stylesheet"
+        href="./css/components.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="./css/responsive.css"
+    >
+
+    <!--
+        Prevent dashboard flash before authentication.
+        The application stays hidden until Firebase authentication
+        has been checked successfully.
+    -->
     <style>
         html.auth-pending,
         html.auth-pending body {
@@ -84,6 +112,7 @@
 
         .auth-loading-card {
             width: min(420px, 100%);
+
             padding: 34px 30px;
 
             text-align: center;
@@ -92,6 +121,7 @@
             border-radius: 24px;
 
             background: rgba(255, 255, 255, 0.64);
+
             box-shadow:
                 0 24px 70px rgba(15, 76, 92, 0.12),
                 inset 0 1px 0 rgba(255, 255, 255, 0.9);
@@ -174,7 +204,7 @@
         }
     </style>
 
-    <!-- Authentication starts before the application is revealed -->
+    <!-- Authentication starts before application is revealed -->
     <script>
         document.documentElement.classList.add("auth-pending");
     </script>
@@ -182,16 +212,23 @@
 
 <body class="admin-body">
 
-    <!-- Authentication Loading Screen -->
+    <!-- =========================================================
+         AUTHENTICATION LOADING SCREEN
+         ========================================================= -->
+
     <div
         id="auth-loading-screen"
         role="status"
         aria-live="polite"
         aria-label="Checking administrator authentication"
     >
+
         <div class="auth-loading-card">
 
-            <div class="auth-loading-icon" aria-hidden="true">
+            <div
+                class="auth-loading-icon"
+                aria-hidden="true"
+            >
                 <div class="auth-loading-spinner"></div>
             </div>
 
@@ -204,32 +241,54 @@
             </p>
 
         </div>
+
     </div>
 
 
-    <!-- Abstract Background Ambient Elements -->
-    <div class="ambient-bg" aria-hidden="true">
+    <!-- =========================================================
+         ABSTRACT BACKGROUND
+         ========================================================= -->
+
+    <div
+        class="ambient-bg"
+        aria-hidden="true"
+    >
+
         <div class="ambient-shape blob-1"></div>
+
         <div class="ambient-shape blob-2"></div>
+
         <div class="ambient-grid"></div>
+
     </div>
 
 
-    <!-- Application Shell -->
-    <div class="admin-layout" id="app-shell">
+    <!-- =========================================================
+         APPLICATION SHELL
+         ========================================================= -->
 
-        <!-- Sidebar Navigation -->
+    <div
+        class="admin-layout"
+        id="app-shell"
+    >
+
+        <!-- =====================================================
+             SIDEBAR
+             ===================================================== -->
+
         <aside
             class="admin-sidebar"
             id="sidebar"
             aria-label="Main Navigation"
         >
 
+            <!-- Sidebar Header -->
             <div class="sidebar-header">
 
                 <div class="brand-badge">
 
                     <div class="brand-icon">
+
                         <svg
                             width="22"
                             height="22"
@@ -242,18 +301,45 @@
                             aria-hidden="true"
                         >
                             <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
-                            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
-                            <line x1="6" y1="1" x2="6" y2="4"></line>
-                            <line x1="10" y1="1" x2="10" y2="4"></line>
-                            <line x1="14" y1="1" x2="14" y2="4"></line>
+
+                            <path
+                                d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"
+                            ></path>
+
+                            <line
+                                x1="6"
+                                y1="1"
+                                x2="6"
+                                y2="4"
+                            ></line>
+
+                            <line
+                                x1="10"
+                                y1="1"
+                                x2="10"
+                                y2="4"
+                            ></line>
+
+                            <line
+                                x1="14"
+                                y1="1"
+                                x2="14"
+                                y2="4"
+                            ></line>
                         </svg>
+
                     </div>
 
                     <div class="brand-details">
-                        <span class="brand-title">Siranchowk</span>
+
+                        <span class="brand-title">
+                            Siranchowk
+                        </span>
+
                         <span class="brand-subtitle">
                             Khaja Ghar Admin
                         </span>
+
                     </div>
 
                 </div>
@@ -264,6 +350,7 @@
                     type="button"
                     aria-label="Close Mobile Navigation"
                 >
+
                     <svg
                         width="20"
                         height="20"
@@ -273,15 +360,30 @@
                         stroke-width="2"
                         aria-hidden="true"
                     >
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                        <line
+                            x1="18"
+                            y1="6"
+                            x2="6"
+                            y2="18"
+                        ></line>
+
+                        <line
+                            x1="6"
+                            y1="6"
+                            x2="18"
+                            y2="18"
+                        ></line>
                     </svg>
+
                 </button>
 
             </div>
 
 
-            <!-- Sidebar Navigation -->
+            <!-- =================================================
+                 SIDEBAR NAVIGATION
+                 ================================================= -->
+
             <nav class="sidebar-nav">
 
                 <div class="nav-section-label">
@@ -293,6 +395,7 @@
                     class="nav-item active"
                     data-view="dashboard"
                 >
+
                     <svg
                         class="nav-icon"
                         width="18"
@@ -303,13 +406,39 @@
                         stroke-width="2"
                         aria-hidden="true"
                     >
-                        <rect x="3" y="3" width="7" height="9"></rect>
-                        <rect x="14" y="3" width="7" height="5"></rect>
-                        <rect x="14" y="12" width="7" height="9"></rect>
-                        <rect x="3" y="16" width="7" height="5"></rect>
+                        <rect
+                            x="3"
+                            y="3"
+                            width="7"
+                            height="9"
+                        ></rect>
+
+                        <rect
+                            x="14"
+                            y="3"
+                            width="7"
+                            height="5"
+                        ></rect>
+
+                        <rect
+                            x="14"
+                            y="12"
+                            width="7"
+                            height="9"
+                        ></rect>
+
+                        <rect
+                            x="3"
+                            y="16"
+                            width="7"
+                            height="5"
+                        ></rect>
                     </svg>
 
-                    <span>Dashboard</span>
+                    <span>
+                        Dashboard
+                    </span>
+
                 </a>
 
 
@@ -317,11 +446,14 @@
                     Management
                 </div>
 
+
+                <!-- Menu -->
                 <a
                     href="#menu"
                     class="nav-item"
                     data-view="menu"
                 >
+
                     <svg
                         class="nav-icon"
                         width="18"
@@ -333,18 +465,26 @@
                         aria-hidden="true"
                     >
                         <path d="M12 20h9"></path>
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+
+                        <path
+                            d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+                        ></path>
                     </svg>
 
-                    <span>Menu Items</span>
+                    <span>
+                        Menu Items
+                    </span>
+
                 </a>
 
 
+                <!-- Orders -->
                 <a
                     href="#orders"
                     class="nav-item"
                     data-view="orders"
                 >
+
                     <svg
                         class="nav-icon"
                         width="18"
@@ -355,12 +495,26 @@
                         stroke-width="2"
                         aria-hidden="true"
                     >
-                        <circle cx="9" cy="21" r="1"></circle>
-                        <circle cx="20" cy="21" r="1"></circle>
-                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        <circle
+                            cx="9"
+                            cy="21"
+                            r="1"
+                        ></circle>
+
+                        <circle
+                            cx="20"
+                            cy="21"
+                            r="1"
+                        ></circle>
+
+                        <path
+                            d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+                        ></path>
                     </svg>
 
-                    <span>Orders</span>
+                    <span>
+                        Orders
+                    </span>
 
                     <span
                         class="nav-badge hidden"
@@ -368,14 +522,17 @@
                     >
                         0
                     </span>
+
                 </a>
 
 
+                <!-- Offers -->
                 <a
                     href="#offers"
                     class="nav-item"
                     data-view="offers"
                 >
+
                     <svg
                         class="nav-icon"
                         width="18"
@@ -386,19 +543,32 @@
                         stroke-width="2"
                         aria-hidden="true"
                     >
-                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-                        <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                        <path
+                            d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"
+                        ></path>
+
+                        <line
+                            x1="7"
+                            y1="7"
+                            x2="7.01"
+                            y2="7"
+                        ></line>
                     </svg>
 
-                    <span>Offers &amp; Promos</span>
+                    <span>
+                        Offers &amp; Promos
+                    </span>
+
                 </a>
 
 
+                <!-- Gallery -->
                 <a
                     href="#gallery"
                     class="nav-item"
                     data-view="gallery"
                 >
+
                     <svg
                         class="nav-icon"
                         width="18"
@@ -416,19 +586,32 @@
                             height="18"
                             rx="2"
                         ></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <polyline points="21 15 16 10 5 21"></polyline>
+
+                        <circle
+                            cx="8.5"
+                            cy="8.5"
+                            r="1.5"
+                        ></circle>
+
+                        <polyline
+                            points="21 15 16 10 5 21"
+                        ></polyline>
                     </svg>
 
-                    <span>Photo Gallery</span>
+                    <span>
+                        Photo Gallery
+                    </span>
+
                 </a>
 
 
+                <!-- Reviews -->
                 <a
                     href="#reviews"
                     class="nav-item"
                     data-view="reviews"
                 >
+
                     <svg
                         class="nav-icon"
                         width="18"
@@ -439,18 +622,25 @@
                         stroke-width="2"
                         aria-hidden="true"
                     >
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        <path
+                            d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                        ></path>
                     </svg>
 
-                    <span>Reviews</span>
+                    <span>
+                        Reviews
+                    </span>
+
                 </a>
 
 
+                <!-- Customers -->
                 <a
                     href="#customers"
                     class="nav-item"
                     data-view="customers"
                 >
+
                     <svg
                         class="nav-icon"
                         width="18"
@@ -461,21 +651,39 @@
                         stroke-width="2"
                         aria-hidden="true"
                     >
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        <path
+                            d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                        ></path>
+
+                        <circle
+                            cx="9"
+                            cy="7"
+                            r="4"
+                        ></circle>
+
+                        <path
+                            d="M23 21v-2a4 4 0 0 0-3-3.87"
+                        ></path>
+
+                        <path
+                            d="M16 3.13a4 4 0 0 1 0 7.75"
+                        ></path>
                     </svg>
 
-                    <span>Customers</span>
+                    <span>
+                        Customers
+                    </span>
+
                 </a>
 
 
+                <!-- Announcements -->
                 <a
                     href="#announcements"
                     class="nav-item"
                     data-view="announcements"
                 >
+
                     <svg
                         class="nav-icon"
                         width="18"
@@ -486,23 +694,34 @@
                         stroke-width="2"
                         aria-hidden="true"
                     >
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        <path
+                            d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"
+                        ></path>
+
+                        <path
+                            d="M13.73 21a2 2 0 0 1-3.46 0"
+                        ></path>
                     </svg>
 
-                    <span>Announcements</span>
+                    <span>
+                        Announcements
+                    </span>
+
                 </a>
 
 
+                <!-- Website Content -->
                 <div class="nav-section-label">
                     Website Content
                 </div>
+
 
                 <a
                     href="#content"
                     class="nav-item"
                     data-view="content"
                 >
+
                     <svg
                         class="nav-icon"
                         width="18"
@@ -513,22 +732,47 @@
                         stroke-width="2"
                         aria-hidden="true"
                     >
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
+                        <path
+                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                        ></path>
+
+                        <polyline
+                            points="14 2 14 8 20 8"
+                        ></polyline>
+
+                        <line
+                            x1="16"
+                            y1="13"
+                            x2="8"
+                            y2="13"
+                        ></line>
+
+                        <line
+                            x1="16"
+                            y1="17"
+                            x2="8"
+                            y2="17"
+                        ></line>
+
+                        <polyline
+                            points="10 9 9 9 8 9"
+                        ></polyline>
                     </svg>
 
-                    <span>Site Content</span>
+                    <span>
+                        Site Content
+                    </span>
+
                 </a>
 
 
+                <!-- SEO -->
                 <a
                     href="#seo"
                     class="nav-item"
                     data-view="seo"
                 >
+
                     <svg
                         class="nav-icon"
                         width="18"
@@ -539,23 +783,40 @@
                         stroke-width="2"
                         aria-hidden="true"
                     >
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <circle
+                            cx="11"
+                            cy="11"
+                            r="8"
+                        ></circle>
+
+                        <line
+                            x1="21"
+                            y1="21"
+                            x2="16.65"
+                            y2="16.65"
+                        ></line>
                     </svg>
 
-                    <span>SEO Settings</span>
+                    <span>
+                        SEO Settings
+                    </span>
+
                 </a>
 
 
+                <!-- System -->
                 <div class="nav-section-label">
                     System
                 </div>
 
+
+                <!-- Analytics -->
                 <a
                     href="#analytics"
                     class="nav-item"
                     data-view="analytics"
                 >
+
                     <svg
                         class="nav-icon"
                         width="18"
@@ -566,20 +827,42 @@
                         stroke-width="2"
                         aria-hidden="true"
                     >
-                        <line x1="18" y1="20" x2="18" y2="10"></line>
-                        <line x1="12" y1="20" x2="12" y2="4"></line>
-                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                        <line
+                            x1="18"
+                            y1="20"
+                            x2="18"
+                            y2="10"
+                        ></line>
+
+                        <line
+                            x1="12"
+                            y1="20"
+                            x2="12"
+                            y2="4"
+                        ></line>
+
+                        <line
+                            x1="6"
+                            y1="20"
+                            x2="6"
+                            y2="14"
+                        ></line>
                     </svg>
 
-                    <span>Analytics</span>
+                    <span>
+                        Analytics
+                    </span>
+
                 </a>
 
 
+                <!-- Settings -->
                 <a
                     href="#settings"
                     class="nav-item"
                     data-view="settings"
                 >
+
                     <svg
                         class="nav-icon"
                         width="18"
@@ -590,17 +873,30 @@
                         stroke-width="2"
                         aria-hidden="true"
                     >
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        <circle
+                            cx="12"
+                            cy="12"
+                            r="3"
+                        ></circle>
+
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                        ></path>
                     </svg>
 
-                    <span>Settings &amp; Logs</span>
+                    <span>
+                        Settings &amp; Logs
+                    </span>
+
                 </a>
 
             </nav>
 
 
-            <!-- Sidebar Footer -->
+            <!-- =================================================
+                 SIDEBAR FOOTER
+                 ================================================= -->
+
             <div class="sidebar-footer">
 
                 <div class="user-profile-summary">
@@ -640,6 +936,7 @@
                     title="Sign Out"
                     aria-label="Sign Out"
                 >
+
                     <svg
                         width="18"
                         height="18"
@@ -649,10 +946,22 @@
                         stroke-width="2"
                         aria-hidden="true"
                     >
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                        <path
+                            d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+                        ></path>
+
+                        <polyline
+                            points="16 17 21 12 16 7"
+                        ></polyline>
+
+                        <line
+                            x1="21"
+                            y1="12"
+                            x2="9"
+                            y2="12"
+                        ></line>
                     </svg>
+
                 </button>
 
             </div>
@@ -660,7 +969,10 @@
         </aside>
 
 
-        <!-- Mobile Drawer Backdrop -->
+        <!-- =====================================================
+             MOBILE DRAWER BACKDROP
+             ===================================================== -->
+
         <div
             class="drawer-backdrop"
             id="drawer-backdrop"
@@ -668,10 +980,16 @@
         ></div>
 
 
-        <!-- Main Content Wrapper -->
+        <!-- =====================================================
+             MAIN WRAPPER
+             ===================================================== -->
+
         <div class="admin-main-wrapper">
 
-            <!-- Top Header -->
+            <!-- =================================================
+                 HEADER
+                 ================================================= -->
+
             <header class="admin-header">
 
                 <div class="header-left">
@@ -682,6 +1000,7 @@
                         type="button"
                         aria-label="Open Navigation Menu"
                     >
+
                         <svg
                             width="22"
                             height="22"
@@ -691,10 +1010,28 @@
                             stroke-width="2"
                             aria-hidden="true"
                         >
-                            <line x1="3" y1="12" x2="21" y2="12"></line>
-                            <line x1="3" y1="6" x2="21" y2="6"></line>
-                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                            <line
+                                x1="3"
+                                y1="12"
+                                x2="21"
+                                y2="12"
+                            ></line>
+
+                            <line
+                                x1="3"
+                                y1="6"
+                                x2="21"
+                                y2="6"
+                            ></line>
+
+                            <line
+                                x1="3"
+                                y1="18"
+                                x2="21"
+                                y2="18"
+                            ></line>
                         </svg>
+
                     </button>
 
 
@@ -719,6 +1056,7 @@
 
                 <div class="header-right">
 
+                    <!-- WhatsApp -->
                     <a
                         href="https://wa.me/9779821233154"
                         target="_blank"
@@ -727,6 +1065,7 @@
                         title="Open WhatsApp Direct"
                         aria-label="Open WhatsApp Direct"
                     >
+
                         <svg
                             width="16"
                             height="16"
@@ -736,15 +1075,19 @@
                             stroke-width="2"
                             aria-hidden="true"
                         >
-                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                            <path
+                                d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
+                            ></path>
                         </svg>
 
                         <span class="hide-mobile">
                             WhatsApp
                         </span>
+
                     </a>
 
 
+                    <!-- Refresh -->
                     <button
                         class="theme-toggle-btn"
                         id="quick-refresh-btn"
@@ -752,6 +1095,7 @@
                         title="Refresh Live Data"
                         aria-label="Refresh Live Data"
                     >
+
                         <svg
                             width="16"
                             height="16"
@@ -761,20 +1105,31 @@
                             stroke-width="2"
                             aria-hidden="true"
                         >
-                            <polyline points="23 4 23 10 17 10"></polyline>
-                            <polyline points="1 20 1 14 7 14"></polyline>
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            <polyline
+                                points="23 4 23 10 17 10"
+                            ></polyline>
+
+                            <polyline
+                                points="1 20 1 14 7 14"
+                            ></polyline>
+
+                            <path
+                                d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+                            ></path>
                         </svg>
+
                     </button>
 
 
                     <div class="header-divider"></div>
 
 
+                    <!-- Clock -->
                     <div
                         class="system-time-display"
                         id="live-clock"
                     >
+
                         <span id="clock-time">
                             --:--:--
                         </span>
@@ -782,6 +1137,7 @@
                         <span id="clock-date">
                             NPT
                         </span>
+
                     </div>
 
                 </div>
@@ -789,7 +1145,10 @@
             </header>
 
 
-            <!-- Dynamic Main Content -->
+            <!-- =================================================
+                 DYNAMIC MAIN CONTENT
+                 ================================================= -->
+
             <main
                 class="admin-main-content"
                 id="main-content"
@@ -799,25 +1158,42 @@
             </main>
 
 
-            <!-- Footer -->
+            <!-- =================================================
+                 FOOTER
+                 ================================================= -->
+
             <footer class="admin-footer">
 
                 <div class="footer-info">
+
                     <span>
-                        <strong>Siranchowk Khaja Ghar</strong>
+
+                        <strong>
+                            Siranchowk Khaja Ghar
+                        </strong>
+
                         — Khairahani-6, Parsa, Chitwan
                         (Behind Chaudhary Medical)
+
                     </span>
+
                 </div>
 
-                <div class="footer-meta">
-                    <span>System v1.0.0</span>
 
-                    <span class="dot-separator">•</span>
+                <div class="footer-meta">
+
+                    <span>
+                        System v1.0.0
+                    </span>
+
+                    <span class="dot-separator">
+                        •
+                    </span>
 
                     <span class="status-ok">
                         Firebase Architecture Ready
                     </span>
+
                 </div>
 
             </footer>
@@ -827,7 +1203,10 @@
     </div>
 
 
-    <!-- Universal Modal -->
+    <!-- =========================================================
+         UNIVERSAL MODAL
+         ========================================================= -->
+
     <div
         class="modal-overlay"
         id="app-modal"
@@ -856,6 +1235,7 @@
                     type="button"
                     aria-label="Close Modal"
                 >
+
                     <svg
                         width="20"
                         height="20"
@@ -865,9 +1245,21 @@
                         stroke-width="2"
                         aria-hidden="true"
                     >
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                        <line
+                            x1="18"
+                            y1="6"
+                            x2="6"
+                            y2="18"
+                        ></line>
+
+                        <line
+                            x1="6"
+                            y1="6"
+                            x2="18"
+                            y2="18"
+                        ></line>
                     </svg>
+
                 </button>
 
             </div>
@@ -893,7 +1285,10 @@
     </div>
 
 
-    <!-- Toast Notification System -->
+    <!-- =========================================================
+         TOAST NOTIFICATION SYSTEM
+         ========================================================= -->
+
     <div
         class="toast-container"
         id="toast-container"
@@ -906,33 +1301,34 @@
          ========================================================= -->
 
     <!-- Configuration -->
-    <script src="js/config.js"></script>
+    <script src="./js/config.js"></script>
 
     <!-- Utilities -->
-    <script src="js/utils.js"></script>
+    <script src="./js/utils.js"></script>
 
-    <!-- Firebase/Data Service -->
-    <script src="js/data-service.js"></script>
+    <!-- Firebase / Data Service -->
+    <script src="./js/data-service.js"></script>
 
     <!-- UI -->
-    <script src="js/ui.js"></script>
+    <script src="./js/ui.js"></script>
 
-    <!-- Admin Feature Modules -->
-    <script src="js/analytics.js"></script>
-    <script src="js/menu.js"></script>
-    <script src="js/orders.js"></script>
-    <script src="js/offers.js"></script>
-    <script src="js/gallery.js"></script>
-    <script src="js/reviews.js"></script>
-    <script src="js/customers.js"></script>
-    <script src="js/announcements.js"></script>
-    <script src="js/content.js"></script>
-    <script src="js/seo.js"></script>
-    <script src="js/settings.js"></script>
+    <!-- Feature Modules -->
+    <script src="./js/analytics.js"></script>
+    <script src="./js/menu.js"></script>
+    <script src="./js/orders.js"></script>
+    <script src="./js/offers.js"></script>
+    <script src="./js/gallery.js"></script>
+    <script src="./js/reviews.js"></script>
+    <script src="./js/customers.js"></script>
+    <script src="./js/announcements.js"></script>
+    <script src="./js/content.js"></script>
+    <script src="./js/seo.js"></script>
+    <script src="./js/settings.js"></script>
+
 
     <!--
         IMPORTANT:
-        auth.js is NOT loaded here as a normal script.
+        auth.js is NOT loaded directly here.
 
         admin.js imports auth.js as an ES module.
     -->
@@ -940,19 +1336,31 @@
     <!-- Main Admin Application -->
     <script
         type="module"
-        src="js/admin.js"
+        src="./js/admin.js"
     ></script>
 
 
-    <!--
-        Reveal the application only after Firebase authentication
-        has been successfully verified by admin.js.
-    -->
+    <!-- =========================================================
+         AUTHENTICATED APPLICATION REVEAL
+         =========================================================
+
+         admin.js can call:
+
+             window.revealAdminApplication();
+
+         after Firebase authentication has been verified.
+         ========================================================= -->
+
     <script>
         window.revealAdminApplication = function () {
-            const shell = document.getElementById("app-shell");
+
+            const shell =
+                document.getElementById("app-shell");
+
             const loadingScreen =
-                document.getElementById("auth-loading-screen");
+                document.getElementById(
+                    "auth-loading-screen"
+                );
 
             if (shell) {
                 shell.classList.add("authenticated");
@@ -962,9 +1370,12 @@
                 loadingScreen.classList.add("is-hidden");
             }
 
-            document.documentElement.classList.remove("auth-pending");
+            document.documentElement.classList.remove(
+                "auth-pending"
+            );
         };
     </script>
 
 </body>
+
 </html>

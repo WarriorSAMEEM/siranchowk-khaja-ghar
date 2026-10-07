@@ -1,604 +1,944 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
-  <meta
-    name="robots"
-    content="noindex, nofollow, noarchive"
-  >
-
-  <title>Admin Login | Siranchowk Khaja Ghar</title>
-
-  <link
-    rel="preconnect"
-    href="https://fonts.googleapis.com"
-  >
-  <link
-    rel="preconnect"
-    href="https://fonts.gstatic.com"
-    crossorigin
-  >
-
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet"
-  >
-
-  <style>
-    :root {
-      --bg-1: #eafcff;
-      --bg-2: #dff7f7;
-      --bg-3: #f5fcfc;
-
-      --text: #102a2e;
-      --muted: #647b7f;
-
-      --primary: #159ca5;
-      --primary-dark: #087f89;
-
-      --border: rgba(21, 156, 165, 0.18);
-      --glass: rgba(255, 255, 255, 0.68);
-
-      --danger: #c0392b;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html,
-    body {
-      width: 100%;
-      min-height: 100%;
-    }
-
-    body {
-      min-height: 100vh;
-      font-family: "Inter", sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(
-          circle at 15% 20%,
-          rgba(91, 220, 226, 0.28),
-          transparent 30%
-        ),
-        radial-gradient(
-          circle at 85% 80%,
-          rgba(83, 190, 200, 0.22),
-          transparent 30%
-        ),
-        linear-gradient(
-          135deg,
-          var(--bg-1),
-          var(--bg-2),
-          var(--bg-3)
-        );
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      padding: 24px;
-
-      overflow-x: hidden;
-      position: relative;
-    }
-
-    /* Organic background shapes */
-
-    body::before,
-    body::after {
-      content: "";
-      position: fixed;
-      z-index: 0;
-      pointer-events: none;
-
-      filter: blur(2px);
-      opacity: 0.45;
-    }
 
-    body::before {
-      width: 420px;
-      height: 420px;
+    <meta charset="UTF-8">
 
-      top: -180px;
-      left: -140px;
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-      border-radius: 48% 52% 63% 37% / 44% 38% 62% 56%;
+    <meta
+        name="robots"
+        content="noindex, nofollow, noarchive"
+    >
 
-      background:
-        linear-gradient(
-          135deg,
-          rgba(74, 202, 211, 0.26),
-          rgba(255, 255, 255, 0.05)
-        );
+    <title>
+        Admin Login | Siranchowk Khaja Ghar
+    </title>
 
-      transform: rotate(18deg);
-    }
 
-    body::after {
-      width: 480px;
-      height: 480px;
+    <!-- ================================================================
+         GOOGLE FONT
+    ================================================================= -->
 
-      right: -200px;
-      bottom: -210px;
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
 
-      border-radius: 57% 43% 34% 66% / 48% 59% 41% 52%;
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
 
-      background:
-        linear-gradient(
-          135deg,
-          rgba(21, 156, 165, 0.18),
-          rgba(255, 255, 255, 0.04)
-        );
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
-      transform: rotate(-22deg);
-    }
 
-    .login-wrapper {
-      width: 100%;
-      max-width: 440px;
-      position: relative;
-      z-index: 2;
-    }
+    <!-- ================================================================
+         LOGIN PAGE STYLES
+    ================================================================= -->
 
-    .login-card {
-      width: 100%;
+    <style>
 
-      padding: 38px;
+        :root {
 
-      border: 1px solid var(--border);
-      border-radius: 28px;
+            --bg-1: #eafcff;
+            --bg-2: #dff7f7;
+            --bg-3: #f5fcfc;
 
-      background: var(--glass);
+            --text: #102a2e;
+            --muted: #647b7f;
 
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
+            --primary: #159ca5;
+            --primary-dark: #087f89;
 
-      box-shadow:
-        0 30px 80px rgba(16, 72, 77, 0.13),
-        0 8px 25px rgba(16, 72, 77, 0.06);
+            --border: rgba(21, 156, 165, 0.18);
 
-      animation: cardIn 0.65s ease both;
-    }
+            --glass: rgba(255, 255, 255, 0.68);
 
-    @keyframes cardIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px) scale(0.98);
-      }
+            --danger: #c0392b;
+        }
 
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
 
-    .brand {
-      text-align: center;
-      margin-bottom: 30px;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    .shield {
-      width: 68px;
-      height: 68px;
 
-      margin: 0 auto 18px;
+        html,
+        body {
 
-      display: flex;
-      align-items: center;
-      justify-content: center;
+            width: 100%;
+            min-height: 100%;
+        }
 
-      border-radius: 20px;
 
-      background:
-        linear-gradient(
-          135deg,
-          rgba(21, 156, 165, 0.16),
-          rgba(255, 255, 255, 0.72)
-        );
+        body {
 
-      border: 1px solid rgba(21, 156, 165, 0.18);
+            min-height: 100vh;
 
-      box-shadow:
-        0 12px 30px rgba(21, 156, 165, 0.12);
-    }
+            font-family:
+                "Inter",
+                sans-serif;
 
-    .shield span {
-      font-size: 29px;
-    }
+            color: var(--text);
 
-    .brand h1 {
-      font-size: 25px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-    }
+            background:
 
-    .brand p {
-      margin-top: 8px;
+                radial-gradient(
+                    circle at 15% 20%,
+                    rgba(91, 220, 226, 0.28),
+                    transparent 30%
+                ),
 
-      color: var(--muted);
+                radial-gradient(
+                    circle at 85% 80%,
+                    rgba(83, 190, 200, 0.22),
+                    transparent 30%
+                ),
 
-      font-size: 13px;
-      line-height: 1.6;
-    }
+                linear-gradient(
+                    135deg,
+                    var(--bg-1),
+                    var(--bg-2),
+                    var(--bg-3)
+                );
 
-    .form-group {
-      margin-bottom: 20px;
-    }
+            display: flex;
 
-    .form-group label {
-      display: block;
+            align-items: center;
 
-      margin-bottom: 8px;
+            justify-content: center;
 
-      font-size: 13px;
-      font-weight: 700;
-    }
+            padding: 24px;
 
-    .input-wrapper {
-      position: relative;
-    }
+            overflow-x: hidden;
 
-    .input-wrapper input {
-      width: 100%;
+            position: relative;
+        }
 
-      height: 54px;
 
-      padding: 0 16px 0 17px;
+        /* ================================================================
+           ORGANIC BACKGROUND SHAPES
+        ================================================================= */
 
-      border: 1px solid rgba(16, 42, 46, 0.12);
-      border-radius: 14px;
+        body::before,
+        body::after {
 
-      outline: none;
+            content: "";
 
-      background: rgba(255, 255, 255, 0.66);
+            position: fixed;
 
-      color: var(--text);
+            z-index: 0;
 
-      font: inherit;
-      font-size: 14px;
+            pointer-events: none;
 
-      transition:
-        border-color 0.25s ease,
-        box-shadow 0.25s ease,
-        background 0.25s ease;
-    }
+            filter: blur(2px);
 
-    .input-wrapper input::placeholder {
-      color: #91a4a7;
-    }
+            opacity: 0.45;
+        }
 
-    .input-wrapper input:focus {
-      border-color: rgba(21, 156, 165, 0.65);
 
-      background: rgba(255, 255, 255, 0.9);
+        body::before {
 
-      box-shadow:
-        0 0 0 4px rgba(21, 156, 165, 0.11),
-        0 8px 25px rgba(21, 156, 165, 0.07);
-    }
+            width: 420px;
 
-    .password-toggle {
-      position: absolute;
+            height: 420px;
 
-      top: 50%;
-      right: 14px;
+            top: -180px;
 
-      transform: translateY(-50%);
+            left: -140px;
 
-      border: 0;
-      background: transparent;
+            border-radius:
+                48% 52% 63% 37%
+                /
+                44% 38% 62% 56%;
 
-      color: #71888c;
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(74, 202, 211, 0.26),
+                    rgba(255, 255, 255, 0.05)
+                );
 
-      cursor: pointer;
+            transform: rotate(18deg);
+        }
 
-      font-size: 13px;
-      font-weight: 600;
 
-      padding: 7px;
-    }
+        body::after {
 
-    .password-toggle:hover {
-      color: var(--primary-dark);
-    }
+            width: 480px;
 
-    .submit-btn {
-      width: 100%;
-      height: 54px;
+            height: 480px;
 
-      margin-top: 6px;
+            right: -200px;
 
-      border: 0;
-      border-radius: 14px;
+            bottom: -210px;
 
-      background:
-        linear-gradient(
-          135deg,
-          var(--primary),
-          var(--primary-dark)
-        );
+            border-radius:
+                57% 43% 34% 66%
+                /
+                48% 59% 41% 52%;
 
-      color: #fff;
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(21, 156, 165, 0.18),
+                    rgba(255, 255, 255, 0.04)
+                );
 
-      font-family: inherit;
-      font-size: 14px;
-      font-weight: 700;
+            transform: rotate(-22deg);
+        }
 
-      cursor: pointer;
 
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
+        /* ================================================================
+           LOGIN WRAPPER
+        ================================================================= */
 
-      box-shadow:
-        0 12px 25px rgba(21, 156, 165, 0.22);
+        .login-wrapper {
 
-      transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease,
-        opacity 0.2s ease;
-    }
+            width: 100%;
 
-    .submit-btn:hover {
-      transform: translateY(-2px);
+            max-width: 440px;
 
-      box-shadow:
-        0 17px 34px rgba(21, 156, 165, 0.27);
-    }
+            position: relative;
 
-    .submit-btn:active {
-      transform: translateY(0);
-    }
+            z-index: 2;
+        }
 
-    .submit-btn:disabled {
-      cursor: not-allowed;
-      opacity: 0.65;
-      transform: none;
-    }
 
-    .error-alert {
-      display: none;
+        /* ================================================================
+           LOGIN CARD
+        ================================================================= */
 
-      margin-bottom: 18px;
+        .login-card {
 
-      padding: 12px 14px;
+            width: 100%;
 
-      border-radius: 12px;
+            padding: 38px;
 
-      border: 1px solid rgba(192, 57, 43, 0.18);
+            border:
+                1px solid
+                var(--border);
 
-      background: rgba(192, 57, 43, 0.07);
+            border-radius: 28px;
 
-      color: var(--danger);
+            background: var(--glass);
 
-      font-size: 12px;
-      line-height: 1.5;
-    }
+            backdrop-filter:
+                blur(24px);
 
-    .error-alert.show {
-      display: block;
-      animation: shake 0.3s ease;
-    }
+            -webkit-backdrop-filter:
+                blur(24px);
 
-    @keyframes shake {
-      0%, 100% {
-        transform: translateX(0);
-      }
+            box-shadow:
 
-      25% {
-        transform: translateX(-5px);
-      }
+                0 30px 80px
+                rgba(16, 72, 77, 0.13),
 
-      75% {
-        transform: translateX(5px);
-      }
-    }
+                0 8px 25px
+                rgba(16, 72, 77, 0.06);
 
-    .security-note {
-      margin-top: 23px;
+            animation:
+                cardIn
+                0.65s
+                ease
+                both;
+        }
 
-      text-align: center;
 
-      color: #7b8f92;
+        @keyframes cardIn {
 
-      font-size: 11px;
-      line-height: 1.6;
-    }
+            from {
 
-    .security-note strong {
-      color: #557276;
-    }
+                opacity: 0;
 
-    .loading {
-      display: none;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
+                transform:
+                    translateY(20px)
+                    scale(0.98);
+            }
 
-    .loading.active {
-      display: flex;
-    }
+            to {
 
-    .loading-dot {
-      width: 7px;
-      height: 7px;
+                opacity: 1;
 
-      border-radius: 50%;
+                transform:
+                    translateY(0)
+                    scale(1);
+            }
+        }
 
-      background: #fff;
 
-      animation: loading 0.8s infinite alternate;
-    }
+        /* ================================================================
+           BRAND
+        ================================================================= */
 
-    .loading-dot:nth-child(2) {
-      animation-delay: 0.15s;
-    }
+        .brand {
 
-    .loading-dot:nth-child(3) {
-      animation-delay: 0.3s;
-    }
+            text-align: center;
 
-    @keyframes loading {
-      from {
-        opacity: 0.3;
-        transform: translateY(0);
-      }
+            margin-bottom: 30px;
+        }
 
-      to {
-        opacity: 1;
-        transform: translateY(-3px);
-      }
-    }
 
-    @media (max-width: 520px) {
-      body {
-        padding: 16px;
-      }
+        .shield {
 
-      .login-card {
-        padding: 28px 22px;
-        border-radius: 23px;
-      }
+            width: 68px;
 
-      .brand h1 {
-        font-size: 22px;
-      }
-    }
-  </style>
+            height: 68px;
+
+            margin:
+                0 auto 18px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            border-radius: 20px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(21, 156, 165, 0.16),
+                    rgba(255, 255, 255, 0.72)
+                );
+
+            border:
+                1px solid
+                rgba(21, 156, 165, 0.18);
+
+            box-shadow:
+                0 12px 30px
+                rgba(21, 156, 165, 0.12);
+        }
+
+
+        .shield span {
+
+            font-size: 29px;
+        }
+
+
+        .brand h1 {
+
+            font-size: 25px;
+
+            font-weight: 800;
+
+            letter-spacing: -0.5px;
+        }
+
+
+        .brand p {
+
+            margin-top: 8px;
+
+            color: var(--muted);
+
+            font-size: 13px;
+
+            line-height: 1.6;
+        }
+
+
+        /* ================================================================
+           FORM
+        ================================================================= */
+
+        .form-group {
+
+            margin-bottom: 20px;
+        }
+
+
+        .form-group label {
+
+            display: block;
+
+            margin-bottom: 8px;
+
+            font-size: 13px;
+
+            font-weight: 700;
+        }
+
+
+        .input-wrapper {
+
+            position: relative;
+        }
+
+
+        .input-wrapper input {
+
+            width: 100%;
+
+            height: 54px;
+
+            padding:
+                0 16px 0 17px;
+
+            border:
+                1px solid
+                rgba(16, 42, 46, 0.12);
+
+            border-radius: 14px;
+
+            outline: none;
+
+            background:
+                rgba(255, 255, 255, 0.66);
+
+            color: var(--text);
+
+            font: inherit;
+
+            font-size: 14px;
+
+            transition:
+                border-color 0.25s ease,
+                box-shadow 0.25s ease,
+                background 0.25s ease;
+        }
+
+
+        .input-wrapper input::placeholder {
+
+            color: #91a4a7;
+        }
+
+
+        .input-wrapper input:focus {
+
+            border-color:
+                rgba(21, 156, 165, 0.65);
+
+            background:
+                rgba(255, 255, 255, 0.9);
+
+            box-shadow:
+
+                0 0 0 4px
+                rgba(21, 156, 165, 0.11),
+
+                0 8px 25px
+                rgba(21, 156, 165, 0.07);
+        }
+
+
+        /* ================================================================
+           PASSWORD TOGGLE
+        ================================================================= */
+
+        .password-toggle {
+
+            position: absolute;
+
+            top: 50%;
+
+            right: 14px;
+
+            transform:
+                translateY(-50%);
+
+            border: 0;
+
+            background: transparent;
+
+            color: #71888c;
+
+            cursor: pointer;
+
+            font-size: 13px;
+
+            font-weight: 600;
+
+            padding: 7px;
+        }
+
+
+        .password-toggle:hover {
+
+            color:
+                var(--primary-dark);
+        }
+
+
+        /* ================================================================
+           SUBMIT BUTTON
+        ================================================================= */
+
+        .submit-btn {
+
+            width: 100%;
+
+            height: 54px;
+
+            margin-top: 6px;
+
+            border: 0;
+
+            border-radius: 14px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--primary),
+                    var(--primary-dark)
+                );
+
+            color: #fff;
+
+            font-family: inherit;
+
+            font-size: 14px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 10px;
+
+            box-shadow:
+                0 12px 25px
+                rgba(21, 156, 165, 0.22);
+
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease,
+                opacity 0.2s ease;
+        }
+
+
+        .submit-btn:hover {
+
+            transform:
+                translateY(-2px);
+
+            box-shadow:
+                0 17px 34px
+                rgba(21, 156, 165, 0.27);
+        }
+
+
+        .submit-btn:active {
+
+            transform:
+                translateY(0);
+        }
+
+
+        .submit-btn:disabled {
+
+            cursor: not-allowed;
+
+            opacity: 0.65;
+
+            transform: none;
+        }
+
+
+        /* ================================================================
+           ERROR
+        ================================================================= */
+
+        .error-alert {
+
+            display: none;
+
+            margin-bottom: 18px;
+
+            padding: 12px 14px;
+
+            border:
+                1px solid
+                rgba(192, 57, 43, 0.18);
+
+            border-radius: 12px;
+
+            background:
+                rgba(192, 57, 43, 0.07);
+
+            color: var(--danger);
+
+            font-size: 12px;
+
+            line-height: 1.5;
+        }
+
+
+        .error-alert.show {
+
+            display: block;
+
+            animation:
+                shake
+                0.3s
+                ease;
+        }
+
+
+        @keyframes shake {
+
+            0%,
+            100% {
+
+                transform:
+                    translateX(0);
+            }
+
+            25% {
+
+                transform:
+                    translateX(-5px);
+            }
+
+            75% {
+
+                transform:
+                    translateX(5px);
+            }
+        }
+
+
+        /* ================================================================
+           SECURITY NOTE
+        ================================================================= */
+
+        .security-note {
+
+            margin-top: 23px;
+
+            text-align: center;
+
+            color: #7b8f92;
+
+            font-size: 11px;
+
+            line-height: 1.6;
+        }
+
+
+        .security-note strong {
+
+            color: #557276;
+        }
+
+
+        /* ================================================================
+           LOADING
+        ================================================================= */
+
+        .loading {
+
+            display: none;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 8px;
+        }
+
+
+        .loading.active {
+
+            display: flex;
+        }
+
+
+        .loading-dot {
+
+            width: 7px;
+
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: #fff;
+
+            animation:
+                loading
+                0.8s
+                infinite
+                alternate;
+        }
+
+
+        .loading-dot:nth-child(2) {
+
+            animation-delay: 0.15s;
+        }
+
+
+        .loading-dot:nth-child(3) {
+
+            animation-delay: 0.3s;
+        }
+
+
+        @keyframes loading {
+
+            from {
+
+                opacity: 0.3;
+
+                transform:
+                    translateY(0);
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform:
+                    translateY(-3px);
+            }
+        }
+
+
+        /* ================================================================
+           MOBILE
+        ================================================================= */
+
+        @media (max-width: 520px) {
+
+            body {
+
+                padding: 16px;
+            }
+
+
+            .login-card {
+
+                padding: 28px 22px;
+
+                border-radius: 23px;
+            }
+
+
+            .brand h1 {
+
+                font-size: 22px;
+            }
+        }
+
+    </style>
+
 </head>
+
 
 <body>
 
-  <main class="login-wrapper">
 
-    <section class="login-card">
+    <main class="login-wrapper">
 
-      <div class="brand">
+        <section class="login-card">
 
-        <div class="shield" aria-hidden="true">
-          <span>🛡️</span>
-        </div>
 
-        <h1>Admin Portal</h1>
+            <!-- ============================================================
+                 BRAND
+            ============================================================= -->
 
-        <p>
-          Siranchowk Khaja Ghar<br>
-          Secure Management System
-        </p>
+            <div class="brand">
 
-      </div>
+                <div
+                    class="shield"
+                    aria-hidden="true"
+                >
+                    <span>🛡️</span>
+                </div>
 
-      <div
-        id="login-error"
-        class="error-alert"
-        role="alert"
-        aria-live="polite"
-      >
-        <span id="error-text">
-          Invalid email or password.
-        </span>
-      </div>
 
-      <form id="admin-login-form" novalidate>
+                <h1>
+                    Admin Portal
+                </h1>
 
-        <div class="form-group">
 
-          <label for="admin-email">
-            Email Address
-          </label>
+                <p>
+                    Siranchowk Khaja Ghar
+                    <br>
+                    Secure Management System
+                </p>
 
-          <div class="input-wrapper">
+            </div>
 
-            <input
-              type="email"
-              id="admin-email"
-              name="email"
-              placeholder="admin@example.com"
-              autocomplete="username"
-              required
+
+            <!-- ============================================================
+                 ERROR MESSAGE
+
+                 IMPORTANT:
+                 IDs must match login-handler.js
+            ============================================================= -->
+
+            <div
+                id="login-error"
+                class="error-alert"
+                role="alert"
+                aria-live="polite"
             >
 
-          </div>
+                <span id="error-text">
+                    Invalid email or password.
+                </span>
 
-        </div>
+            </div>
 
-        <div class="form-group">
 
-          <label for="admin-password">
-            Password
-          </label>
+            <!-- ============================================================
+                 LOGIN FORM
+            ============================================================= -->
 
-          <div class="input-wrapper">
-
-            <input
-              type="password"
-              id="admin-password"
-              name="password"
-              placeholder="Enter your password"
-              autocomplete="current-password"
-              minlength="6"
-              required
+            <form
+                id="admin-login-form"
+                novalidate
             >
 
-            <button
-              type="button"
-              class="password-toggle"
-              id="toggle-password"
-              aria-label="Show password"
-            >
-              Show
-            </button>
 
-          </div>
+                <!-- EMAIL -->
 
-        </div>
+                <div class="form-group">
 
-        <button
-          type="submit"
-          class="submit-btn"
-          id="btn-submit"
-        >
+                    <label for="admin-email">
+                        Email Address
+                    </label>
 
-          <span id="submit-text">
-            Sign in securely
-          </span>
 
-          <span
-            id="loading"
-            class="loading"
-            aria-hidden="true"
-          >
-            <span class="loading-dot"></span>
-            <span class="loading-dot"></span>
-            <span class="loading-dot"></span>
-          </span>
+                    <div class="input-wrapper">
 
-        </button>
+                        <input
+                            type="email"
+                            id="admin-email"
+                            name="email"
+                            placeholder="admin@example.com"
+                            autocomplete="username"
+                            required
+                        >
 
-      </form>
+                    </div>
 
-      <p class="security-note">
-        🔒 <strong>Protected area.</strong>
-        Authorized administrators only.
-      </p>
+                </div>
 
-    </section>
 
-  </main>
+                <!-- PASSWORD -->
 
-  <script type="module" src="./js/login-handler.js"></script>
+                <div class="form-group">
+
+                    <label for="admin-password">
+                        Password
+                    </label>
+
+
+                    <div class="input-wrapper">
+
+                        <input
+                            type="password"
+                            id="admin-password"
+                            name="password"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            minlength="6"
+                            required
+                        >
+
+
+                        <button
+                            type="button"
+                            class="password-toggle"
+                            id="toggle-password"
+                            aria-label="Show password"
+                        >
+                            Show
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- SUBMIT -->
+
+                <button
+                    type="submit"
+                    class="submit-btn"
+                    id="btn-submit"
+                >
+
+                    <span id="submit-text">
+                        Sign in securely
+                    </span>
+
+
+                    <span
+                        id="loading"
+                        class="loading"
+                        aria-hidden="true"
+                    >
+
+                        <span class="loading-dot"></span>
+
+                        <span class="loading-dot"></span>
+
+                        <span class="loading-dot"></span>
+
+                    </span>
+
+                </button>
+
+            </form>
+
+
+            <!-- ============================================================
+                 SECURITY NOTE
+            ============================================================= -->
+
+            <p class="security-note">
+
+                🔒
+
+                <strong>
+                    Protected area.
+                </strong>
+
+                Authorized administrators only.
+
+            </p>
+
+
+        </section>
+
+    </main>
+
+
+    <!-- ================================================================
+         ADMIN LOGIN JAVASCRIPT
+
+         Vite bundles Firebase dependencies automatically.
+    ================================================================= -->
+
+    <script
+        type="module"
+        src="./js/login-handler.js"
+    ></script>
+
 
 </body>
+
 </html>
