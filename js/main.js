@@ -15,30 +15,48 @@ import {
 
 console.log("Firebase initialized successfully:", db);
 
+
 // ============================================================================
 // 1. CENTRAL BUSINESS CONFIGURATION
 // ============================================================================
 
 const SITE_CONFIG = {
+
     businessName: "Siranchowk Khaja Ghar",
+
     nepaliName: "सिरानचोक खाजा घर",
+
     tagline: "Your Satisfaction Is Our Satisfaction",
+
     phone: "9821233154",
+
     whatsapp: "9779821233154",
+
     address: "Khairahani 6, Parsa, Chitwan, Nepal",
+
     landmark: "Behind Chaudhary Medical",
+
     hours: "6:30 AM – 9:00 PM",
+
     openingTime: "2026-09-28T09:00:00+05:45",
+
     timezone: "Asia/Kathmandu",
+
     mapsUrl: "https://share.google/TQzV5f70BfISX9l1h"
+
 };
+
 
 // ============================================================================
 // 2. DEFAULT / FALLBACK MENU DATA
 // ============================================================================
 
 const menuItems = [
+
+    // ------------------------------------------------------------------------
     // MOMO
+    // ------------------------------------------------------------------------
+
     {
         id: "momo-chicken",
         category: "momo",
@@ -69,7 +87,11 @@ const menuItems = [
         alt: "Steamed Nepali Buff Momo with spicy sauce"
     },
 
+
+    // ------------------------------------------------------------------------
     // CHOWMEIN
+    // ------------------------------------------------------------------------
+
     {
         id: "chowmein-veg",
         category: "chowmein",
@@ -100,7 +122,11 @@ const menuItems = [
         alt: "Nepali Chicken Chowmein noodles"
     },
 
+
+    // ------------------------------------------------------------------------
     // BREAD / ROTI
+    // ------------------------------------------------------------------------
+
     {
         id: "roti-plain",
         category: "roti",
@@ -131,7 +157,11 @@ const menuItems = [
         alt: "Golden crispy Nepali Paratha"
     },
 
+
+    // ------------------------------------------------------------------------
     // TEA
+    // ------------------------------------------------------------------------
+
     {
         id: "tea-milk",
         category: "tea",
@@ -162,7 +192,11 @@ const menuItems = [
         alt: "Fresh hot black tea in a glass"
     },
 
+
+    // ------------------------------------------------------------------------
     // RICE / SPECIAL
+    // ------------------------------------------------------------------------
+
     {
         id: "special-biryani",
         category: "special",
@@ -178,7 +212,11 @@ const menuItems = [
         alt: "Special Chicken Biryani rice dish"
     },
 
+
+    // ------------------------------------------------------------------------
     // SNACKS / OTHER
+    // ------------------------------------------------------------------------
+
     {
         id: "snack-chana",
         category: "snacks",
@@ -253,31 +291,157 @@ const menuItems = [
         image: "https://i.postimg.cc/d1V1cTR8/fried-chicken.jpg",
         alt: "Golden crispy fried chicken"
     }
+
 ];
 
+
 // ============================================================================
-// 3. DOM READY
+// 3. PWA INSTALL PROMPT
+// ============================================================================
+//
+// The browser's beforeinstallprompt event is captured here.
+//
+// IMPORTANT:
+// We call preventDefault() only when an actual install control exists.
+// This prevents the browser console warning:
+// "beforeinstallprompt event.preventDefault() called..."
+//
+// The install prompt itself is shown only after a real user click.
+// ============================================================================
+
+let deferredInstallPrompt = null;
+let installPromptReady = false;
+
+
+function initPWAInstall() {
+
+    const installButtons = document.querySelectorAll(
+        "#install-app-btn, " +
+        "#pwa-install-btn, " +
+        "[data-install-app], " +
+        ".install-app-btn"
+    );
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+
+        // If there is no custom install button/banner,
+        // allow the browser to handle the event normally.
+        if (!installButtons.length) {
+            return;
+        }
+
+        event.preventDefault();
+
+        deferredInstallPrompt = event;
+        installPromptReady = true;
+
+        installButtons.forEach((button) => {
+
+            button.hidden = false;
+            button.disabled = false;
+
+            button.addEventListener(
+                "click",
+                handleInstallClick,
+                { once: true }
+            );
+
+        });
+
+        console.log("PWA install prompt is ready.");
+
+    });
+
+
+    window.addEventListener("appinstalled", () => {
+
+        deferredInstallPrompt = null;
+        installPromptReady = false;
+
+        installButtons.forEach((button) => {
+            button.hidden = true;
+        });
+
+        console.log("Siranchowk Khaja Ghar app installed successfully.");
+
+    });
+
+}
+
+
+async function handleInstallClick() {
+
+    if (!deferredInstallPrompt || !installPromptReady) {
+        console.log("PWA install prompt is not available yet.");
+        return;
+    }
+
+    try {
+
+        const promptEvent = deferredInstallPrompt;
+
+        deferredInstallPrompt = null;
+        installPromptReady = false;
+
+        await promptEvent.prompt();
+
+        const choiceResult = await promptEvent.userChoice;
+
+        console.log(
+            "PWA installation result:",
+            choiceResult.outcome
+        );
+
+    } catch (error) {
+
+        console.error(
+            "PWA installation prompt failed:",
+            error
+        );
+
+    }
+
+}
+
+
+// ============================================================================
+// 4. DOM READY
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
+
     initMobileNav();
+
     initCountdown();
+
     initMenuPage();
+
     setCurrentYear();
+
     highlightActiveNav();
+
+    initPWAInstall();
+
 });
 
+
 // ============================================================================
-// 4. MOBILE NAVIGATION
+// 5. MOBILE NAVIGATION
 // ============================================================================
 
 function initMobileNav() {
-    const toggleBtn = document.querySelector(".mobile-nav-toggle");
-    const nav = document.getElementById("primary-nav");
+
+    const toggleBtn =
+        document.querySelector(".mobile-nav-toggle");
+
+    const nav =
+        document.getElementById("primary-nav");
 
     if (!toggleBtn || !nav) return;
 
+
     toggleBtn.addEventListener("click", () => {
+
         const isExpanded =
             toggleBtn.getAttribute("aria-expanded") === "true";
 
@@ -287,32 +451,53 @@ function initMobileNav() {
         );
 
         nav.classList.toggle("is-open");
+
     });
 
-    document.addEventListener("click", (e) => {
+
+    document.addEventListener("click", (event) => {
+
         if (
-            !nav.contains(e.target) &&
-            !toggleBtn.contains(e.target) &&
+            !nav.contains(event.target) &&
+            !toggleBtn.contains(event.target) &&
             nav.classList.contains("is-open")
         ) {
+
             nav.classList.remove("is-open");
-            toggleBtn.setAttribute("aria-expanded", "false");
+
+            toggleBtn.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
         }
+
     });
+
 }
 
-// ============================================================================
-// 5. OPENING STATUS
-// ============================================================================
 
+// ============================================================================
+// 6. OPENING STATUS
+// ============================================================================
+//
 // Business is already open.
 // Countdown remains only as compatibility support for older HTML.
+// ============================================================================
 
 function initCountdown() {
-    const timerDays = document.getElementById("timer-days");
-    const timerHours = document.getElementById("timer-hours");
-    const timerMins = document.getElementById("timer-mins");
-    const timerSecs = document.getElementById("timer-secs");
+
+    const timerDays =
+        document.getElementById("timer-days");
+
+    const timerHours =
+        document.getElementById("timer-hours");
+
+    const timerMins =
+        document.getElementById("timer-mins");
+
+    const timerSecs =
+        document.getElementById("timer-secs");
 
     const countdownTimer =
         document.getElementById("countdown-timer");
@@ -323,6 +508,7 @@ function initCountdown() {
     const openingBadge =
         document.getElementById("opening-badge");
 
+
     if (
         !timerDays ||
         !timerHours ||
@@ -332,14 +518,21 @@ function initCountdown() {
         return;
     }
 
+
     const openingDate =
         new Date(SITE_CONFIG.openingTime).getTime();
 
+
     function updateTimer() {
+
         const now = Date.now();
-        const timeDifference = openingDate - now;
+
+        const timeDifference =
+            openingDate - now;
+
 
         if (timeDifference <= 0) {
+
             if (countdownTimer) {
                 countdownTimer.classList.add("hidden");
             }
@@ -349,33 +542,52 @@ function initCountdown() {
             }
 
             if (openingBadge) {
-                openingBadge.textContent = "NOW OPEN";
+
+                openingBadge.textContent =
+                    "NOW OPEN";
+
                 openingBadge.style.backgroundColor =
                     "var(--color-whatsapp)";
-                openingBadge.style.color = "#ffffff";
+
+                openingBadge.style.color =
+                    "#ffffff";
+
             }
 
             return;
         }
 
-        const days = Math.floor(
-            timeDifference / (1000 * 60 * 60 * 24)
-        );
 
-        const hours = Math.floor(
-            (timeDifference % (1000 * 60 * 60 * 24)) /
-            (1000 * 60 * 60)
-        );
+        const days =
+            Math.floor(
+                timeDifference /
+                (1000 * 60 * 60 * 24)
+            );
 
-        const minutes = Math.floor(
-            (timeDifference % (1000 * 60 * 60)) /
-            (1000 * 60)
-        );
 
-        const seconds = Math.floor(
-            (timeDifference % (1000 * 60)) /
-            1000
-        );
+        const hours =
+            Math.floor(
+                (timeDifference %
+                    (1000 * 60 * 60 * 24)) /
+                (1000 * 60 * 60)
+            );
+
+
+        const minutes =
+            Math.floor(
+                (timeDifference %
+                    (1000 * 60 * 60)) /
+                (1000 * 60)
+            );
+
+
+        const seconds =
+            Math.floor(
+                (timeDifference %
+                    (1000 * 60)) /
+                1000
+            );
+
 
         timerDays.textContent =
             String(days).padStart(2, "0");
@@ -388,78 +600,118 @@ function initCountdown() {
 
         timerSecs.textContent =
             String(seconds).padStart(2, "0");
+
     }
 
+
     updateTimer();
+
     setInterval(updateTimer, 1000);
+
 }
 
+
 // ============================================================================
-// 6. MENU PAGE
+// 7. MENU PAGE
 // ============================================================================
 
 function initMenuPage() {
+
     const menuContainer =
-        document.getElementById("menu-grid-container");
+        document.getElementById(
+            "menu-grid-container"
+        );
 
     if (!menuContainer) return;
 
+
     const filterBtns =
-        document.querySelectorAll(".filter-btn");
+        document.querySelectorAll(
+            ".filter-btn"
+        );
+
 
     const urlParams =
-        new URLSearchParams(window.location.search);
+        new URLSearchParams(
+            window.location.search
+        );
+
 
     const initialCategory =
         urlParams.get("category") || "all";
 
+
     renderMenuItems(initialCategory);
 
+
     filterBtns.forEach((btn) => {
+
         if (
             btn.getAttribute("data-category") ===
             initialCategory
         ) {
+
             btn.classList.add("active");
+
         } else {
+
             btn.classList.remove("active");
+
         }
 
+
         btn.addEventListener("click", () => {
-            filterBtns.forEach((b) =>
-                b.classList.remove("active")
-            );
+
+            filterBtns.forEach((button) => {
+                button.classList.remove("active");
+            });
 
             btn.classList.add("active");
 
+
             const category =
-                btn.getAttribute("data-category");
+                btn.getAttribute(
+                    "data-category"
+                );
+
 
             renderMenuItems(category);
+
         });
+
     });
+
 }
 
+
 // ============================================================================
-// 7. RENDER MENU
+// 8. RENDER MENU
 // ============================================================================
 
 function renderMenuItems(category) {
+
     const menuContainer =
-        document.getElementById("menu-grid-container");
+        document.getElementById(
+            "menu-grid-container"
+        );
 
     if (!menuContainer) return;
 
+
     menuContainer.innerHTML = "";
+
 
     const filteredItems =
         category === "all"
             ? menuItems
             : menuItems.filter(
-                (item) => item.category === category
+                (item) =>
+                    item.category === category
             );
 
+
     if (filteredItems.length === 0) {
+
         menuContainer.innerHTML = `
             <p
                 style="
@@ -475,20 +727,28 @@ function renderMenuItems(category) {
         return;
     }
 
+
     filteredItems.forEach((item) => {
+
         const isSpecial =
             item.category === "special";
 
-        const waText = encodeURIComponent(
-            `Hello Siranchowk Khaja Ghar, I would like to order ${item.name}.`
-        );
+
+        const waText =
+            encodeURIComponent(
+                `Hello Siranchowk Khaja Ghar, I would like to order ${item.name}.`
+            );
+
 
         const waUrl =
             `https://wa.me/${SITE_CONFIG.whatsapp}?text=${waText}`;
 
+
         const cardHtml = `
             <div class="dish-card ${
-                isSpecial ? "special-dish-card" : ""
+                isSpecial
+                    ? "special-dish-card"
+                    : ""
             }">
 
                 <div class="dish-img-wrapper">
@@ -511,19 +771,26 @@ function renderMenuItems(category) {
 
                 </div>
 
+
                 <div class="dish-info">
 
                     <div class="dish-title-row">
-                        <h3>${item.name}</h3>
+
+                        <h3>
+                            ${item.name}
+                        </h3>
 
                         <span class="dish-nepali">
                             ${item.nepaliName}
                         </span>
+
                     </div>
+
 
                     <p class="dish-desc">
                         ${item.description}
                     </p>
+
 
                     <div class="dish-footer">
 
@@ -537,7 +804,11 @@ function renderMenuItems(category) {
                             rel="noopener noreferrer"
                             class="btn-sm btn-whatsapp"
                         >
-                            ${isSpecial ? "Inquire" : "Order"}
+                            ${
+                                isSpecial
+                                    ? "Inquire"
+                                    : "Order"
+                            }
                         </a>
 
                     </div>
@@ -547,137 +818,195 @@ function renderMenuItems(category) {
             </div>
         `;
 
+
         menuContainer.insertAdjacentHTML(
             "beforeend",
             cardHtml
         );
+
     });
+
 }
 
+
 // ============================================================================
-// 8. FIREBASE REALTIME DATABASE
+// 9. FIREBASE REALTIME DATABASE
 // ============================================================================
 //
 // Realtime Database functions are imported from ./firebase.js.
 //
 // This avoids browser module-resolution errors such as:
 // "Failed to resolve module specifier firebase/database"
-//
 // ============================================================================
 
+
 // ============================================================================
-// 9. ADD SAMPLE MENU ITEM TO REALTIME DATABASE
+// 10. ADD SAMPLE MENU ITEM TO REALTIME DATABASE
 // ============================================================================
 
 async function addSampleMenu() {
+
     try {
+
         const menuListRef =
             ref(db, "menu_items");
+
 
         const newItemRef =
             push(menuListRef);
 
+
         await set(newItemRef, {
+
             name: "Special Buff Momo",
+
             price: 150,
+
             category: "momo",
+
             categoryLabel: "Momo",
+
             description:
                 "Special Buff Momo prepared fresh at Siranchowk Khaja Ghar.",
+
             available: true,
-            createdAt: new Date().toISOString()
+
+            createdAt:
+                new Date().toISOString()
+
         });
+
 
         console.log(
             "Menu item saved successfully:",
             newItemRef.key
         );
 
+
         return newItemRef.key;
 
     } catch (error) {
+
         console.error(
             "Error adding menu item:",
             error
         );
 
         throw error;
+
     }
+
 }
 
+
 // ============================================================================
-// 10. FETCH MENU ITEMS FROM REALTIME DATABASE
+// 11. FETCH MENU ITEMS FROM REALTIME DATABASE
 // ============================================================================
 
 async function fetchMenu() {
+
     try {
-        const dbRef = ref(db);
+
+        const dbRef =
+            ref(db);
+
 
         const snapshot =
             await get(
-                child(dbRef, "menu_items")
+                child(
+                    dbRef,
+                    "menu_items"
+                )
             );
 
+
         if (snapshot.exists()) {
+
             const menuData =
                 snapshot.val();
+
 
             console.log(
                 "Menu fetched successfully:",
                 menuData
             );
 
+
             return menuData;
+
         }
+
 
         console.log(
             "No menu data available in Realtime Database."
         );
 
+
         return {};
 
     } catch (error) {
+
         console.error(
             "Error fetching menu:",
             error
         );
 
         return {};
+
     }
+
 }
 
+
 // ============================================================================
-// 11. HELPER FUNCTIONS
+// 12. HELPER FUNCTIONS
 // ============================================================================
 
 function setCurrentYear() {
+
     const yearEls =
-        document.querySelectorAll("#current-year");
+        document.querySelectorAll(
+            "#current-year"
+        );
+
 
     const currentYear =
         new Date().getFullYear();
 
+
     yearEls.forEach((el) => {
-        el.textContent = currentYear;
+
+        el.textContent =
+            currentYear;
+
     });
+
 }
 
+
 // ============================================================================
-// 12. ACTIVE NAVIGATION
+// 13. ACTIVE NAVIGATION
 // ============================================================================
 
 function highlightActiveNav() {
+
     const currentPath =
         window.location.pathname
             .split("/")
             .pop() || "index.html";
 
+
     const navLinks =
-        document.querySelectorAll(".nav-link");
+        document.querySelectorAll(
+            ".nav-link"
+        );
+
 
     navLinks.forEach((link) => {
+
         const href =
             link.getAttribute("href");
+
 
         if (
             href === currentPath ||
@@ -686,17 +1015,37 @@ function highlightActiveNav() {
                 href === "index.html"
             )
         ) {
+
             link.classList.add("active");
+
         } else {
+
             link.classList.remove("active");
+
         }
+
     });
+
 }
 
+
 // ============================================================================
-// 13. OPTIONAL GLOBAL ACCESS FOR TESTING
+// 14. OPTIONAL GLOBAL ACCESS FOR TESTING
 // ============================================================================
 
-window.addSampleMenu = addSampleMenu;
-window.fetchMenu = fetchMenu;
-window.SITE_CONFIG = SITE_CONFIG;
+window.addSampleMenu =
+    addSampleMenu;
+
+window.fetchMenu =
+    fetchMenu;
+
+window.SITE_CONFIG =
+    SITE_CONFIG;
+
+
+// ============================================================================
+// 15. OPTIONAL PWA GLOBAL ACCESS
+// ============================================================================
+
+window.showInstallPrompt =
+    handleInstallClick;
