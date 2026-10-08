@@ -94,27 +94,6 @@ function setLoading(isLoading) {
 // PASSWORD TOGGLE
 // ============================================================================
 
-if (togglePassword && passwordInput) {
-
-    togglePassword.addEventListener("click", () => {
-
-        const hidden =
-            passwordInput.type === "password";
-
-        passwordInput.type =
-            hidden ? "text" : "password";
-
-        togglePassword.textContent =
-            hidden ? "Hide" : "Show";
-
-        togglePassword.setAttribute(
-            "aria-label",
-            hidden
-                ? "Hide password"
-                : "Show password"
-        );
-    });
-}
 
 
 // ============================================================================
