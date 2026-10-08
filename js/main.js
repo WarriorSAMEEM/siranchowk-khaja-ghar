@@ -408,21 +408,21 @@ async function handleInstallClick() {
 // 4. DOM READY
 // ============================================================================
 
-document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", () => {
 
-    initMobileNav();
+        initMobileNav();
 
-    initCountdown();
+        initCountdown();
 
-    initMenuPage();
+        initMenuPage();
 
-    setCurrentYear();
+        setCurrentYear();
 
-    highlightActiveNav();
+        highlightActiveNav();
 
-    initPWAInstall();
+        initPWAInstall();
 
-});
+    });
 
 
 // ============================================================================
