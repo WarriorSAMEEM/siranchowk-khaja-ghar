@@ -4467,3 +4467,207 @@ footer,.site-footer{
     box-shadow:none!important;border:1px solid #ddd!important;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ============================================================
+   PREMIUM ADMIN PANEL — MOBILE FIRST
+   ============================================================ */
+
+.nav-link789 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  min-height: 44px;
+  padding: 0.72rem 1rem;
+
+  color: #168ca8;
+  text-decoration: none;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+
+  border: 1px solid rgba(50, 190, 218, 0.28);
+  border-radius: 12px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.58),
+    rgba(76, 210, 235, 0.10)
+  );
+
+  box-shadow:
+    0 4px 14px rgba(25, 165, 195, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  overflow: hidden;
+
+  transition:
+    color 220ms ease,
+    background 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+
+/* Subtle shine */
+.nav-link789::before {
+  content: "";
+  position: absolute;
+
+  top: 0;
+  left: -130%;
+
+  width: 65%;
+  height: 100%;
+
+  background: linear-gradient(
+    105deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+
+  transform: skewX(-20deg);
+
+  transition: left 600ms ease;
+
+  pointer-events: none;
+}
+
+
+/* Mobile tap / hover */
+.nav-link789:hover {
+  color: #087b98;
+
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.72),
+    rgba(76, 210, 235, 0.16)
+  );
+
+  border-color: rgba(42, 190, 218, 0.48);
+
+  box-shadow:
+    0 6px 18px rgba(30, 170, 200, 0.13),
+    0 0 16px rgba(70, 205, 230, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+
+  transform: translateY(-1px);
+}
+
+.nav-link789:hover::before {
+  left: 150%;
+}
+
+
+/* Touch feedback */
+.nav-link789:active {
+  transform: scale(0.975);
+
+  box-shadow:
+    0 2px 8px rgba(30, 170, 200, 0.10);
+}
+
+
+/* Keyboard focus */
+.nav-link789:focus-visible {
+  outline: none;
+
+  border-color: rgba(35, 190, 220, 0.65);
+
+  box-shadow:
+    0 0 0 3px rgba(65, 205, 230, 0.13),
+    0 0 20px rgba(65, 205, 230, 0.12);
+}
+
+
+/* ============================================================
+   SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 480px) {
+  .nav-link789 {
+    min-height: 46px;
+    padding: 0.72rem 0.9rem;
+
+    border-radius: 11px;
+
+    font-size: 0.94rem;
+  }
+}
+
+
+/* ============================================================
+   VERY SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 360px) {
+  .nav-link789 {
+    min-height: 44px;
+    padding: 0.65rem 0.8rem;
+
+    font-size: 0.9rem;
+  }
+}
+
+
+/* ============================================================
+   DESKTOP ENHANCEMENT
+   ============================================================ */
+
+@media (min-width: 769px) {
+  .nav-link789 {
+    width: auto;
+    min-height: 40px;
+
+    padding: 0.52rem 0.95rem;
+
+    border-radius: 999px;
+  }
+
+  .nav-link789:hover {
+    transform: translateY(-2px);
+  }
+}
+
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-link789,
+  .nav-link789::before {
+    transition: none;
+  }
+
+  .nav-link789:hover,
+  .nav-link789:active {
+    transform: none;
+  }
+}

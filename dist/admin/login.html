@@ -1,248 +1,401 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <meta
-        name="robots"
-        content="noindex, nofollow, noarchive"
-    >
-
-    <title>
-        Admin Login | Siranchowk Khaja Ghar
-    </title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="theme-color" content="#050607">
+    <meta name="color-scheme" content="dark">
+    <title>Admin Login | Siranchowk Khaja Ghar</title>
 
     <!-- ================================================================
-         GOOGLE FONT
+         OPTIONAL FONT
+         The page still works with system fonts if Google Fonts is blocked.
     ================================================================= -->
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-    >
-
-    <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossorigin
-    >
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap"
         rel="stylesheet"
     >
 
-
-    <!-- ================================================================
-         LOGIN PAGE STYLES
-    ================================================================= -->
-
-    <style>:root{--bg-1:#eafcff;--bg-2:#dff7f7;--bg-3:#f5fcfc;--text:#102a2e;--muted:#647b7f;--primary:#159ca5;--primary-dark:#087f89;--border:#159ca52e;--glass:#ffffffad;--danger:#c0392b}*{box-sizing:border-box;margin:0;padding:0}html,body{width:100%;min-height:100%}body{min-height:100vh;color:var(--text);background:radial-gradient(circle at 15% 20%, #5bdce247, transparent 30%), radial-gradient(circle at 85% 80%, #53bec838, transparent 30%), linear-gradient(135deg, var(--bg-1), var(--bg-2), var(--bg-3));justify-content:center;align-items:center;padding:24px;font-family:Inter,sans-serif;display:flex;position:relative;overflow-x:hidden}body:before,body:after{content:"";z-index:0;pointer-events:none;filter:blur(2px);opacity:.45;position:fixed}body:before{background:linear-gradient(135deg,#4acad342,#ffffff0d);border-radius:48% 52% 63% 37%/44% 38% 62% 56%;width:420px;height:420px;top:-180px;left:-140px;transform:rotate(18deg)}body:after{background:linear-gradient(135deg,#159ca52e,#ffffff0a);border-radius:57% 43% 34% 66%/48% 59% 41% 52%;width:480px;height:480px;bottom:-210px;right:-200px;transform:rotate(-22deg)}.login-wrapper{z-index:2;width:100%;max-width:440px;position:relative}.login-card{border:1px solid var(--border);background:var(--glass);-webkit-backdrop-filter:blur(24px);border-radius:28px;width:100%;padding:38px;animation:.65s both cardIn;box-shadow:0 30px 80px #10484d21,0 8px 25px #10484d0f}@keyframes cardIn{0%{opacity:0;transform:translateY(20px)scale(.98)}to{opacity:1;transform:translateY(0)scale(1)}}.brand{text-align:center;margin-bottom:30px}.shield{background:linear-gradient(135deg,#159ca529,#ffffffb8);border:1px solid #159ca52e;border-radius:20px;justify-content:center;align-items:center;width:68px;height:68px;margin:0 auto 18px;display:flex;box-shadow:0 12px 30px #159ca51f}.shield span{font-size:29px}.brand h1{letter-spacing:-.5px;font-size:25px;font-weight:800}.brand p{color:var(--muted);margin-top:8px;font-size:13px;line-height:1.6}.form-group{margin-bottom:20px}.form-group label{margin-bottom:8px;font-size:13px;font-weight:700;display:block}.input-wrapper{position:relative}.input-wrapper input{width:100%;height:54px;color:var(--text);font:inherit;background:#ffffffa8;border:1px solid #102a2e1f;border-radius:14px;outline:none;padding:0 16px 0 17px;font-size:14px;transition:border-color .25s,box-shadow .25s,background .25s}.input-wrapper input::placeholder{color:#91a4a7}.input-wrapper input:focus{background:#ffffffe6;border-color:#159ca5a6;box-shadow:0 0 0 4px #159ca51c,0 8px 25px #159ca512}.password-toggle{color:#71888c;cursor:pointer;background:0 0;border:0;padding:7px;font-size:13px;font-weight:600;position:absolute;top:50%;right:14px;transform:translateY(-50%)}.password-toggle:hover{color:var(--primary-dark)}.submit-btn{background:linear-gradient(135deg, var(--primary), var(--primary-dark));color:#fff;cursor:pointer;border:0;border-radius:14px;justify-content:center;align-items:center;gap:10px;width:100%;height:54px;margin-top:6px;font-family:inherit;font-size:14px;font-weight:700;transition:transform .2s,box-shadow .2s,opacity .2s;display:flex;box-shadow:0 12px 25px #159ca538}.submit-btn:hover{transform:translateY(-2px);box-shadow:0 17px 34px #159ca545}.submit-btn:active{transform:translateY(0)}.submit-btn:disabled{cursor:not-allowed;opacity:.65;transform:none}.error-alert{color:var(--danger);background:#c0392b12;border:1px solid #c0392b2e;border-radius:12px;margin-bottom:18px;padding:12px 14px;font-size:12px;line-height:1.5;display:none}.error-alert.show{animation:.3s shake;display:block}@keyframes shake{0%,to{transform:translate(0)}25%{transform:translate(-5px)}75%{transform:translate(5px)}}.security-note{text-align:center;color:#7b8f92;margin-top:23px;font-size:11px;line-height:1.6}.security-note strong{color:#557276}.loading{justify-content:center;align-items:center;gap:8px;display:none}.loading.active{display:flex}.loading-dot{background:#fff;border-radius:50%;width:7px;height:7px;animation:.8s infinite alternate loading}.loading-dot:nth-child(2){animation-delay:.15s}.loading-dot:nth-child(3){animation-delay:.3s}@keyframes loading{0%{opacity:.3;transform:translateY(0)}to{opacity:1;transform:translateY(-3px)}}@media (width<=520px){body{padding:16px}.login-card{border-radius:23px;padding:28px 22px}.brand h1{font-size:22px}}</style>
-
+    <style>:root{--lightningcss-light:initial;--lightningcss-dark: ;color-scheme:light;--bg:#eefbfd;--bg-soft:#f7fdfe;--surface:#ffffffad;--surface-strong:#ffffffe0;--text:#12343d;--text-soft:#3d626b;--muted:#6f8b92;--muted-2:#8aa1a7;--line:#18809724;--line-strong:#1880973b;--aqua:#159fba;--aqua-soft:#54cfe0;--aqua-pale:#54cfe024;--violet:#8c78e8;--pink:#e889b7;--gold:#e8b65c;--mint:#67cfa8;--danger:#c95b69;--danger-bg:#c95b6913;--danger-line:#c95b6933;--card-radius:24px;--input-radius:14px;--shadow:0 28px 70px #2267741f, 0 8px 26px #22677412;--ease:cubic-bezier(.22, 1, .36, 1);--ease-soft:cubic-bezier(.25, .8, .25, 1);--cursor-x:50%;--cursor-y:50%;--tilt-x:0deg;--tilt-y:0deg}*,:before,:after{box-sizing:border-box}html{background:var(--bg);text-rendering:optimizelegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;min-height:100%}body{min-height:100svh;color:var(--text);background:var(--bg);margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;overflow-x:hidden}button,input{font:inherit}button{-webkit-tap-highlight-color:transparent}::selection{color:#08333c;background:#54cfe0b3}::-moz-selection{color:#08333c;background:#54cfe0b3}.page{isolation:isolate;background:radial-gradient(circle at 10% 10%,#54cfe026,#0000 32%),radial-gradient(circle at 90% 86%,#e889b71c,#0000 30%),linear-gradient(145deg,#f6fdfe 0%,#edf9fb 48%,#f9f6fd 100%);place-items:center;min-height:100svh;padding:16px;display:grid;position:relative;overflow:hidden}.page:before,.page:after{content:"";pointer-events:none;z-index:-6;position:absolute}.page:before{filter:blur(2px);background:linear-gradient(135deg,#54cfe038,#8c78e817);border-radius:43% 57% 62% 38%/47% 42% 58% 53%;width:72vw;max-width:620px;height:72vw;max-height:620px;top:-22vw;left:-25vw;transform:rotate(-18deg)}.page:after{filter:blur(4px);background:linear-gradient(135deg,#e889b724,#e8b65c17);border-radius:58% 42% 36% 64%/44% 62% 38% 56%;width:62vw;max-width:540px;height:62vw;max-height:540px;bottom:-18vw;right:-22vw;transform:rotate(22deg)}.grain{z-index:5;pointer-events:none;opacity:.018;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.88' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");position:absolute;inset:-50%;transform:rotate(8deg)}.background-lines{z-index:-4;pointer-events:none;opacity:.32;background-image:linear-gradient(90deg,#0000 49.7%,#1880970b 50%,#0000 50.3%),linear-gradient(#0000 49.7%,#18809709 50%,#0000 50.3%);background-size:86px 86px;position:absolute;inset:0;-webkit-mask-image:radial-gradient(#000 0%,#0000 76%);mask-image:radial-gradient(#000 0%,#0000 76%)}.background-lines:before,.background-lines:after{content:"";pointer-events:none;border:1px solid #159fba1a;position:absolute}.background-lines:before{border-radius:38px;width:170px;height:170px;bottom:9%;left:5%;transform:rotate(27deg)}.background-lines:after{border-color:#8c78e81c;border-radius:50%;width:120px;height:120px;top:13%;right:7%;box-shadow:0 0 0 18px #e889b706,0 0 0 36px #54cfe005}.orb{z-index:-3;aspect-ratio:1;pointer-events:none;opacity:.48;filter:blur(48px);width:88vw;max-width:650px;transform:translate(-50%, -50%) translate3d(calc((var(--cursor-x) - 50%) * .018), calc((var(--cursor-y) - 50%) * .018), 0);background:radial-gradient(circle at 42% 35%,#54cfe040,#8c78e81a 30%,#e889b712 48%,#0000 72%);border-radius:50%;animation:10s ease-in-out infinite orbBreath;position:absolute;top:48%;left:50%}@keyframes orbBreath{0%,to{opacity:.38;transform:translate(-50%,-50%)scale(.97)}50%{opacity:.52;transform:translate(-50%,-50%)scale(1.04)}}.orb-ring{z-index:-2;aspect-ratio:1;pointer-events:none;border:1px solid #159fba14;border-radius:50%;width:112vw;max-width:850px;animation:22s linear infinite ringDrift;position:absolute;top:48%;left:50%;transform:translate(-50%,-50%)rotate(-12deg)}@keyframes ringDrift{0%{transform:translate(-50%,-50%)rotate(-12deg)}to{transform:translate(-50%,-50%)rotate(348deg)}}.corner-mark{color:#12343d80;letter-spacing:.13em;text-transform:uppercase;-webkit-user-select:none;user-select:none;animation:fadeDown .7s var(--ease) both;align-items:center;gap:7px;font-size:8px;font-weight:800;display:inline-flex;position:absolute;top:14px;left:16px}.corner-mark:before{content:"";background:var(--aqua);border-radius:50%;width:5px;height:5px;box-shadow:0 0 0 4px #54cfe014,0 0 12px #54cfe080}.login-wrapper{z-index:10;perspective:1200px;width:min(100%,430px);position:relative}.login-card{--mouse-glow-x:50%;--mouse-glow-y:50%;border-radius:var(--card-radius);width:100%;box-shadow:var(--shadow);-webkit-backdrop-filter:blur(22px)saturate(130%);transform:rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(0);transform-style:preserve-3d;transition:transform .18s var(--ease-soft), border-color .35s var(--ease), box-shadow .35s var(--ease);animation:cardEnter .65s var(--ease) both;background:linear-gradient(145deg,#ffffffe0,#ffffffa1);border:1px solid #18809726;padding:27px 18px 23px;position:relative;overflow:hidden}.login-card:before{content:"";pointer-events:none;border-radius:inherit;background:radial-gradient(circle 250px at var(--mouse-glow-x) var(--mouse-glow-y), #54cfe01f, transparent 68%);opacity:.7;transition:opacity .3s var(--ease);position:absolute;inset:0}.login-card:after{content:"";pointer-events:none;border-radius:inherit;border:1px solid #ffffff8c;position:absolute;inset:0;-webkit-mask-image:linear-gradient(135deg,#000,#0000 38% 62%,#000);mask-image:linear-gradient(135deg,#000,#0000 38% 62%,#000)}@keyframes cardEnter{0%{opacity:0;transform:translateY(16px)scale(.985)}to{opacity:1;transform:translateY(0)scale(1)}}.card-line{opacity:.85;background:linear-gradient(90deg,#0000,#159fba7a,#8c78e838,#0000);width:66%;height:1px;position:absolute;top:0;left:17%}.brand{z-index:2;text-align:center;margin-bottom:25px;position:relative}.brand-mark{background:linear-gradient(145deg,#54cfe026,#8c78e814,#ffffff8f);border:1px solid #159fba2e;border-radius:17px;place-items:center;width:54px;height:54px;margin:0 auto 16px;display:grid;position:relative;transform:translateZ(20px);box-shadow:inset 0 1px #ffffffd9,0 13px 30px #2678891a}.brand-mark:before{content:"";border:1px solid #159fba1f;border-radius:12px;position:absolute;inset:7px}.brand-mark:after{content:"";background:var(--aqua);border-radius:50%;width:6px;height:6px;position:absolute;top:6px;right:6px;box-shadow:0 0 0 4px #54cfe017,0 0 11px #54cfe07a}.shield-icon{width:21px;height:24px;color:var(--aqua);filter:drop-shadow(0 0 8px #54cfe033);position:relative}.shield-icon:before{content:"";clip-path:polygon(50% 0%,92% 14%,86% 59%,71% 80%,50% 100%,29% 80%,14% 59%,8% 14%);border:1px solid var(--aqua);background:linear-gradient(#54cfe02e,#8c78e80a);position:absolute;inset:0}.shield-icon:after{content:"";border-right:1.5px solid var(--aqua);border-bottom:1.5px solid var(--aqua);width:7px;height:11px;position:absolute;top:6px;left:7px;transform:rotate(45deg)scale(.72)}.brand h1{color:#153b45;letter-spacing:-.045em;margin:0;font-family:Manrope,Inter,-apple-system,BlinkMacSystemFont,sans-serif;font-size:22px;font-weight:800;line-height:1.15}.brand p{color:var(--muted);letter-spacing:.01em;margin:8px 0 0;font-size:10.5px;font-weight:500;line-height:1.6}.secure-status{color:#65828a;letter-spacing:.01em;background:linear-gradient(135deg,#54cfe017,#8c78e80b);border:1px solid #159fba21;border-radius:999px;align-items:center;gap:7px;width:max-content;max-width:100%;margin:0 auto 21px;padding:7px 10px 7px 8px;font-size:9px;font-weight:600;display:flex}.secure-status-dot{background:var(--mint);border-radius:50%;width:5px;height:5px;box-shadow:0 0 0 3px #67cfa81a,0 0 10px #67cfa861}.login-form{z-index:2;position:relative}.form-group{margin-bottom:15px}.form-group label{color:#476770;letter-spacing:.01em;justify-content:space-between;align-items:center;margin:0 0 7px 2px;font-size:10px;font-weight:700;display:flex}.field-hint{color:var(--muted-2);font-size:8px;font-weight:500}.input-wrapper{position:relative}.input-wrapper:before{content:"";z-index:-1;border-radius:calc(var(--input-radius) + 1px);background:radial-gradient(circle 120px at var(--field-x,50%) var(--field-y,50%), #54cfe02e, transparent 70%);opacity:0;transition:opacity .28s var(--ease);position:absolute;inset:-1px}.input-wrapper:focus-within:before{opacity:1}.input-wrapper input{border-radius:var(--input-radius);color:#173d46;width:100%;height:52px;caret-color:var(--aqua);transition:border-color .24s var(--ease), background .24s var(--ease), box-shadow .24s var(--ease), transform .24s var(--ease);background:linear-gradient(#ffffffd6,#f7fcfdb8);border:1px solid #18809721;outline:none;padding:0 15px;box-shadow:inset 0 1px #fffffff2,0 4px 15px #246f7c0b}.input-wrapper input:hover{border-color:#159fba38}.input-wrapper input:focus{background:linear-gradient(#fffffff5,#f1fbfde0);border-color:#159fba6b;box-shadow:0 0 0 3px #54cfe017,0 10px 24px #246f7c14,inset 0 1px #fffffffa}.input-wrapper input::placeholder{color:#9aadb2;opacity:1}.input-wrapper input:-webkit-autofill{-webkit-text-fill-color:#173d46;transition:background-color 9999s ease-in-out;-webkit-box-shadow:inset 0 0 0 1000px #f5fbfc,0 0 0 3px #54cfe00f}.input-wrapper input:-webkit-autofill:hover{-webkit-text-fill-color:#173d46;transition:background-color 9999s ease-in-out;-webkit-box-shadow:inset 0 0 0 1000px #f5fbfc,0 0 0 3px #54cfe00f}.input-wrapper input:-webkit-autofill:focus{-webkit-text-fill-color:#173d46;transition:background-color 9999s ease-in-out;-webkit-box-shadow:inset 0 0 0 1000px #f5fbfc,0 0 0 3px #54cfe00f}.password-toggle{color:#7d979e;cursor:pointer;letter-spacing:.02em;min-width:48px;min-height:36px;transition:color .18s var(--ease), background .18s var(--ease), border-color .18s var(--ease);background:0 0;border:1px solid #0000;border-radius:9px;place-items:center;padding:7px 9px;font-size:9px;font-weight:700;display:grid;position:absolute;top:50%;right:8px;transform:translateY(-50%)}.password-toggle:hover{color:var(--aqua);background:#54cfe00f;border-color:#159fba1f}.password-toggle:focus-visible{outline-offset:2px;outline:2px solid #159fba59}.error-alert{border:1px solid var(--danger-line);color:var(--danger);background:var(--danger-bg);border-radius:13px;margin:0 0 15px;padding:11px 12px;font-size:10px;line-height:1.5;display:none;position:relative}.error-alert.show{animation:errorIn .3s var(--ease) both;display:block}@keyframes errorIn{0%{opacity:0;transform:translateY(-4px)}55%{transform:translate(4px)}80%{transform:translate(-2px)}to{opacity:1;transform:translate(0)}}.submit-btn{isolation:isolate;border-radius:var(--input-radius);color:#fff;cursor:pointer;letter-spacing:.015em;width:100%;min-height:52px;transition:transform .22s var(--ease), box-shadow .22s var(--ease), filter .22s var(--ease);background:linear-gradient(120deg,#159fba 0%,#39bfd1 45%,#7f73dc 100%);border:1px solid #159fba38;margin-top:4px;font-size:10.5px;font-weight:800;position:relative;overflow:hidden;box-shadow:0 12px 28px #2b8fa12e,0 0 #54cfe000}.submit-btn:before{content:"";z-index:-1;opacity:0;background:linear-gradient(90deg,#0000,#ffffffb8,#0000);width:28%;height:180%;transition:opacity .15s;position:absolute;top:-40%;left:-45%;transform:skew(-20deg)}.submit-btn:hover:before{opacity:1;animation:buttonSweep .65s var(--ease) forwards}@keyframes buttonSweep{0%{left:-45%}to{left:125%}}.submit-btn:after{content:"";z-index:-1;border-radius:calc(var(--input-radius) - 1px);pointer-events:none;background:linear-gradient(#ffffff2e,#0000 48%);position:absolute;inset:1px}.submit-btn:hover{filter:brightness(1.035);transform:translateY(-2px);box-shadow:0 17px 34px #2b8fa138,0 0 25px #54cfe01f}.submit-btn:active{transition-duration:90ms;transform:translateY(0)scale(.99)}.submit-btn:focus-visible{outline-offset:3px;outline:2px solid #159fba73}.submit-btn:disabled{cursor:not-allowed;opacity:.62;filter:none;transform:none;box-shadow:0 8px 20px #2b8fa11a}#submit-text{transition:opacity .16s,transform .16s}.loading{justify-content:center;align-items:center;gap:5px;display:none;position:absolute;inset:0}.loading.active{display:flex}.loading-dot{background:#fff;border-radius:50%;width:5px;height:5px;animation:.65s ease-in-out infinite loadingDot}.loading-dot:nth-child(2){animation-delay:90ms}.loading-dot:nth-child(3){animation-delay:.18s}@keyframes loadingDot{0%,70%,to{opacity:.35;transform:translateY(0)}35%{opacity:1;transform:translateY(-3px)}}.security-note{color:#81979d;text-align:center;justify-content:center;align-items:center;gap:7px;margin:17px 0 0;font-size:8.5px;font-weight:500;line-height:1.5;display:flex}.security-icon{border:1px solid #8ca1a6;border-radius:3px;flex:0 0 12px;width:12px;height:12px;position:relative}.security-icon:before{content:"";border:1px solid #8ca1a6;border-bottom:0;border-radius:5px 5px 0 0;width:6px;height:6px;position:absolute;top:-5px;left:2px}.security-note strong{color:#55747d;font-weight:700}.footer-meta{z-index:2;color:#12343d52;letter-spacing:.06em;text-align:center;text-transform:uppercase;white-space:nowrap;-webkit-user-select:none;user-select:none;animation:fadeUp .9s .15s var(--ease) both;font-size:7px;font-weight:700;position:absolute;bottom:10px;left:50%;transform:translate(-50%)}.footer-meta span{color:#159fba8c}@media (width>=521px){.page{padding:22px}.corner-mark{font-size:9px;top:20px;left:22px}.login-card{border-radius:27px;padding:34px}.brand{margin-bottom:29px}.brand-mark{width:58px;height:58px;margin-bottom:18px}.brand h1{font-size:25px}.brand p{font-size:11px}.secure-status{margin-bottom:24px}.input-wrapper input,.submit-btn{height:53px}.orb{filter:blur(58px);width:90vw}.orb-ring{width:105vw}.footer-meta{font-size:8px;bottom:16px}}@media (width>=900px){.page{padding:28px}.login-card{padding:38px}.corner-mark{top:26px;left:28px}.brand h1{font-size:25px}.orb{filter:blur(64px);width:min(52vw,680px)}.orb-ring{width:min(62vw,820px)}.login-card:hover{border-color:#18809730;box-shadow:0 34px 84px #22677424,0 12px 30px #22677414}}@media (width<=360px){.page{padding:12px}.login-card{border-radius:21px;padding:25px 16px 21px}.brand{margin-bottom:22px}.brand-mark{width:50px;height:50px;margin-bottom:14px}.brand h1{font-size:20px}.brand p{font-size:10px}.secure-status{font-size:8.5px}.form-group label{font-size:9.5px}.input-wrapper input{height:50px;font-size:12px}.submit-btn{min-height:50px;font-size:10px}.corner-mark{display:none}}@media (hover:none) and (pointer:coarse){.login-card{transform:none!important}.submit-btn:hover{filter:none;transform:none}.submit-btn:hover:before{animation:none}.input-wrapper input:hover{border-color:#18809721}}@media (prefers-reduced-motion:reduce){*,:before,:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}.login-card,.orb,.orb-ring{animation:none!important;transform:none!important}}</style>
   <script type="module" crossorigin src="/assets/adminLogin-CrSyyt--.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/firebase-Cqo9gZKS.js">
   <link rel="modulepreload" crossorigin href="/assets/auth-D3oEsBym.js">
 </head>
 
-
 <body>
+    <main class="page" id="login-page">
+        <div class="grain" aria-hidden="true"></div>
+        <div class="background-lines" aria-hidden="true"></div>
+        <div class="orb" aria-hidden="true"></div>
+        <div class="orb-ring" aria-hidden="true"></div>
 
+        <div class="corner-mark" aria-hidden="true">
+            <span>Secure Admin</span>
+        </div>
 
-    <main class="login-wrapper">
+        <section class="login-wrapper" aria-label="Administrator login">
+            <div class="login-card" id="login-card">
+                <span class="card-line" aria-hidden="true"></span>
 
-        <section class="login-card">
+                <!-- ========================================================
+                     BRAND
+                ========================================================= -->
+                <header class="brand">
+                    <div class="brand-mark" aria-hidden="true">
+                        <span class="shield-icon"></span>
+                    </div>
 
+                    <h1>Admin Portal</h1>
 
-            <!-- ============================================================
-                 BRAND
-            ============================================================= -->
+                    <p>
+                        Siranchowk Khaja Ghar
+                        <br>
+                        Secure Management System
+                    </p>
+                </header>
 
-            <div class="brand">
+                <!-- ========================================================
+                     SECURITY STATUS
+                ========================================================= -->
+                <div class="secure-status" aria-label="Secure connection">
+                    <span class="secure-status-dot"></span>
+                    <span>Protected administrator access</span>
+                </div>
 
+                <!-- ========================================================
+                     ERROR MESSAGE
+
+                     IMPORTANT:
+                     IDs are preserved for login-handler.js.
+                ========================================================= -->
                 <div
-                    class="shield"
-                    aria-hidden="true"
+                    id="login-error"
+                    class="error-alert"
+                    role="alert"
+                    aria-live="polite"
                 >
-                    <span>🛡️</span>
-                </div>
-
-
-                <h1>
-                    Admin Portal
-                </h1>
-
-
-                <p>
-                    Siranchowk Khaja Ghar
-                    <br>
-                    Secure Management System
-                </p>
-
-            </div>
-
-
-            <!-- ============================================================
-                 ERROR MESSAGE
-
-                 IMPORTANT:
-                 IDs must match login-handler.js
-            ============================================================= -->
-
-            <div
-                id="login-error"
-                class="error-alert"
-                role="alert"
-                aria-live="polite"
-            >
-
-                <span id="error-text">
-                    Invalid email or password.
-                </span>
-
-            </div>
-
-
-            <!-- ============================================================
-                 LOGIN FORM
-            ============================================================= -->
-
-            <form
-                id="admin-login-form"
-                novalidate
-            >
-
-
-                <!-- EMAIL -->
-
-                <div class="form-group">
-
-                    <label for="admin-email">
-                        Email Address
-                    </label>
-
-
-                    <div class="input-wrapper">
-
-                        <input
-                            type="email"
-                            id="admin-email"
-                            name="email"
-                            placeholder="admin@example.com"
-                            autocomplete="username"
-                            required
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <!-- PASSWORD -->
-
-                <div class="form-group">
-
-                    <label for="admin-password">
-                        Password
-                    </label>
-
-
-                    <div class="input-wrapper">
-
-                        <input
-                            type="password"
-                            id="admin-password"
-                            name="password"
-                            placeholder="Enter your password"
-                            autocomplete="current-password"
-                            minlength="6"
-                            required
-                        >
-
-
-                        <button
-                            type="button"
-                            class="password-toggle"
-                            id="toggle-password"
-                            aria-label="Show password"
-                        >
-                            Show
-                        </button>
-
-                    </div>
-
-                </div>
-
-
-                <!-- SUBMIT -->
-
-                <button
-                    type="submit"
-                    class="submit-btn"
-                    id="btn-submit"
-                >
-
-                    <span id="submit-text">
-                        Sign in securely
+                    <span id="error-text">
+                        Invalid email or password.
                     </span>
+                </div>
 
+                <!-- ========================================================
+                     LOGIN FORM
 
-                    <span
-                        id="loading"
-                        class="loading"
-                        aria-hidden="true"
+                     IMPORTANT:
+                     These IDs/names are preserved:
+                     - admin-login-form
+                     - admin-email
+                     - admin-password
+                     - toggle-password
+                     - btn-submit
+                     - submit-text
+                     - loading
+                ========================================================= -->
+                <form
+                    id="admin-login-form"
+                    class="login-form"
+                    novalidate
+                >
+                    <!-- EMAIL -->
+                    <div class="form-group">
+                        <label for="admin-email">
+                            <span>Email Address</span>
+                            <span class="field-hint">Required</span>
+                        </label>
+
+                        <div class="input-wrapper">
+                            <input
+                                type="email"
+                                id="admin-email"
+                                name="email"
+                                placeholder="admin@example.com"
+                                autocomplete="username"
+                                inputmode="email"
+                                spellcheck="false"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <!-- PASSWORD -->
+                    <div class="form-group">
+                        <label for="admin-password">
+                            <span>Password</span>
+                            <span class="field-hint">Min. 6 characters</span>
+                        </label>
+
+                        <div class="input-wrapper">
+                            <input
+                                type="password"
+                                id="admin-password"
+                                name="password"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                minlength="6"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                id="toggle-password"
+                                aria-label="Show password"
+                            >
+                                Show
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SUBMIT -->
+                    <button
+                        type="submit"
+                        class="submit-btn"
+                        id="btn-submit"
                     >
+                        <span id="submit-text">
+                            Sign in securely
+                        </span>
 
-                        <span class="loading-dot"></span>
+                        <span
+                            id="loading"
+                            class="loading"
+                            aria-hidden="true"
+                        >
+                            <span class="loading-dot"></span>
+                            <span class="loading-dot"></span>
+                            <span class="loading-dot"></span>
+                        </span>
+                    </button>
+                </form>
 
-                        <span class="loading-dot"></span>
+                <!-- ========================================================
+                     SECURITY NOTE
+                ========================================================= -->
+                <p class="security-note">
+                    <span
+                        class="security-icon"
+                        aria-hidden="true"
+                    ></span>
 
-                        <span class="loading-dot"></span>
-
+                    <span>
+                        <strong>Protected area.</strong>
+                        Authorized administrators only.
                     </span>
-
-                </button>
-
-            </form>
-
-
-            <!-- ============================================================
-                 SECURITY NOTE
-            ============================================================= -->
-
-            <p class="security-note">
-
-                🔒
-
-                <strong>
-                    Protected area.
-                </strong>
-
-                Authorized administrators only.
-
-            </p>
-
-
+                </p>
+            </div>
         </section>
 
+        <div class="footer-meta" aria-hidden="true">
+            SIRANCHOWK <span>•</span> PRIVATE ADMIN ACCESS
+        </div>
     </main>
 
+    <!-- ================================================================
+         EXISTING AUTHENTICATION HANDLER
+
+         DO NOT REMOVE OR RENAME.
+         Vite bundles Firebase dependencies automatically.
+    ================================================================= -->
 
     <!-- ================================================================
-         ADMIN LOGIN JAVASCRIPT
+         VISUAL MICRO-INTERACTIONS
 
-         Vite bundles Firebase dependencies automatically.
+         This script ONLY controls visual effects:
+         - Cursor-responsive border/glow
+         - Tiny card tilt/parallax
+         - Input glow position
+
+         It does NOT perform authentication.
     ================================================================= -->
-
+    <script>
+        (() => {
+            "use strict";
+
+            const page = document.getElementById("login-page");
+            const card = document.getElementById("login-card");
+
+            if (!page || !card) {
+                return;
+            }
+
+            const reducedMotion = window.matchMedia(
+                "(prefers-reduced-motion: reduce)"
+            );
+
+            const coarsePointer = window.matchMedia(
+                "(hover: none) and (pointer: coarse)"
+            );
+
+            let frame = 0;
+
+            function updatePointer(event) {
+                if (reducedMotion.matches || coarsePointer.matches) {
+                    return;
+                }
+
+                const rect = card.getBoundingClientRect();
+
+                const x = event.clientX;
+                const y = event.clientY;
+
+                const localX = x - rect.left;
+                const localY = y - rect.top;
+
+                const percentX = (localX / rect.width) * 100;
+                const percentY = (localY / rect.height) * 100;
+
+                const normalizedX =
+                    (localX / rect.width - 0.5);
+
+                const normalizedY =
+                    (localY / rect.height - 0.5);
+
+                const rotateY =
+                    normalizedX * 2.6;
+
+                const rotateX =
+                    normalizedY * -2.6;
+
+                cancelAnimationFrame(frame);
+
+                frame = requestAnimationFrame(() => {
+                    document.documentElement.style.setProperty(
+                        "--cursor-x",
+                        `${(x / window.innerWidth) * 100}%`
+                    );
+
+                    document.documentElement.style.setProperty(
+                        "--cursor-y",
+                        `${(y / window.innerHeight) * 100}%`
+                    );
+
+                    card.style.setProperty(
+                        "--mouse-glow-x",
+                        `${percentX}%`
+                    );
+
+                    card.style.setProperty(
+                        "--mouse-glow-y",
+                        `${percentY}%`
+                    );
+
+                    card.style.setProperty(
+                        "--tilt-x",
+                        `${rotateX}deg`
+                    );
+
+                    card.style.setProperty(
+                        "--tilt-y",
+                        `${rotateY}deg`
+                    );
+                });
+            }
+
+            function resetCard() {
+                if (reducedMotion.matches || coarsePointer.matches) {
+                    return;
+                }
+
+                card.style.setProperty(
+                    "--tilt-x",
+                    "0deg"
+                );
+
+                card.style.setProperty(
+                    "--tilt-y",
+                    "0deg"
+                );
+
+                card.style.setProperty(
+                    "--mouse-glow-x",
+                    "50%"
+                );
+
+                card.style.setProperty(
+                    "--mouse-glow-y",
+                    "50%"
+                );
+            }
+
+            function updateFieldGlow(event) {
+                const wrapper = event.currentTarget;
+
+                const rect =
+                    wrapper.getBoundingClientRect();
+
+                const x =
+                    ((event.clientX - rect.left) / rect.width) *
+                    100;
+
+                const y =
+                    ((event.clientY - rect.top) / rect.height) *
+                    100;
+
+                wrapper.style.setProperty(
+                    "--field-x",
+                    `${x}%`
+                );
+
+                wrapper.style.setProperty(
+                    "--field-y",
+                    `${y}%`
+                );
+            }
+
+            window.addEventListener(
+                "pointermove",
+                updatePointer,
+                { passive: true }
+            );
+
+            card.addEventListener(
+                "pointerleave",
+                resetCard
+            );
+
+            document
+                .querySelectorAll(".input-wrapper")
+                .forEach((wrapper) => {
+                    wrapper.addEventListener(
+                        "pointermove",
+                        updateFieldGlow,
+                        { passive: true }
+                    );
+                });
+
+            reducedMotion.addEventListener?.(
+                "change",
+                () => {
+                    if (reducedMotion.matches) {
+                        resetCard();
+                    }
+                }
+            );
+        })();
 
 
+
+
+
+        const passwordInput = document.getElementById("admin-password");
+    const togglePassword = document.getElementById("toggle-password");
+
+    togglePassword.addEventListener("click", () => {
+        const isHidden = passwordInput.type === "password";
+
+        passwordInput.type = isHidden ? "text" : "password";
+
+        togglePassword.textContent = isHidden ? "Hide" : "Show";
+
+        togglePassword.setAttribute(
+            "aria-label",
+            isHidden ? "Hide password" : "Show password"
+        );
+    });
+    </script>
 </body>
-
 </html>

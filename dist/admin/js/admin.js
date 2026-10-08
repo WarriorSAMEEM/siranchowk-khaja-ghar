@@ -1,33 +1,15 @@
-// ============================================================================
-// SIRANCHOWK KHAJA GHAR - ADMIN DASHBOARD CONTROLLER
-// ============================================================================
-
 import {
     checkAdminAuth,
     logoutAdmin
 } from "./auth.js";
 
 import {
+    AnalyticsModule
+} from "./analytics.js";
+
+import {
     auth
 } from "../../js/firebase.js";
-
-
-// ============================================================================
-// ADMIN AUTH GUARD
-// ============================================================================
-//
-// Direct access:
-//
-// /admin/admin.html
-//        ↓
-// Firebase Authentication Check
-//        ↓
-// NOT AUTHENTICATED → login.html
-//        ↓
-// AUTHENTICATED → Admin Dashboard
-//
-// Dashboard remains hidden until authentication is verified.
-// ============================================================================
 
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -38,46 +20,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("======================================");
 
 
-    // ========================================================================
-    // 1. VERIFY ADMIN AUTHENTICATION
-    // ========================================================================
+    // ============================================================
+    // 1. AUTHENTICATION
+    // ============================================================
 
     let authenticatedUser = null;
 
     try {
 
-        console.log(
-            "Checking Firebase authentication..."
-        );
+        console.log("Checking Firebase authentication...");
 
-        const authenticated =
-            await checkAdminAuth();
+        const authenticated = await checkAdminAuth();
 
         if (!authenticated) {
-
-            console.warn(
-                "Admin is not authenticated."
-            );
-
+            console.warn("Admin is not authenticated.");
             return;
         }
 
-
-        // Firebase may restore the user asynchronously.
-        // Read the actual current Firebase user.
-        authenticatedUser =
-            auth.currentUser;
-
+        authenticatedUser = auth.currentUser;
 
         if (!authenticatedUser) {
-
             console.error(
-                "Authentication was reported as valid, but Firebase user is unavailable."
+                "Authentication was valid, but Firebase user is unavailable."
             );
-
             return;
         }
-
 
         console.log(
             "Admin authentication verified:",
@@ -95,28 +62,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    // ========================================================================
-    // 2. REVEAL AUTHENTICATED APPLICATION
-    // ========================================================================
+    // ============================================================
+    // 2. REVEAL ADMIN APPLICATION
+    // ============================================================
 
     if (
         typeof window.revealAdminApplication === "function"
     ) {
-
         window.revealAdminApplication();
-
-    } else {
-
-        console.warn(
-            "revealAdminApplication() is not available."
-        );
-
     }
 
 
-    // ========================================================================
-    // 3. INITIALIZE GLOBAL UI
-    // ========================================================================
+    // ============================================================
+    // 3. INITIALIZE UI
+    // ============================================================
 
     if (
         typeof UIModule !== "undefined" &&
@@ -127,9 +86,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             UIModule.init();
 
-            console.log(
-                "UI module initialized."
-            );
+            console.log("UI module initialized.");
 
         } catch (error) {
 
@@ -137,33 +94,28 @@ document.addEventListener("DOMContentLoaded", async () => {
                 "UI initialization failed:",
                 error
             );
+
         }
+
     }
 
 
-    // ========================================================================
+    // ============================================================
     // 4. ADMIN PROFILE
-    // ========================================================================
+    // ============================================================
 
     const displayNameElement =
-        document.getElementById(
-            "user-display-name"
-        );
+        document.getElementById("user-display-name");
 
     const roleElement =
-        document.getElementById(
-            "user-role-label"
-        );
+        document.getElementById("user-role-label");
 
     const avatarElement =
-        document.getElementById(
-            "user-avatar-initials"
-        );
+        document.getElementById("user-avatar-initials");
 
 
     const adminEmail =
-        authenticatedUser.email ||
-        "Administrator";
+        authenticatedUser.email || "Administrator";
 
 
     const displayName =
@@ -173,49 +125,39 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     if (displayNameElement) {
-
-        displayNameElement.textContent =
-            displayName;
+        displayNameElement.textContent = displayName;
     }
 
 
     if (roleElement) {
-
-        roleElement.textContent =
-            "Siranchowk Admin";
+        roleElement.textContent = "Siranchowk Admin";
     }
 
 
     if (avatarElement) {
 
-        const initials =
-            displayName
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2)
-                .map(
-                    word =>
-                        word
-                            .charAt(0)
-                            .toUpperCase()
-                )
-                .join("") || "AD";
+        const initials = displayName
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map(function (word) {
+                return word.charAt(0).toUpperCase();
+            })
+            .join("") || "AD";
 
-
-        avatarElement.textContent =
-            initials;
+        avatarElement.textContent = initials;
     }
 
 
-    // ========================================================================
+    // ============================================================
     // 5. VIEW REGISTRY
-    // ========================================================================
+    // ============================================================
 
     const views = {
 
         dashboard:
-            typeof AnalyticsModule !== "undefined"
-                ? AnalyticsModule
+            typeof DashboardModule !== "undefined"
+                ? DashboardModule
                 : null,
 
         menu:
@@ -264,9 +206,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 : null,
 
         analytics:
-            typeof AnalyticsModule !== "undefined"
-                ? AnalyticsModule
-                : null,
+            AnalyticsModule,
 
         settings:
             typeof SettingsModule !== "undefined"
@@ -276,24 +216,63 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
 
-    // ========================================================================
-    // 6. MAIN DOM ELEMENTS
-    // ========================================================================
+    // ============================================================
+    // 6. DEBUG MODULES
+    // ============================================================
+
+    console.log("Admin modules:", {
+
+        DashboardModule:
+            typeof DashboardModule !== "undefined",
+
+        AnalyticsModule:
+            typeof AnalyticsModule !== "undefined",
+
+        MenuModule:
+            typeof MenuModule !== "undefined",
+
+        OrdersModule:
+            typeof OrdersModule !== "undefined",
+
+        OffersModule:
+            typeof OffersModule !== "undefined",
+
+        GalleryModule:
+            typeof GalleryModule !== "undefined",
+
+        ReviewsModule:
+            typeof ReviewsModule !== "undefined",
+
+        CustomersModule:
+            typeof CustomersModule !== "undefined",
+
+        AnnouncementsModule:
+            typeof AnnouncementsModule !== "undefined",
+
+        ContentModule:
+            typeof ContentModule !== "undefined",
+
+        SEOModule:
+            typeof SEOModule !== "undefined",
+
+        SettingsModule:
+            typeof SettingsModule !== "undefined"
+
+    });
+
+
+    // ============================================================
+    // 7. DOM ELEMENTS
+    // ============================================================
 
     const mainContainer =
-        document.getElementById(
-            "main-content"
-        );
+        document.getElementById("main-content");
 
     const pageTitleHeading =
-        document.getElementById(
-            "page-title-heading"
-        );
+        document.getElementById("page-title-heading");
 
     const navItems =
-        document.querySelectorAll(
-            ".nav-item"
-        );
+        document.querySelectorAll(".nav-item");
 
 
     if (!mainContainer) {
@@ -306,15 +285,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    // ========================================================================
-    // 7. VIEW NAVIGATION
-    // ========================================================================
+    // ============================================================
+    // 8. NAVIGATION
+    // ============================================================
 
     async function navigateTo(viewKey) {
 
+        const requestedKey =
+            String(viewKey || "")
+                .trim()
+                .toLowerCase();
+
+
         const key =
-            views[viewKey]
-                ? viewKey
+            views[requestedKey]
+                ? requestedKey
                 : "dashboard";
 
 
@@ -322,11 +307,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             views[key];
 
 
-        // --------------------------------------------------------------------
+        // --------------------------------------------------------
         // Active navigation
-        // --------------------------------------------------------------------
+        // --------------------------------------------------------
 
-        navItems.forEach((item) => {
+        navItems.forEach(function (item) {
 
             const isActive =
                 item.dataset.view === key;
@@ -339,9 +324,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
 
-        // --------------------------------------------------------------------
+        // --------------------------------------------------------
         // Page title
-        // --------------------------------------------------------------------
+        // --------------------------------------------------------
 
         if (pageTitleHeading) {
 
@@ -349,14 +334,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                 key.charAt(0).toUpperCase() +
                 key.slice(1);
 
-            pageTitleHeading.textContent =
-                title;
+            pageTitleHeading.textContent = title;
         }
 
 
-        // --------------------------------------------------------------------
+        // --------------------------------------------------------
         // Close mobile drawer
-        // --------------------------------------------------------------------
+        // --------------------------------------------------------
 
         if (
             typeof UIModule !== "undefined" &&
@@ -373,23 +357,24 @@ document.addEventListener("DOMContentLoaded", async () => {
                     "Unable to close navigation drawer:",
                     error
                 );
+
             }
+
         }
 
 
-        // --------------------------------------------------------------------
-        // Loading state
-        // --------------------------------------------------------------------
+        // --------------------------------------------------------
+        // Render module
+        // --------------------------------------------------------
 
         if (
             targetModule &&
             typeof targetModule.render === "function"
         ) {
 
-            mainContainer.innerHTML = `
-                <div class="skeleton skeleton-title"></div>
-                <div class="skeleton skeleton-text"></div>
-            `;
+            mainContainer.innerHTML =
+                '<div class="skeleton skeleton-title"></div>' +
+                '<div class="skeleton skeleton-text"></div>';
 
 
             try {
@@ -400,114 +385,124 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
                 console.log(
-                    `Admin view loaded: ${key}`
+                    "Admin view loaded:",
+                    key
                 );
 
 
             } catch (error) {
 
                 console.error(
-                    `Failed to render "${key}" view:`,
+                    "Failed to render view:",
+                    key,
                     error
                 );
 
 
-                mainContainer.innerHTML = `
-                    <div class="admin-view-error">
-
-                        <h3>
-                            Unable to load this section
-                        </h3>
-
-                        <p>
-                            Something went wrong while
-                            loading this dashboard view.
-                        </p>
-
-                        <button
-                            type="button"
-                            id="retry-view-btn"
-                        >
-                            Try Again
-                        </button>
-
-                    </div>
-                `;
+                mainContainer.innerHTML =
+                    '<div class="admin-view-error">' +
+                    '<h3>Unable to load this section</h3>' +
+                    '<p>Something went wrong while loading this dashboard view.</p>' +
+                    '<button type="button" id="retry-view-btn">Try Again</button>' +
+                    '</div>';
 
 
-                document
-                    .getElementById(
+                const retryButton =
+                    document.getElementById(
                         "retry-view-btn"
-                    )
-                    ?.addEventListener(
-                        "click",
-                        () => navigateTo(key)
                     );
-            }
 
+
+                if (retryButton) {
+
+                    retryButton.addEventListener(
+                        "click",
+                        function () {
+                            navigateTo(key);
+                        }
+                    );
+
+                }
+
+            }
 
             return;
         }
 
 
-        // --------------------------------------------------------------------
+        // --------------------------------------------------------
         // Module unavailable
-        // --------------------------------------------------------------------
+        // --------------------------------------------------------
 
         console.warn(
-            `Admin module "${key}" is not available.`
+            'Admin module "' + key + '" is not available.'
         );
 
 
-        mainContainer.innerHTML = `
-            <div class="admin-view-error">
+        mainContainer.innerHTML =
+            '<div class="admin-view-error">' +
+            '<h3>Section unavailable</h3>' +
+            '<p>The "' + key + '" module is not available.</p>' +
+            '<button type="button" id="retry-module-btn">Retry</button>' +
+            '</div>';
 
-                <h3>
-                    Section unavailable
-                </h3>
 
-                <p>
-                    The "${key}" module is not available.
-                </p>
+        const retryModuleButton =
+            document.getElementById(
+                "retry-module-btn"
+            );
 
-            </div>
-        `;
+
+        if (retryModuleButton) {
+
+            retryModuleButton.addEventListener(
+                "click",
+                function () {
+                    navigateTo(key);
+                }
+            );
+
+        }
+
     }
 
 
-    // ========================================================================
-    // 8. HASH NAVIGATION
-    // ========================================================================
+    // ============================================================
+    // 9. HASH NAVIGATION
+    // ============================================================
 
     window.addEventListener(
         "hashchange",
-        () => {
+        function () {
 
             const hash =
                 window.location.hash
                     .replace("#", "")
-                    .trim();
+                    .trim()
+                    .toLowerCase();
 
 
             navigateTo(
                 hash || "dashboard"
             );
+
         }
     );
 
 
-    // ========================================================================
-    // 9. NAVIGATION CLICK HANDLERS
-    // ========================================================================
+    // ============================================================
+    // 10. NAVIGATION CLICK
+    // ============================================================
 
-    navItems.forEach((item) => {
+    navItems.forEach(function (item) {
 
         item.addEventListener(
             "click",
-            (event) => {
+            function (event) {
 
                 const view =
                     item.dataset.view;
+
 
                 if (!view) {
                     return;
@@ -518,7 +513,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
                 const targetHash =
-                    `#${view}`;
+                    "#" + view;
 
 
                 if (
@@ -532,28 +527,36 @@ document.addEventListener("DOMContentLoaded", async () => {
                 } else {
 
                     navigateTo(view);
+
                 }
+
             }
         );
+
     });
 
 
-    // ========================================================================
-    // 10. QUICK REFRESH
-    // ========================================================================
+    // ============================================================
+    // 11. QUICK REFRESH
+    // ============================================================
 
-    document
-        .getElementById(
+    const refreshButton =
+        document.getElementById(
             "quick-refresh-btn"
-        )
-        ?.addEventListener(
+        );
+
+
+    if (refreshButton) {
+
+        refreshButton.addEventListener(
             "click",
-            async () => {
+            async function () {
 
                 const currentHash =
                     window.location.hash
                         .replace("#", "")
-                        .trim() ||
+                        .trim()
+                        .toLowerCase() ||
                     "dashboard";
 
 
@@ -573,7 +576,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                             "View refreshed",
                             "info"
                         );
+
                     }
+
 
                 } catch (error) {
 
@@ -581,22 +586,30 @@ document.addEventListener("DOMContentLoaded", async () => {
                         "View refresh failed:",
                         error
                     );
+
                 }
+
             }
         );
 
+    }
 
-    // ========================================================================
-    // 11. LOGOUT
-    // ========================================================================
 
-    document
-        .getElementById(
+    // ============================================================
+    // 12. LOGOUT
+    // ============================================================
+
+    const logoutButton =
+        document.getElementById(
             "logout-btn"
-        )
-        ?.addEventListener(
+        );
+
+
+    if (logoutButton) {
+
+        logoutButton.addEventListener(
             "click",
-            async () => {
+            async function () {
 
                 const confirmed =
                     window.confirm(
@@ -641,20 +654,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                             "Unable to sign out. Please try again.",
                             "error"
                         );
+
                     }
+
                 }
+
             }
         );
 
+    }
 
-    // ========================================================================
-    // 12. INITIAL VIEW
-    // ========================================================================
+
+    // ============================================================
+    // 13. INITIAL VIEW
+    // ============================================================
 
     const initialHash =
         window.location.hash
             .replace("#", "")
-            .trim() ||
+            .trim()
+            .toLowerCase() ||
         "dashboard";
 
 
@@ -663,41 +682,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
 
 
-    // ========================================================================
-    // 13. ACCESSIBILITY
-    // ========================================================================
+    // ============================================================
+    // 14. ACCESSIBILITY
+    // ============================================================
 
-    if (mainContainer) {
+    try {
+
+        mainContainer.focus({
+            preventScroll: true
+        });
+
+    } catch (error) {
 
         try {
 
-            mainContainer.focus({
-                preventScroll: true
-            });
+            mainContainer.focus();
 
-        } catch {
+        } catch (focusError) {
 
-            try {
+            // Ignore focus errors.
 
-                mainContainer.focus();
-
-            } catch {
-                // Ignore focus errors.
-            }
         }
+
     }
 
 
-    // ========================================================================
-    // 14. FINISHED
-    // ========================================================================
+    // ============================================================
+    // 15. COMPLETE
+    // ============================================================
 
     console.log("======================================");
-    console.log("ADMIN DASHBOARD READY");
+
+    console.log(
+        "ADMIN DASHBOARD READY"
+    );
+
     console.log(
         "Logged in as:",
         authenticatedUser.email
     );
+
     console.log("======================================");
 
 });
