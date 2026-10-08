@@ -1462,78 +1462,18 @@
     const passwordInput = document.getElementById("admin-password");
     const togglePassword = document.getElementById("toggle-password");
 
-    let hideTimer = null;
-    let countdownTimer = null;
-
     if (passwordInput && togglePassword) {
-
         togglePassword.addEventListener("click", () => {
+            const isHidden = passwordInput.type === "password";
 
-            // If password is currently hidden → show it
-            if (passwordInput.type === "password") {
+            passwordInput.type = isHidden ? "text" : "password";
 
-                passwordInput.type = "text";
+            togglePassword.textContent = isHidden ? "Hide" : "Show";
 
-                let seconds = 5;
-
-                togglePassword.textContent = seconds;
-                togglePassword.setAttribute(
-                    "aria-label",
-                    `Password visible. Hiding in ${seconds} seconds`
-                );
-
-                // Clear any previous timers
-                clearTimeout(hideTimer);
-                clearInterval(countdownTimer);
-
-                // Countdown
-                countdownTimer = setInterval(() => {
-
-                    seconds--;
-
-                    if (seconds > 0) {
-                        togglePassword.textContent = seconds;
-
-                        togglePassword.setAttribute(
-                            "aria-label",
-                            `Password visible. Hiding in ${seconds} seconds`
-                        );
-                    }
-
-                }, 1000);
-
-                // Automatically hide after 5 seconds
-                hideTimer = setTimeout(() => {
-
-                    clearInterval(countdownTimer);
-
-                    passwordInput.type = "password";
-
-                    togglePassword.textContent = "Show";
-
-                    togglePassword.setAttribute(
-                        "aria-label",
-                        "Show password"
-                    );
-
-                }, 5000);
-
-            } else {
-
-                // If clicked while password is visible,
-                // hide immediately.
-                clearTimeout(hideTimer);
-                clearInterval(countdownTimer);
-
-                passwordInput.type = "password";
-
-                togglePassword.textContent = "Show";
-
-                togglePassword.setAttribute(
-                    "aria-label",
-                    "Show password"
-                );
-            }
+            togglePassword.setAttribute(
+                "aria-label",
+                isHidden ? "Hide password" : "Show password"
+            );
         });
     }
 </script>
