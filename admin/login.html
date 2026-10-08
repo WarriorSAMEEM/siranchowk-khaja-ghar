@@ -1456,24 +1456,84 @@
          DO NOT REMOVE OR RENAME.
          Vite bundles Firebase dependencies automatically.
     ================================================================= -->
-    script type="module">
+    <script type="module">
     import "./js/login-handler.js";
 
     const passwordInput = document.getElementById("admin-password");
     const togglePassword = document.getElementById("toggle-password");
 
+    let hideTimer = null;
+    let countdownTimer = null;
+
     if (passwordInput && togglePassword) {
+
         togglePassword.addEventListener("click", () => {
-            const isHidden = passwordInput.type === "password";
 
-            passwordInput.type = isHidden ? "text" : "password";
+            // If password is currently hidden → show it
+            if (passwordInput.type === "password") {
 
-            togglePassword.textContent = isHidden ? "Hide" : "Show";
+                passwordInput.type = "text";
 
-            togglePassword.setAttribute(
-                "aria-label",
-                isHidden ? "Hide password" : "Show password"
-            );
+                let seconds = 5;
+
+                togglePassword.textContent = seconds;
+                togglePassword.setAttribute(
+                    "aria-label",
+                    `Password visible. Hiding in ${seconds} seconds`
+                );
+
+                // Clear any previous timers
+                clearTimeout(hideTimer);
+                clearInterval(countdownTimer);
+
+                // Countdown
+                countdownTimer = setInterval(() => {
+
+                    seconds--;
+
+                    if (seconds > 0) {
+                        togglePassword.textContent = seconds;
+
+                        togglePassword.setAttribute(
+                            "aria-label",
+                            `Password visible. Hiding in ${seconds} seconds`
+                        );
+                    }
+
+                }, 1000);
+
+                // Automatically hide after 5 seconds
+                hideTimer = setTimeout(() => {
+
+                    clearInterval(countdownTimer);
+
+                    passwordInput.type = "password";
+
+                    togglePassword.textContent = "Show";
+
+                    togglePassword.setAttribute(
+                        "aria-label",
+                        "Show password"
+                    );
+
+                }, 5000);
+
+            } else {
+
+                // If clicked while password is visible,
+                // hide immediately.
+                clearTimeout(hideTimer);
+                clearInterval(countdownTimer);
+
+                passwordInput.type = "password";
+
+                togglePassword.textContent = "Show";
+
+                togglePassword.setAttribute(
+                    "aria-label",
+                    "Show password"
+                );
+            }
         });
     }
 </script>
@@ -1654,25 +1714,6 @@
             );
         })();
 
-
-
-
-
-        const passwordInput = document.getElementById("admin-password");
-    const togglePassword = document.getElementById("toggle-password");
-
-    togglePassword.addEventListener("click", () => {
-        const isHidden = passwordInput.type === "password";
-
-        passwordInput.type = isHidden ? "text" : "password";
-
-        togglePassword.textContent = isHidden ? "Hide" : "Show";
-
-        togglePassword.setAttribute(
-            "aria-label",
-            isHidden ? "Hide password" : "Show password"
-        );
-    });
     </script>
 </body>
 </html>
