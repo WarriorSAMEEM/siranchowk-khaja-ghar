@@ -688,146 +688,120 @@ function initMenuPage() {
 // 8. RENDER MENU
 // ============================================================================
 
-function renderMenuItems(category) {
+function renderMenuItems(category = "all") {
+    const menuContainer = document.getElementById("menu-grid-container");
 
-    const menuContainer =
-        document.getElementById(
-            "menu-grid-container"
-        );
-
-    if (!menuContainer) return;
-
-
-    menuContainer.innerHTML = "";
-
-
-    const filteredItems =
-        category === "all"
-            ? menuItems
-            : menuItems.filter(
-                (item) =>
-                    item.category === category
-            );
-
-
-    if (filteredItems.length === 0) {
-
-        menuContainer.innerHTML = `
-            <p
-                style="
-                    grid-column: 1 / -1;
-                    text-align: center;
-                    padding: 2rem;
-                "
-            >
-                No menu items found in this category.
-            </p>
-        `;
-
+    if (!menuContainer) {
+        console.error("Menu container #menu-grid-container not found.");
         return;
     }
 
+    menuContainer.replaceChildren();
+
+    if (!Array.isArray(menuItems)) {
+        console.error("menuItems must be an array.");
+        menuContainer.textContent = "Menu is temporarily unavailable.";
+        return;
+    }
+
+    const selectedCategory = category || "all";
+    const filteredItems = selectedCategory === "all"
+        ? menuItems
+        : menuItems.filter((item) => item.category === selectedCategory);
+
+    if (filteredItems.length === 0) {
+        const message = document.createElement("p");
+        message.className = "menu-empty-message";
+        message.textContent = "No menu items found in this category.";
+        message.style.gridColumn = "1 / -1";
+        message.style.textAlign = "center";
+        message.style.padding = "2rem";
+        menuContainer.appendChild(message);
+        return;
+    }
+
+    const whatsappNumber = String(SITE_CONFIG?.whatsapp || "9779821233154").replace(/\D/g, "");
 
     filteredItems.forEach((item) => {
+        if (!item || !item.name) return;
 
-        const isSpecial =
-            item.category === "special";
-
-
-        const waText =
-            encodeURIComponent(
-                `Hello Siranchowk Khaja Ghar, I would like to order ${item.name}.`
-            );
-
-
-        const waUrl =
-            `https://wa.me/${SITE_CONFIG.whatsapp}?text=${waText}`;
-
-
-        const cardHtml = `
-            <div class="dish-card ${
-                isSpecial
-                    ? "special-dish-card"
-                    : ""
-            }">
-
-                <div class="dish-img-wrapper">
-
-                    <img
-                        src="${item.image}"
-                        alt="${item.alt}"
-                        loading="lazy"
-                    >
-
-                    ${
-                        isSpecial
-                            ? `
-                                <span class="dish-badge special-badge">
-                                    Friday & Special Days
-                                </span>
-                            `
-                            : ""
-                    }
-
-                </div>
-
-
-                <div class="dish-info">
-
-                    <div class="dish-title-row">
-
-                        <h3>
-                            ${item.name}
-                        </h3>
-
-                        <span class="dish-nepali">
-                            ${item.nepaliName}
-                        </span>
-
-                    </div>
-
-
-                    <p class="dish-desc">
-                        ${item.description}
-                    </p>
-
-
-                    <div class="dish-footer">
-
-                        <span class="dish-price">
-                            ${item.priceNote}
-                        </span>
-
-                        <a
-                            href="${waUrl}"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="btn-sm btn-whatsapp"
-                        >
-                            ${
-                                isSpecial
-                                    ? "Inquire"
-                                    : "Order"
-                            }
-                        </a>
-
-                    </div>
-
-                </div>
-
-            </div>
-        `;
-
-
-        menuContainer.insertAdjacentHTML(
-            "beforeend",
-            cardHtml
+        const isSpecial = item.category === "special";
+        const waText = encodeURIComponent(
+            `Hello Siranchowk Khaja Ghar, I would like to order ${item.name}.`
         );
+        const waUrl = `https://wa.me/${whatsappNumber}?text=${waText}`;
 
+        const card = document.createElement("article");
+        card.className = "dish-card";
+
+        if (isSpecial) {
+            card.classList.add("special-dish-card");
+        }
+
+        const imageWrapper = document.createElement("div");
+        imageWrapper.className = "dish-img-wrapper";
+
+        const image = document.createElement("img");
+        image.alt = item.alt || item.name;
+        image.loading = "lazy";
+        image.decoding = "async";
+
+        if (item.image) {
+            image.src = item.image;
+        } else {
+            imageWrapper.classList.add("dish-image-error");
+        }
+
+        imageWrapper.appendChild(image);
+
+        if (isSpecial) {
+            const badge = document.createElement("span");
+            badge.className = "dish-badge special-badge";
+            badge.textContent = "Friday & Special Days";
+            imageWrapper.appendChild(badge);
+        }
+
+        const info = document.createElement("div");
+        info.className = "dish-info";
+
+        const titleRow = document.createElement("div");
+        titleRow.className = "dish-title-row";
+
+        const title = document.createElement("h3");
+        title.textContent = item.name;
+
+        const nepaliName = document.createElement("span");
+        nepaliName.className = "dish-nepali";
+        nepaliName.textContent = item.nepaliName || "";
+
+        titleRow.append(title, nepaliName);
+
+        const description = document.createElement("p");
+        description.className = "dish-desc";
+        description.textContent = item.description || "";
+
+        const footer = document.createElement("div");
+        footer.className = "dish-footer";
+
+        const price = document.createElement("span");
+        price.className = "dish-price";
+        price.textContent = item.priceNote || "Ask for price";
+
+        const orderLink = document.createElement("a");
+        orderLink.href = waUrl;
+        orderLink.target = "_blank";
+        orderLink.rel = "noopener noreferrer";
+        orderLink.className = "btn-sm btn-whatsapp";
+        orderLink.textContent = isSpecial ? "Inquire" : "Order";
+
+        footer.append(price, orderLink);
+        info.append(titleRow, description, footer);
+        card.append(imageWrapper, info);
+        menuContainer.appendChild(card);
     });
 
+    console.log(`Rendered ${filteredItems.length} menu items.`);
 }
-
 
 // ============================================================================
 // 9. FIREBASE REALTIME DATABASE
