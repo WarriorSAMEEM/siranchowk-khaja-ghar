@@ -1,20 +1,23 @@
 import { defineConfig } from "vite";
-import { resolve } from "path";
-import { copyFileSync, mkdirSync, readdirSync, statSync } from "fs";
+import { resolve } from "node:path";
+import {
+    copyFileSync,
+    mkdirSync,
+    readdirSync,
+    statSync,
+} from "node:fs";
 
 function copyAdminScripts() {
     return {
         name: "copy-admin-scripts",
 
         closeBundle() {
-            const sourceDir = resolve(__dirname, "admin/js");
-            const targetDir = resolve(__dirname, "dist/admin/js");
+            const sourceDir = resolve("admin/js");
+            const targetDir = resolve("dist/admin/js");
 
             mkdirSync(targetDir, { recursive: true });
 
-            const files = readdirSync(sourceDir);
-
-            for (const file of files) {
+            for (const file of readdirSync(sourceDir)) {
                 const sourcePath = resolve(sourceDir, file);
                 const targetPath = resolve(targetDir, file);
 
@@ -24,22 +27,23 @@ function copyAdminScripts() {
             }
 
             console.log("Admin JS files copied successfully.");
-        }
+        },
     };
 }
 
 export default defineConfig({
-    plugins: [
-        copyAdminScripts()
-    ],
+    plugins: [copyAdminScripts()],
 
     build: {
         rollupOptions: {
             input: {
-                main: resolve(__dirname, "index.html"),
-                adminLogin: resolve(__dirname, "admin/login.html"),
-                adminDashboard: resolve(__dirname, "admin/admin.html")
-            }
-        }
-    }
+                main: resolve("index.html"),
+                menu: resolve("menu.html"),
+                about: resolve("about.html"),
+                contact: resolve("contact.html"),
+                adminLogin: resolve("admin/login.html"),
+                adminDashboard: resolve("admin/admin.html"),
+            },
+        },
+    },
 });
