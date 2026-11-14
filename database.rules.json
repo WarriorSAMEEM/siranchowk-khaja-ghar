@@ -1,0 +1,86 @@
+
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "orders": {
+      ".read": "auth != null && auth.uid === '47SB1i4UL5hlUVPqM1tQoKJFdaM2'",
+
+      "$orderId": {
+        ".write": "(auth != null && auth.uid === '47SB1i4UL5hlUVPqM1tQoKJFdaM2') || (!data.exists() && newData.hasChildren(['id','customerName','customerPhone','items','summary','orderType','status','source','customerTrackingToken','createdAt','updatedAt']) && newData.child('id').val() === $orderId && newData.child('status').val() === 'pending' && newData.child('source').val() === 'website' && newData.child('customerName').isString() && newData.child('customerName').val().length > 0 && newData.child('customerName').val().length <= 80 && newData.child('customerPhone').isString() && newData.child('customerPhone').val().length >= 7 && newData.child('customerPhone').val().length <= 16 && newData.child('summary').isString() && newData.child('summary').val().length <= 1000 && (newData.child('orderType').val() === 'Pickup' || newData.child('orderType').val() === 'Delivery' || newData.child('orderType').val() === 'Dine-in') && newData.child('customerTrackingToken').isString() && newData.child('customerTrackingToken').val().length === 48 && newData.child('items').hasChildren() && newData.child('createdAt').isNumber() && newData.child('updatedAt').isNumber())",
+
+        ".validate": "newData.hasChildren(['id','customerName','customerPhone','items','summary','orderType','status','source','customerTrackingToken','createdAt','updatedAt']) && newData.child('id').isString() && newData.child('customerName').isString() && newData.child('customerPhone').isString() && newData.child('summary').isString() && (newData.child('orderType').val() === 'Pickup' || newData.child('orderType').val() === 'Delivery' || newData.child('orderType').val() === 'Dine-in') && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'accepted' || newData.child('status').val() === 'preparing' || newData.child('status').val() === 'ready' || newData.child('status').val() === 'dispatched' || newData.child('status').val() === 'delivered' || newData.child('status').val() === 'cancelled') && newData.child('source').val() === 'website' && newData.child('customerTrackingToken').isString() && newData.child('customerTrackingToken').val().length === 48 && newData.child('createdAt').isNumber() && newData.child('updatedAt').isNumber()",
+
+        "items": {
+          "$itemKey": {
+            ".validate": "newData.hasChildren(['name','quantity']) && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 100 && newData.child('quantity').isNumber() && newData.child('quantity').val() >= 1 && newData.child('quantity').val() <= 20"
+          }
+        },
+
+        "customerName": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+        },
+        "customerPhone": {
+          ".validate": "newData.isString() && newData.val().length >= 7 && newData.val().length <= 16"
+        },
+        "summary": {
+          ".validate": "newData.isString() && newData.val().length <= 1000"
+        },
+        "deliveryAddress": {
+          ".validate": "newData.isString() && newData.val().length <= 180"
+        },
+        "notes": {
+          ".validate": "newData.isString() && newData.val().length <= 400"
+        },
+        "currency": {
+          ".validate": "newData.val() === 'NPR'"
+        },
+        "priceStatus": {
+          ".validate": "newData.val() === 'confirm_at_counter'"
+        },
+        "orderType": {
+          ".validate": "newData.val() === 'Pickup' || newData.val() === 'Delivery' || newData.val() === 'Dine-in'"
+        },
+        "status": {
+          ".validate": "newData.val() === 'pending' || newData.val() === 'accepted' || newData.val() === 'preparing' || newData.val() === 'ready' || newData.val() === 'dispatched' || newData.val() === 'delivered' || newData.val() === 'cancelled'"
+        },
+        "source": {
+          ".validate": "newData.val() === 'website'"
+        },
+        "customerTrackingToken": {
+          ".validate": "newData.isString() && newData.val().length === 48"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+
+    "orderTracking": {
+      "$token": {
+        ".read": "$token.length === 48",
+
+        ".write": "(auth != null && auth.uid === '47SB1i4UL5hlUVPqM1tQoKJFdaM2') || (!data.exists() && $token.length === 48 && newData.child('status').val() === 'pending' && newData.child('orderId').isString() && newData.child('orderId').val().length <= 64)",
+
+        ".validate": "newData.hasChildren(['orderId','status','updatedAt']) && newData.child('orderId').isString() && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'accepted' || newData.child('status').val() === 'preparing' || newData.child('status').val() === 'ready' || newData.child('status').val() === 'dispatched' || newData.child('status').val() === 'delivered' || newData.child('status').val() === 'cancelled') && newData.child('updatedAt').isNumber()",
+
+        "orderId": {
+          ".validate": "newData.isString() && newData.val().length <= 64"
+        },
+        "status": {
+          ".validate": "newData.val() === 'pending' || newData.val() === 'accepted' || newData.val() === 'preparing' || newData.val() === 'ready' || newData.val() === 'dispatched' || newData.val() === 'delivered' || newData.val() === 'cancelled'"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "customerMessage": {
+          ".validate": "newData.isString() && newData.val().length <= 240"
+        }
+      }
+    }
+  }
+}

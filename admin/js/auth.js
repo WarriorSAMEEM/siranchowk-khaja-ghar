@@ -161,8 +161,17 @@ export async function checkAdminAuth() {
 
 
     // ========================================================================
-    // AUTHENTICATED
+    // AUTHENTICATED - VERIFY EXPLICIT ADMIN UID ALLOWLIST
+    // Replace the placeholder with the Firebase Authentication UID(s) of
+    // trusted administrators. Realtime Database Rules enforce this again.
     // ========================================================================
+    const ADMIN_UIDS = ["47SB1i4UL5hlUVPqM1tQoKJFdaM2"];
+    if (!ADMIN_UIDS.includes(user.uid)) {
+        await signOut(auth);
+        if (isAdminPage) window.location.replace("./login.html");
+        throw new Error("This account is not authorized to access the admin panel.");
+    }
+
 
     currentUser =
         user;

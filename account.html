@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#dff8f7">
+  <title>My Account & Orders | Siranchowk Khaja Ghar</title>
+  <meta name="description" content="View recent orders and order status from this device at Siranchowk Khaja Ghar.">
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .account-wrap{max-width:1000px;margin:0 auto;padding:clamp(28px,6vw,64px) 18px 80px}
+    .account-hero{padding:clamp(24px,5vw,42px);border-radius:26px;background:linear-gradient(135deg,#123f3b,#087f78);color:#fff;box-shadow:0 18px 45px #123f3b22}
+    .account-hero h1{margin:0 0 8px;font-size:clamp(27px,5vw,42px);color:#fff}
+    .account-hero p{margin:0;max-width:680px;color:#e0f5f1;line-height:1.65}
+    .account-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0 28px}
+    .account-stat,.account-card{background:#fff;border:1px solid #e1ece9;border-radius:18px;box-shadow:0 8px 24px #123f3b0a}
+    .account-stat{padding:18px}.account-stat small{display:block;color:#71837f;font-weight:700}.account-stat strong{display:block;margin-top:6px;color:#123f3b;font-size:25px}
+    .account-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 14px}.account-section-title h2{margin:0;color:#173f3a;font-size:clamp(21px,4vw,28px)}
+    .account-card{padding:20px;margin:12px 0}.account-order-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.account-order-top h3{margin:0;color:#173f3a;font-size:17px}.account-muted{color:#70817e;font-size:13px;line-height:1.55}.account-status{display:inline-flex;align-items:center;padding:6px 11px;border-radius:999px;background:#fff5df;color:#8a5b11;font-size:12px;font-weight:800;text-transform:capitalize}.account-status.accepted,.account-status.preparing,.account-status.ready,.account-status.dispatched,.account-status.delivered{background:#e8f7ef;color:#176b3b}.account-status.cancelled{background:#fff0ef;color:#a53e35}
+    .account-items{margin:14px 0;padding:12px 14px;border-radius:12px;background:#f5faf8;color:#345b55;font-size:14px;line-height:1.7}.account-order-bottom{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}.account-btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 14px;border:0;border-radius:11px;background:#087f78;color:#fff;text-decoration:none;font:inherit;font-size:13px;font-weight:800;cursor:pointer}.account-btn.secondary{background:#edf5f3;color:#24524b}.account-empty{text-align:center;padding:38px 20px}.account-empty h3{margin:0 0 8px;color:#173f3a}.account-notice{margin:18px 0;padding:14px 16px;border:1px solid #f0dfb7;border-radius:14px;background:#fffaf0;color:#76531c;font-size:13px;line-height:1.6}.account-notifications{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    @media(max-width:650px){.account-grid{grid-template-columns:1fr}.account-stat{display:flex;align-items:center;justify-content:space-between}.account-stat strong{margin:0}.account-card{padding:16px}.account-order-bottom>*{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="announcement-bar"><div class="container announcement-content"><span>📍 Khairahani-6, Parsa, Chitwan, Nepal</span><span>⏰ 6:30 AM – 9:00 PM</span><a href="tel:9821233154">📞 9821233154</a></div></div>
+  <header class="site-header"><div class="container header-inner">
+    <a href="index.html" class="brand-logo" aria-label="Siranchowk Khaja Ghar Home"><img src="https://i.postimg.cc/HnL4h5rL/siranchowkpng-logo.png" alt="Siranchowk Khaja Ghar Logo" class="logo-img"><div class="brand-text"><span class="brand-title">Siranchowk Khaja Ghar</span><span class="brand-nepali">सिरानचोक खाजा घर</span></div></a>
+    <button class="mobile-nav-toggle" aria-expanded="false" aria-controls="primary-nav" aria-label="Toggle navigation menu"><span class="hamburger-line"></span><span class="hamburger-line"></span><span class="hamburger-line"></span></button>
+    <nav id="primary-nav" class="primary-nav"><ul class="nav-list"><li><a href="index.html" class="nav-link">Home</a></li><li><a href="menu.html" class="nav-link">Menu</a></li><li><a href="about.html" class="nav-link">About Us</a></li><li><a href="contact.html" class="nav-link">Contact</a></li><li><a href="account.html" class="nav-link active">My Account</a></li></ul><div class="nav-actions"><a href="https://wa.me/9779821233154" target="_blank" rel="noopener" class="btn btn-whatsapp header-cta">WhatsApp</a></div></nav>
+  </div></header>
+  <main class="account-wrap">
+    <section class="account-hero"><span style="font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#bce9df">CUSTOMER SPACE</span><h1>My Account & Orders</h1><p>See the orders you have placed from this browser and follow their latest status. A secure Google or email sign-in will be connected in a later update.</p></section>
+    <div class="account-notice"><strong>Pre-login version:</strong> Order history is saved only in this browser/device. It will not automatically appear on another phone or browser, and clearing browser data can remove this local history. Your order itself is still submitted to the restaurant's order system.</div>
+    <section class="account-grid" aria-label="Order summary"><div class="account-stat"><small>Orders on this device</small><strong id="account-total">0</strong></div><div class="account-stat"><small>In progress</small><strong id="account-active">0</strong></div><div class="account-stat"><small>Completed</small><strong id="account-completed">0</strong></div></section>
+    <section class="account-card account-notifications"><div><strong style="color:#173f3a">Order status alerts</strong><div class="account-muted">Allow browser notifications while this page is open.</div></div><button class="account-btn secondary" id="enable-notifications" type="button">Enable notifications</button></section>
+    <div class="account-section-title"><h2>My previous orders</h2><a href="menu.html" class="account-btn">Order food</a></div>
+    <section id="account-orders" aria-live="polite"><div class="account-card account-empty"><h3>Loading your orders…</h3><p class="account-muted">Please wait.</p></div></section>
+    <p class="account-muted" style="text-align:center;margin-top:30px">Need help? <a href="https://wa.me/9779821233154" target="_blank" rel="noopener">Contact us on WhatsApp</a> · 9821233154</p>
+  </main>
+  <script type="module" src="/js/main.js"></script>
+  <script type="module" src="/js/account.js"></script>
+</body>
+</html>

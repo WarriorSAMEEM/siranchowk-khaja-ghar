@@ -46,7 +46,7 @@ const UIModule = (() => {
         showToast(message, type = 'info') {
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
-            toast.innerHTML = `<span>${Utils.escapeHTML(message)}</span>`;
+            toast.innerHTML = `<span>${window.Utils.escapeHTML(message)}</span>`;
             toastContainer.appendChild(toast);
             setTimeout(() => toast.remove(), 3500);
         },
@@ -65,3 +65,4 @@ const UIModule = (() => {
         }
     };
 })();
+window.UIModule = UIModule;

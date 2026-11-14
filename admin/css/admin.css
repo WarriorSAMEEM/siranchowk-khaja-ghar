@@ -517,3 +517,68 @@ body.admin-body {
     color: var(--color-primary);
     font-weight: 600;
 }
+
+/* Siranchowk Order Desk refinement */
+:root {
+    --color-primary: #087f78;
+    --color-primary-hover: #066b65;
+    --color-primary-light: #e4f5f1;
+    --color-primary-subtle: rgba(8, 127, 120, .10);
+    --color-accent: #35b7a7;
+    --surface-sidebar: #123f3b;
+    --surface-sidebar-hover: #1b514b;
+    --surface-sidebar-active: #087f78;
+}
+.skg-sidebar-note { margin-top: 24px; }
+.skg-sidebar-help {
+    margin: 0 8px;
+    color: rgba(235, 248, 245, .68);
+    font-size: 12px;
+    line-height: 1.6;
+}
+.sidebar-nav .nav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-size: 19px;
+    font-weight: 700;
+}
+.skg-dashboard-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-top: 24px;
+    padding: 20px;
+    border: 1px solid #dcebe7;
+    border-radius: 16px;
+    background: linear-gradient(120deg, #f3fbf8, #f8fcfb);
+}
+.skg-dashboard-bottom h3 { margin: 0 0 5px; color: #183b37; }
+.skg-dashboard-bottom p { margin: 0; max-width: 650px; color: #607773; font-size: 13px; line-height: 1.6; }
+.skg-recent-orders { display: grid; gap: 0; }
+.skg-recent-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 13px 2px;
+    border-bottom: 1px solid #edf2f0;
+}
+.skg-recent-row:last-child { border-bottom: 0; }
+.skg-recent-row > div { display: grid; gap: 4px; }
+.skg-recent-row strong { color: #254741; font-size: 14px; }
+.skg-recent-row span,.skg-recent-row small { color: #71837f; font-size: 12px; }
+.skg-recent-row > div:last-child { text-align: right; }
+.skg-recent-row b { color: #087f78; font-size: 12px; text-transform: capitalize; }
+.skg-recent-empty,.skg-dashboard-error { padding: 24px; color: #71837f; text-align: center; }
+.skg-admin-loading { padding: 32px; color: #71837f; text-align: center; }
+@media(max-width:600px) {
+    .skg-dashboard-bottom { align-items: stretch; flex-direction: column; }
+    .skg-dashboard-bottom .btn { width: 100%; }
+    .skg-recent-row { align-items: flex-start; }
+}
+
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}

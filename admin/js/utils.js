@@ -15,7 +15,7 @@ const Utils = {
 
     formatCurrency(amount) {
         const num = parseFloat(amount) || 0;
-        return `${ADMIN_CONFIG.business.currencySymbol} ${num.toLocaleString('en-IN')}`;
+        return `${window.ADMIN_CONFIG.business.currencySymbol} ${num.toLocaleString('en-IN')}`;
     },
 
     formatDate(dateStr) {
@@ -43,3 +43,4 @@ const Utils = {
         };
     }
 };
+window.Utils = Utils;
