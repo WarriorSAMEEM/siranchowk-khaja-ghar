@@ -1,6 +1,11 @@
 
 import { db, ref, onValue, update } from "../../js/firebase.js";
 
+import {
+    enableAdminPush,
+    notifyCustomerOrderStatus
+} from "../../js/push-notifications.js";
+
 const STATUSES = [
     "pending",
     "accepted",
@@ -408,35 +413,37 @@ function startOrderMonitor() {
     return monitorUnsubscribe;
 }
 
+/* Register this admin device with Firebase Cloud Messaging. */
 async function enableBrowserNotifications(button) {
     if (!("Notification" in window)) {
         alert(
-            "This browser does not support desktop notifications. In-panel notifications will still work."
+            "This browser does not support notifications. Please use a supported browser."
         );
         return;
     }
 
+    button.disabled = true;
+    button.textContent = "Registering device…";
+
     try {
-        const permission = await Notification.requestPermission();
+        await enableAdminPush();
 
-        if (permission === "granted") {
-            button.textContent = "✓ Browser alerts enabled";
-            button.disabled = true;
+        button.textContent = "✓ Admin push alerts enabled";
 
-            notifyAdmin(
-                "Notifications enabled",
-                "New orders and status changes will appear here."
-            );
-        } else {
-            button.textContent = "Notifications blocked";
-
-            alert(
-                "Browser notifications were not allowed. In-panel alerts will continue while the admin panel is open."
-            );
-        }
+        notifyAdmin(
+            "Notifications enabled",
+            "This device is registered for new website order alerts."
+        );
     } catch (error) {
-        console.error("Notification permission error:", error);
-        alert("Could not enable browser notifications.");
+        console.error("Admin push registration failed:", error);
+
+        button.disabled = false;
+        button.textContent = "🔔 Enable push alerts";
+
+        alert(
+            "Could not enable admin push notifications:\n" +
+            (error.message || "Unknown error")
+        );
     }
 }
 
@@ -581,7 +588,7 @@ const OrdersModule = {
                         class="btn btn-primary"
                         id="skg-enable-admin-notifications"
                     >
-                        🔔 Enable browser alerts
+                        🔔 Enable push alerts
                     </button>
                 </div>
 
@@ -706,7 +713,9 @@ const OrdersModule = {
                             `Your order is now ${STATUS_LABELS[nextStatus] || nextStatus}.`;
 
                         try {
-                            // Update the specific order path, not the database root.
+                            /*
+                             * Step 1: Update the main order.
+                             */
                             await update(
                                 ref(db, `orders/${id}`),
                                 {
@@ -715,6 +724,55 @@ const OrdersModule = {
                                 }
                             );
 
+                            /*
+                             * Step 2: Update customer tracking.
+                             * Worker verification requires matching status.
+                             */
+                            if (order.customerTrackingToken) {
+                                await update(
+                                    ref(
+                                        db,
+                                        `orderTracking/${order.customerTrackingToken}`
+                                    ),
+                                    {
+                                        status: nextStatus,
+                                        updatedAt: now,
+                                        customerMessage: message
+                                    }
+                                );
+
+                                /*
+                                 * Step 3: Send push notification to customer.
+                                 * A push failure must not undo the saved order.
+                                 */
+                                try {
+                                    const result = await notifyCustomerOrderStatus(
+                                        id,
+                                        nextStatus
+                                    );
+
+                                    console.log(
+                                        "Customer push notification result:",
+                                        result
+                                    );
+                                } catch (pushError) {
+                                    console.error(
+                                        "Customer push notification failed:",
+                                        pushError
+                                    );
+
+                                    notifyAdmin(
+                                        "Customer push warning",
+                                        "Order status was saved, but the push notification could not be sent."
+                                    );
+                                }
+                            } else {
+                                notifyAdmin(
+                                    "Tracking token missing",
+                                    "Order status was saved, but customer push alerts could not be sent."
+                                );
+                            }
+
                             saveButton.textContent = "Saved";
 
                             notifyAdmin(
@@ -722,37 +780,11 @@ const OrdersModule = {
                                 `${order.customerName || "Customer"} • ${STATUS_LABELS[nextStatus]}`
                             );
 
-                            // Tracking is updated separately.
-                            if (order.customerTrackingToken) {
-                                try {
-                                    await update(
-                                        ref(
-                                            db,
-                                            `orderTracking/${order.customerTrackingToken}`
-                                        ),
-                                        {
-                                            status: nextStatus,
-                                            updatedAt: now,
-                                            customerMessage: message
-                                        }
-                                    );
-                                } catch (trackingError) {
-                                    console.error(
-                                        "Order saved, but tracking update failed:",
-                                        trackingError
-                                    );
-
-                                    notifyAdmin(
-                                        "Tracking update warning",
-                                        "Order status was saved, but customer tracking could not be updated."
-                                    );
-                                }
-                            }
                         } catch (error) {
                             console.error("Order status update failed:", error);
 
                             alert(
-                                `Could not update this order: ${error.message}`
+                                `Could not fully update this order: ${error.message}`
                             );
 
                             saveButton.disabled = false;

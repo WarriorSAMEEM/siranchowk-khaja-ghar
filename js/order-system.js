@@ -7,6 +7,11 @@ import {
     onValue
 } from "./firebase.js";
 
+import {
+    enableCustomerPush,
+    notifyAdminNewOrder
+} from "./push-notifications.js";
+
 const BUSINESS = {
     name: "Siranchowk Khaja Ghar",
     phone: "9821233154",
@@ -528,7 +533,6 @@ function makeWhatsAppMessage(values) {
 function sendWhatsApp() {
     const values = getFormValues();
 
-    // WhatsApp orders must include the customer's name and phone number.
     const error = validateOrder(values, true);
 
     if (error) {
@@ -608,6 +612,12 @@ async function placeOrder(event) {
         // First: save the actual customer order.
         await set(orderRef, order);
 
+        // Notify admin after the order is saved.
+        // Notification failure must not cancel the order.
+        notifyAdminNewOrder(orderId).catch((error) => {
+            console.error("Admin push notification failed:", error);
+        });
+
         // Second: save the tracking record separately.
         try {
             await set(
@@ -636,17 +646,19 @@ async function placeOrder(event) {
                 );
             } catch (storageError) {
                 console.warn(
-                    "Tracking information could not be saved locally:",
+                    "Tracking information could not be saved locally.",
                     storageError
                 );
             }
         }
 
         // Save a customer-visible history copy on this browser.
-        // This is a temporary pre-login profile; it is not cross-device account storage.
         try {
             const historyKey = "skg_customer_orders_v1";
-            const history = JSON.parse(localStorage.getItem(historyKey) || "[]");
+            const history = JSON.parse(
+                localStorage.getItem(historyKey) || "[]"
+            );
+
             history.unshift({
                 id: orderId,
                 token: trackingSaved ? trackingToken : null,
@@ -660,9 +672,17 @@ async function placeOrder(event) {
                 status: "pending",
                 createdAt: now
             });
-            localStorage.setItem(historyKey, JSON.stringify(history.slice(0, 50)));
+
+            localStorage.setItem(
+                historyKey,
+                JSON.stringify(history.slice(0, 50))
+            );
+
         } catch (historyError) {
-            console.warn("Local customer order history could not be saved.", historyError);
+            console.warn(
+                "Local customer order history could not be saved.",
+                historyError
+            );
         }
 
         // The order itself has been saved successfully.
@@ -720,10 +740,9 @@ async function placeOrder(event) {
         if (trackingSaved) {
             document
                 .getElementById("skg-enable-customer-notifications")
-                ?.addEventListener(
-                    "click",
-                    enableCustomerStatusAlerts
-                );
+                ?.addEventListener("click", () => {
+                    enableCustomerStatusAlerts(trackingToken);
+                });
 
             listenForCustomerUpdates(
                 trackingToken,
@@ -759,42 +778,45 @@ async function placeOrder(event) {
 
 let customerNotificationPermission = false;
 
-async function enableCustomerStatusAlerts() {
-    if (!("Notification" in window)) {
-        alert(
-            "This browser does not support notifications. " +
-            "Keep this page open to see order status updates."
-        );
+async function enableCustomerStatusAlerts(trackingToken) {
+    const button = document.getElementById(
+        "skg-enable-customer-notifications"
+    );
 
+    if (!button) return;
+
+    if (!trackingToken) {
+        alert("Order tracking information was not found.");
         return;
     }
 
+    button.disabled = true;
+    button.textContent = "Enabling alerts…";
+
     try {
-        const permission = await Notification.requestPermission();
+        await enableCustomerPush(trackingToken);
 
-        customerNotificationPermission = permission === "granted";
+        customerNotificationPermission = true;
 
-        const button = document.getElementById(
-            "skg-enable-customer-notifications"
+        button.textContent = "✓ Order alerts enabled";
+
+        alert(
+            "Order notifications are enabled on this device."
         );
 
-        if (button) {
-            button.textContent = customerNotificationPermission
-                ? "Status alerts enabled"
-                : "Alerts not enabled";
-        }
-
-        if (permission !== "granted") {
-            alert(
-                "Notifications were not allowed. " +
-                "You can still track your order while this page is open."
-            );
-        }
-
     } catch (error) {
-        console.error("Notification permission error:", error);
+        console.error(
+            "Customer push registration failed:",
+            error
+        );
 
-        alert("Could not enable notifications in this browser.");
+        button.disabled = false;
+        button.textContent = "Enable status alerts";
+
+        alert(
+            "Could not enable order notifications: " +
+            error.message
+        );
     }
 }
 
@@ -910,30 +932,46 @@ document.addEventListener("DOMContentLoaded", () => {
     mountUI();
 
     const menuContainer = document.getElementById("menu-grid-container");
+
     if (menuContainer) {
         const observer = new MutationObserver(() => mountUI());
-        observer.observe(menuContainer, { childList: true, subtree: true });
+
+        observer.observe(menuContainer, {
+            childList: true,
+            subtree: true
+        });
     }
 
     // Route customer-facing WhatsApp order CTAs through the shared cart/checkout.
-    // Footer contact links are intentionally left as direct WhatsApp links.
     document.querySelectorAll('a[href*="wa.me"]').forEach((link) => {
         if (link.dataset.skgCartBound === "true") return;
         if (link.closest("footer")) return;
-        if (!link.classList.contains("btn") && !link.classList.contains("btn-sm") &&
-            !link.classList.contains("header-cta")) return;
+
+        if (
+            !link.classList.contains("btn") &&
+            !link.classList.contains("btn-sm") &&
+            !link.classList.contains("header-cta")
+        ) return;
 
         link.dataset.skgCartBound = "true";
+
         link.addEventListener("click", (event) => {
             event.preventDefault();
+
             const card = link.closest(".dish-card");
             const dishName = card?.querySelector("h3")?.textContent?.trim();
+
             if (dishName) {
                 const quantity = cart.get(dishName) || 0;
-                if (quantity < 20) cart.set(dishName, quantity + 1);
+
+                if (quantity < 20) {
+                    cart.set(dishName, quantity + 1);
+                }
+
                 saveCart();
                 refreshCart();
             }
+
             openCart();
         });
     });
