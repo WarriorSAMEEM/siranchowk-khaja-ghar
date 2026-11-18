@@ -1,0 +1,23 @@
+{
+  "name": "siranchowk-khaja-ghar",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "start": "npm run dev",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "lint": "node scripts/verify-project.js",
+    "check": "node scripts/verify-project.js",
+    "test": "node --test scripts/worker.test.js"
+  },
+  "dependencies": {
+    "firebase": "^12.19.0"
+  },
+  "devDependencies": {
+    "vite": "^8.3.2"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

@@ -1,0 +1,21 @@
+node_modules/
+dist/
+functions/node_modules/
+.env
+.env.*.local
+.firebase/
+.env.local
+# Private credentials - never publish
+SKG-PRIVATE/
+**/firebase-service-account*.json
+**/*service-account*.json
+**/*.pem
+!.env.example
+# Private credentials - never commit
+# Never commit local dependency/build output or old distributable archives
+security-backups/
+Siranchowk-Khaja-Ghar-Final-Production-Version.zip
+*.bak
+# Never place AI Studio/service-account credentials in public assets
+public/assets/aistudio/
+**/firebase-adminsdk*.json

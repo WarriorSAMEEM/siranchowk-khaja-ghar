@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#dff8f7">
+  <title>My Account &amp; Orders | Siranchowk Khaja Ghar</title>
+  <meta name="description" content="Sign in to Siranchowk Khaja Ghar to manage your profile, view private order history, track live order status, and apply active coupons.">
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg">
+  <link rel="manifest" href="/assets/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="announcement-bar">
+    <div class="container announcement-content">
+      <span>📍 Khairahani-6, Parsa, Chitwan, Nepal (Behind Chaudhary Medical)</span>
+      <span class="announcement-hours">⏰ Open Daily: 6:30 AM – 9:00 PM</span>
+      <a href="tel:9821233154" class="announcement-phone">📞 9821233154</a>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand-logo" aria-label="Siranchowk Khaja Ghar Home">
+        <img src="https://i.postimg.cc/HnL4h5rL/siranchowkpng-logo.png" referrerpolicy="no-referrer" alt="Siranchowk Khaja Ghar Logo" class="logo-img">
+        <div class="brand-text">
+          <span class="brand-title">Siranchowk Khaja Ghar</span>
+          <span class="brand-nepali">सिरानचोक खाजा घर</span>
+        </div>
+      </a>
+
+      <button class="mobile-nav-toggle" aria-expanded="false" aria-controls="primary-nav" aria-label="Toggle navigation menu">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+
+      <nav id="primary-nav" class="primary-nav">
+        <ul class="nav-list">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="menu.html" class="nav-link">Menu</a></li>
+          <li><a href="about.html" class="nav-link">About</a></li>
+          <li><a href="contact.html" class="nav-link">Contact</a></li>
+          <li><a href="account.html?mode=login" class="nav-link active">Login</a></li>
+          <li><a href="account.html?mode=signup" class="nav-link">Sign Up</a></li>
+        </ul>
+        <div class="nav-actions">
+          <button type="button" class="btn btn-primary header-cta nav-cart-trigger" id="nav-open-cart-btn">
+            Cart <span class="nav-cart-badge" id="nav-cart-badge">0</span>
+          </button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main id="account-root" class="account-wrap" aria-live="polite">
+    <section class="account-card account-empty">
+      <h2>Checking your account session…</h2>
+      <p class="account-muted">Please wait while we verify your authentication status.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-grid">
+        <div class="footer-col footer-about">
+          <div class="footer-brand">
+            <img src="https://i.postimg.cc/HnL4h5rL/siranchowkpng-logo.png" referrerpolicy="no-referrer" alt="Siranchowk Khaja Ghar Logo" class="footer-logo">
+            <div>
+              <h3>Siranchowk Khaja Ghar</h3>
+              <p class="nepali-sub">सिरानचोक खाजा घर</p>
+            </div>
+          </div>
+          <p class="tagline">"Your Satisfaction Is Our Satisfaction"</p>
+          <p class="footer-desc">Serving fresh everyday snacks, momo, chowmein, paratha, and hot tea in Khairahani 6, Parsa, Chitwan.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Quick Links</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="menu.html">Our Menu</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact &amp; Map</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Customer Portal</h4>
+          <ul class="footer-links">
+            <li><a href="account.html?mode=login">Login</a></li>
+            <li><a href="account.html?mode=signup">Create Account</a></li>
+            <li><a href="account.html#tracking">Order Tracking</a></li>
+            <li><a href="menu.html#offers">Active Coupons</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Contact Us</h4>
+          <p class="footer-contact-item">📍 Khairahani 6, Parsa, Chitwan<br><small>(Behind Chaudhary Medical)</small></p>
+          <p class="footer-contact-item">📞 <a href="tel:9821233154">9821233154</a></p>
+          <p class="footer-contact-item">💬 <a href="https://wa.me/9779821233154" target="_blank" rel="noopener">WhatsApp: +977 9821233154</a></p>
+          <p class="footer-contact-item">⏰ 6:30 AM – 9:00 PM Daily</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; <span id="current-year">2026</span> Siranchowk Khaja Ghar (सिरानचोक खाजा घर). All rights reserved.</p>
+        <p class="footer-subtext">Khairahani, Parsa, Chitwan, Nepal</p>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="/js/main.js"></script>
+  <script type="module" src="/js/order-system.js"></script>
+  <script type="module" src="/js/account.js"></script>
+  <script type="module" src="/js/analytics-tracker.js"></script>
+</body>
+</html>
