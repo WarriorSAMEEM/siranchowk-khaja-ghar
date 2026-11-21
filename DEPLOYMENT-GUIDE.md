@@ -1,3 +1,5 @@
+> **Data compatibility note:** The supplied RTDB export contains legacy `pushSubscriptions` and `pushNotificationEvents` records, but the current frontend and Worker do not use those paths. The current rules explicitly deny client access to them to protect stored FCM tokens. Existing records are not deleted. Do not re-enable these paths without a reviewed server-side migration.
+
 # Siranchowk Khaja Ghar — Production Deployment & Setup Checklist
 
 Follow these steps to publish your upgraded site, Realtime Database security rules, and Web Push Worker without committing any private keys or credentials.
@@ -84,3 +86,33 @@ In-panel live alerts and customer tracking work immediately via Firebase Realtim
 8. Open **Settings** (`#settings`) → **Analytics & Retention Settings** to customize `retentionDays` (default `90`), `dormantDays` (`30`), and customer engagement tier thresholds, and use **Reports & Exports** (`#reports-exports`) for CSV/print exports and Spark-plan pruning.
 
 
+
+---
+
+## Audit additions (rules verification and Worker configuration)
+
+### Verify rules before publishing
+1. `npm test` runs `scripts/rules.test.js` (31 scenarios) against `database.rules.json` using the offline `targaryen` simulator. This is **not** the official emulator.
+2. Before publishing, repeat the key scenarios in the Firebase Console **Rules Playground** (anonymous create order, anonymous read `/orders`, staff update order, anonymous read `/analytics/events`) or in the Firebase Emulator Suite (`firebase emulators:start --only database`), which needs Java and network access to Google.
+3. Publish only after you approve. Keep the previous rules (Console -> Realtime Database -> Rules -> history) for rollback.
+
+### Worker configuration (names only; never commit values)
+| Name | Kind | Where |
+|---|---|---|
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | **Secret** | `npx wrangler secret put FIREBASE_SERVICE_ACCOUNT_JSON --name siranchowk-notifications` |
+| `FIREBASE_PROJECT_ID` | Variable | `cloudflare-worker/wrangler.toml` `[vars]` |
+| `FIREBASE_DATABASE_URL` | Variable | `wrangler.toml` `[vars]` |
+| `PRIMARY_OWNER_UID` | Variable | `wrangler.toml` `[vars]` |
+| `ALLOWED_ORIGINS` | Variable | `wrangler.toml` `[vars]` (comma separated, no `*`) |
+
+If any of these is missing the Worker answers `503 {"code":"worker_not_configured"}` and `npx wrangler tail` shows which name is missing (names only).
+
+### Deploy
+```powershell
+cd cloudflare-worker
+npx wrangler deploy --dry-run      # validates config, uploads nothing
+npx wrangler deploy                # only after owner approval
+```
+Frontend build variable `VITE_PUSH_WORKER_URL` (Cloudflare Pages -> Settings -> Variables) must be the deployed Worker URL.
+
+See `AUDIT-REPORT.md` for the full audit, permission matrix and checklist.

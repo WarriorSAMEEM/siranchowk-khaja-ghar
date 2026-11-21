@@ -8,8 +8,14 @@ import {
   update
 } from "./firebase.js";
 
-const WORKER_URL =
+const DEFAULT_WORKER_URL =
   "https://siranchowk-notifications.minecraftboot411-cloudflare.workers.dev";
+const WORKER_URL = (
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_PUSH_WORKER_URL
+    ? String(import.meta.env.VITE_PUSH_WORKER_URL).trim().replace(/\/+$/, "")
+    : "") || DEFAULT_WORKER_URL
+);
+const WORKER_TIMEOUT_MS = 8000;
 
 const MAX_DETAIL_KEYS = 12;
 const MAX_TEXT_LENGTH = 240;
@@ -149,12 +155,13 @@ async function sendWorkerEvent(type, payload = {}) {
   const idToken = await getAuthenticatedIdToken();
 
   if (!idToken) {
-    console.warn(
-      `${type} skipped: no authenticated Firebase user.`
-    );
-
     return false;
   }
+
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timeoutId = controller
+    ? setTimeout(() => controller.abort(), WORKER_TIMEOUT_MS)
+    : null;
 
   try {
     const response = await fetch(WORKER_URL, {
@@ -166,13 +173,14 @@ async function sendWorkerEvent(type, payload = {}) {
       body: JSON.stringify({
         type,
         ...payload
-      })
+      }),
+      ...(controller ? { signal: controller.signal } : {})
     });
 
     const result = await response.json().catch(() => ({}));
 
     if (!response.ok || result.success === false) {
-      console.error(`${type} Worker request failed:`, {
+      console.warn(`${type} Worker telemetry skipped:`, {
         status: response.status,
         message:
           result.error ||
@@ -185,12 +193,14 @@ async function sendWorkerEvent(type, payload = {}) {
 
     return true;
   } catch (error) {
-    console.error(
-      `${type} Worker request error:`,
-      error
+    console.warn(
+      `${type} Worker telemetry skipped:`,
+      error?.name === "AbortError" ? "Request timed out" : (error?.message || error)
     );
 
     return false;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
 }
 
@@ -210,6 +220,7 @@ export async function recordLoginEvent({
   portal = "customer",
   sessionId = "",
   deviceId = "",
+  sessionDurationSec = null,
   metadata = {}
 } = {}) {
   const allowedActions = ["login", "logout"];
@@ -241,16 +252,11 @@ export async function recordLoginEvent({
 
   // This endpoint only accepts authenticated events.
   if (!auth.currentUser) {
-    console.warn(
-      "Login event skipped: Firebase user is not authenticated."
-    );
-
     return false;
   }
 
   const environment = detectClientEnvironment();
-
-  return sendWorkerEvent("login_event", {
+  const payload = {
     action,
     result,
     method,
@@ -265,12 +271,26 @@ export async function recordLoginEvent({
     deviceType: environment.deviceType,
     userAgent: environment.userAgent,
     metadata: sanitizeMetadata(metadata)
-  });
+  };
+
+  if (
+    sessionDurationSec !== null &&
+    sessionDurationSec !== undefined &&
+    Number.isFinite(Number(sessionDurationSec)) &&
+    Number(sessionDurationSec) >= 0
+  ) {
+    payload.sessionDurationSec = Math.min(
+      Math.round(Number(sessionDurationSec)),
+      2592000
+    );
+  }
+
+  return sendWorkerEvent("login_event", payload);
 }
 
 /**
  * Writes customer activity to the customer's own Firebase path.
- * Fields match the current database validation rules.
+ * Supports customer self-logging and authorized staff order lifecycle logging.
  */
 export async function logCustomerActivity(
   uid,
@@ -281,13 +301,11 @@ export async function logCustomerActivity(
 
   const currentUser = auth.currentUser;
 
-  if (!currentUser || currentUser.uid !== uid) {
-    console.warn(
-      "Customer activity skipped: UID does not match session."
-    );
-
+  if (!currentUser) {
     return false;
   }
+
+  const isOwnerSession = currentUser.uid === uid;
 
   try {
     const activityRef = push(
@@ -304,18 +322,20 @@ export async function logCustomerActivity(
       ...detectClientEnvironment()
     });
 
-    await update(
-      ref(db, `users/${uid}/profile`),
-      {
-        lastActiveAt: Date.now()
-      }
-    );
+    if (isOwnerSession) {
+      await update(
+        ref(db, `users/${uid}/profile`),
+        {
+          lastActiveAt: Date.now()
+        }
+      ).catch(() => {});
+    }
 
     return true;
   } catch (error) {
-    console.error(
-      "Customer activity write failed:",
-      error
+    console.warn(
+      "Customer activity write skipped:",
+      error?.message || error
     );
 
     return false;
@@ -358,37 +378,110 @@ export async function logSecurityEvent({
   });
 }
 
+const VALID_NOTIFICATION_CHANNELS = new Set([
+  "admin",
+  "customer",
+  "orders",
+  "security",
+  "campaigns"
+]);
+const VALID_NOTIFICATION_STATUSES = new Set([
+  "created",
+  "queued",
+  "sent_to_provider",
+  "delivered",
+  "failed"
+]);
+
+export function normalizeNotificationHistoryEntry(
+  channelOrPayload = "orders",
+  payloadArg = null
+) {
+  const isTwoArg = typeof channelOrPayload === "string" || payloadArg !== null;
+  const rawPayload = isTwoArg
+    ? (payloadArg && typeof payloadArg === "object" ? payloadArg : {})
+    : (channelOrPayload && typeof channelOrPayload === "object" ? channelOrPayload : {});
+
+  const requestedChannel = isTwoArg
+    ? channelOrPayload
+    : (rawPayload.channel || "orders");
+  const cleanChannel = safeText(requestedChannel, 32).toLowerCase();
+  const channel = VALID_NOTIFICATION_CHANNELS.has(cleanChannel)
+    ? cleanChannel
+    : "orders";
+
+  const rawStatus = safeText(rawPayload.status || "created", 40).toLowerCase();
+  const mappedStatus = rawStatus === "sent" ? "sent_to_provider" : rawStatus;
+  const status = VALID_NOTIFICATION_STATUSES.has(mappedStatus)
+    ? mappedStatus
+    : "created";
+
+  const entry = {
+    channel,
+    title: safeText(rawPayload.title || rawPayload.type || "Notification", 140),
+    message: safeText(rawPayload.message || rawPayload.body || "", 400),
+    type: safeText(rawPayload.type || channel, 80),
+    targetAudience: safeText(
+      rawPayload.targetAudience || rawPayload.target || "",
+      160
+    ),
+    status,
+    actorUid: safeText(
+      rawPayload.actorUid || auth.currentUser?.uid || "system",
+      128
+    ),
+    createdAt: Number(rawPayload.createdAt || rawPayload.timestamp) || Date.now()
+  };
+
+  if (rawPayload.id) {
+    entry.referenceId = safeText(rawPayload.id, 128);
+  }
+  if (rawPayload.failureDetails) {
+    entry.failureDetails = safeText(rawPayload.failureDetails, 240);
+  }
+  if (Number.isFinite(Number(rawPayload.targetedCount))) {
+    entry.targetedCount = Math.max(0, Math.round(Number(rawPayload.targetedCount)));
+  }
+  if (Number.isFinite(Number(rawPayload.sentCount))) {
+    entry.sentCount = Math.max(0, Math.round(Number(rawPayload.sentCount)));
+  }
+  if (Number.isFinite(Number(rawPayload.failedCount))) {
+    entry.failedCount = Math.max(0, Math.round(Number(rawPayload.failedCount)));
+  }
+  if (Array.isArray(rawPayload.deliveryResults) && rawPayload.deliveryResults.length) {
+    entry.deliveryResults = rawPayload.deliveryResults.slice(0, 50);
+  }
+  if (rawPayload.metadata && typeof rawPayload.metadata === "object") {
+    entry.metadata = sanitizeMetadata(rawPayload.metadata);
+  }
+
+  return entry;
+}
+
 /**
- * Preserves existing notification history behavior.
+ * Writes separated notification history under notificationHistory/{channel}/{recordId}
+ * matching RTDB validation rules.
  */
-export async function recordNotificationHistory({
-  type = "notification",
-  title = "",
-  message = "",
-  target = "",
-  status = "sent",
-  metadata = {}
-} = {}) {
+export async function recordNotificationHistory(
+  channelOrPayload = "orders",
+  payloadArg = null
+) {
   try {
+    const entry = normalizeNotificationHistoryEntry(channelOrPayload, payloadArg);
     const historyRef = push(
-      ref(db, "notificationHistory")
+      ref(db, `notificationHistory/${entry.channel}`)
     );
 
     await set(historyRef, {
-      type: safeText(type, 80),
-      title: safeText(title),
-      message: safeText(message),
-      target: safeText(target, 160),
-      status: safeText(status, 40),
-      metadata: sanitizeMetadata(metadata),
-      timestamp: Date.now()
+      id: historyRef.key,
+      ...entry
     });
 
     return true;
   } catch (error) {
-    console.error(
-      "Notification history write failed:",
-      error
+    console.warn(
+      "Notification history write skipped:",
+      error?.message || error
     );
 
     return false;

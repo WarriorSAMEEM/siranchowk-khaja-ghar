@@ -53,6 +53,8 @@ export function renderOrderTemplate(templates, statusKey, orderId = "", customNo
     return customNote ? `${base} ${customNote}`.trim() : base;
 }
 
+const DEFAULT_PUSH_WORKER_URL = "https://siranchowk-notifications.minecraftboot411-cloudflare.workers.dev";
+
 export async function getPublicPushConfig() {
     const envVapid = import.meta.env.VITE_VAPID_PUBLIC_KEY || "";
     const envWorker = import.meta.env.VITE_PUSH_WORKER_URL || "";
@@ -63,14 +65,14 @@ export async function getPublicPushConfig() {
             const val = snap.val() || {};
             return {
                 vapidKey: val.vapidKey || envVapid || "",
-                workerUrl: val.workerUrl || envWorker || ""
+                workerUrl: val.workerUrl || envWorker || DEFAULT_PUSH_WORKER_URL
             };
         }
     } catch {
         // Fallback to env config
     }
 
-    return { vapidKey: envVapid, workerUrl: envWorker };
+    return { vapidKey: envVapid, workerUrl: envWorker || DEFAULT_PUSH_WORKER_URL };
 }
 
 export async function ensureServiceWorkerRegistration() {
@@ -162,6 +164,8 @@ export async function disableCustomerDeviceNotifications(user) {
     if (!user?.uid) return;
     const deviceId = await getPersistentDeviceId();
     await update(ref(db, `users/${user.uid}/devices/${deviceId}`), {
+        deviceId,
+        uid: user.uid,
         enabled: false,
         orderAlerts: false,
         offersOptIn: false,

@@ -1,0 +1,260 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ------------------------------------------------------------------------
+    // Reusable Global Helpers (Static checks ordered before any DB lookups)
+    // ------------------------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        (request.auth.token.email == 'minecraftboot411@gmail.com') ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // ------------------------------------------------------------------------
+    // Entity Validation Helpers (Create + Update blueprints)
+    // ------------------------------------------------------------------------
+    function isValidAdminRecord(data, uid) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'role', 'createdAt', 'updatedAt']) &&
+        isValidId(data.uid) &&
+        data.uid == uid &&
+        data.email is string &&
+        data.email.size() >= 5 &&
+        data.email.size() <= 160 &&
+        data.role in ['owner', 'admin'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserPreference(data, userId) {
+      return data.keys().hasAll(['uid', 'displayName', 'preferredDiningMode', 'spicePreference', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'displayName', 'preferredDiningMode', 'spicePreference', 'createdAt', 'updatedAt']) &&
+        isValidId(data.uid) &&
+        data.uid == userId &&
+        data.uid == request.auth.uid &&
+        data.displayName is string &&
+        data.displayName.size() >= 1 &&
+        data.displayName.size() <= 80 &&
+        data.preferredDiningMode in ['dine-in', 'takeaway', 'delivery'] &&
+        data.spicePreference in ['mild', 'medium', 'spicy'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidChatSession(data, sessionId) {
+      return data.keys().hasAll(['sessionId', 'ownerId', 'title', 'model', 'status', 'messageCount', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['sessionId', 'ownerId', 'title', 'model', 'status', 'messageCount', 'createdAt', 'updatedAt']) &&
+        isValidId(data.sessionId) &&
+        data.sessionId == sessionId &&
+        isValidId(data.ownerId) &&
+        data.ownerId == request.auth.uid &&
+        data.title is string &&
+        data.title.size() >= 1 &&
+        data.title.size() <= 120 &&
+        data.model in ['gemini-4-hydrogen', 'gemini-3.1-flash-lite'] &&
+        data.status in ['active', 'archived'] &&
+        data.messageCount is int &&
+        data.messageCount >= 0 &&
+        data.messageCount <= 200 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidGroundingUrls(data) {
+      return !('groundingUrls' in data) || (
+        data.groundingUrls is list &&
+        data.groundingUrls.size() <= 10 &&
+        (
+          data.groundingUrls.size() == 0 ||
+          (
+            data.groundingUrls[0] is string &&
+            data.groundingUrls[0].size() >= 10 &&
+            data.groundingUrls[0].size() <= 500
+          )
+        )
+      );
+    }
+
+    function isValidChatMessage(data, sessionId, messageId) {
+      return data.keys().hasAll(['messageId', 'sessionId', 'ownerId', 'role', 'text', 'modelUsed', 'createdAt']) &&
+        data.keys().hasOnly(['messageId', 'sessionId', 'ownerId', 'role', 'text', 'modelUsed', 'groundingUrls', 'createdAt']) &&
+        isValidId(data.messageId) &&
+        data.messageId == messageId &&
+        isValidId(data.sessionId) &&
+        data.sessionId == sessionId &&
+        isValidId(data.ownerId) &&
+        data.ownerId == request.auth.uid &&
+        data.role in ['user', 'model'] &&
+        data.text is string &&
+        data.text.size() >= 1 &&
+        data.text.size() <= 4000 &&
+        data.modelUsed in ['gemini-4-hydrogen', 'gemini-3.1-flash-lite', 'user-input'] &&
+        isValidGroundingUrls(data) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidSavedPlace(data, placeId) {
+      return data.keys().hasAll(['placeId', 'userId', 'title', 'mapsUri', 'category', 'notes', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['placeId', 'userId', 'title', 'mapsUri', 'category', 'notes', 'createdAt', 'updatedAt']) &&
+        isValidId(data.placeId) &&
+        data.placeId == placeId &&
+        isValidId(data.userId) &&
+        data.userId == request.auth.uid &&
+        data.title is string &&
+        data.title.size() >= 1 &&
+        data.title.size() <= 140 &&
+        data.mapsUri is string &&
+        data.mapsUri.size() >= 12 &&
+        data.mapsUri.size() <= 500 &&
+        data.mapsUri.matches('^https://(www\\.)?(google\\.com/maps|maps\\.google\\.com|maps\\.app\\.goo\\.gl).*') &&
+        data.category in ['restaurant', 'landmark', 'transit', 'medical', 'atm', 'other'] &&
+        data.notes is string &&
+        data.notes.size() <= 300 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // ------------------------------------------------------------------------
+    // Collection Rules
+    // ------------------------------------------------------------------------
+    match /admins/{uid} {
+      allow get: if isSignedIn() && isValidId(uid) && (isOwner(uid) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(uid) && isValidAdminRecord(incoming(), uid) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(uid) && isValidAdminRecord(incoming(), uid) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['email', 'role', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(uid);
+    }
+
+    match /userPreferences/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isVerifiedUser() && isValidId(userId) && isOwner(userId) &&
+        isValidUserPreference(incoming(), userId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(userId) && isValidUserPreference(incoming(), userId) && (
+        isAdmin() || (
+          isOwner(userId) &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'preferredDiningMode', 'spicePreference', 'updatedAt'])
+        )
+      );
+      allow delete: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+    }
+
+    match /chatSessions/{sessionId} {
+      allow get: if isSignedIn() && isValidId(sessionId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(sessionId) &&
+        isValidChatSession(incoming(), sessionId) &&
+        incoming().status == 'active' &&
+        incoming().messageCount == 0 &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(sessionId) && isValidChatSession(incoming(), sessionId) && (
+        isAdmin() || (
+          existing().ownerId == request.auth.uid &&
+          existing().status != 'archived' &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().sessionId == existing().sessionId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          (
+            (incoming().messageCount == existing().messageCount + 1 &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['messageCount', 'model', 'updatedAt'])) ||
+            (incoming().messageCount == existing().messageCount &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['title', 'model', 'updatedAt'])) ||
+            (incoming().status == 'archived' &&
+              incoming().messageCount == existing().messageCount &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+          )
+        )
+      );
+      allow delete: if isSignedIn() && isValidId(sessionId) && (existing().ownerId == request.auth.uid || isAdmin());
+
+      match /messages/{messageId} {
+        allow get: if isSignedIn() && isValidId(sessionId) && isValidId(messageId) && (
+          isAdmin() || (
+            exists(/databases/$(database)/documents/chatSessions/$(sessionId)) &&
+            get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.ownerId == request.auth.uid
+          )
+        );
+        allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+        allow create: if isVerifiedUser() && isValidId(sessionId) && isValidId(messageId) &&
+          isValidChatMessage(incoming(), sessionId, messageId) &&
+          incoming().createdAt == request.time &&
+          exists(/databases/$(database)/documents/chatSessions/$(sessionId)) &&
+          get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.ownerId == request.auth.uid &&
+          get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.status == 'active' &&
+          getAfter(/databases/$(database)/documents/chatSessions/$(sessionId)).data.messageCount ==
+            get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.messageCount + 1;
+        allow update: if false;
+        allow delete: if isSignedIn() && isValidId(sessionId) && isValidId(messageId) && (
+          isAdmin() || (
+            exists(/databases/$(database)/documents/chatSessions/$(sessionId)) &&
+            get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.ownerId == request.auth.uid
+          )
+        );
+      }
+    }
+
+    match /savedPlaces/{placeId} {
+      allow get: if isSignedIn() && isValidId(placeId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(placeId) &&
+        isValidSavedPlace(incoming(), placeId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(placeId) && isValidSavedPlace(incoming(), placeId) && (
+        isAdmin() || (
+          existing().userId == request.auth.uid &&
+          incoming().userId == existing().userId &&
+          incoming().placeId == existing().placeId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['category', 'notes', 'updatedAt'])
+        )
+      );
+      allow delete: if isSignedIn() && isValidId(placeId) && (existing().userId == request.auth.uid || isAdmin());
+    }
+  }
+}

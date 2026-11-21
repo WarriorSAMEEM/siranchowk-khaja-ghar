@@ -1,0 +1,240 @@
+{
+  "entities": {
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Authorized restaurant administrator entry stored in Firestore.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 160
+        },
+        "role": {
+          "type": "string",
+          "enum": ["owner", "admin"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "role", "createdAt", "updatedAt"]
+    },
+    "UserPreference": {
+      "title": "UserPreference",
+      "description": "Non-PII dining and ordering preferences for a signed-in Google customer.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "preferredDiningMode": {
+          "type": "string",
+          "enum": ["dine-in", "takeaway", "delivery"]
+        },
+        "spicePreference": {
+          "type": "string",
+          "enum": ["mild", "medium", "spicy"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "preferredDiningMode", "spicePreference", "createdAt", "updatedAt"]
+    },
+    "ChatSession": {
+      "title": "ChatSession",
+      "description": "Multi-turn Gemini concierge conversation session owned by an authenticated customer.",
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "model": {
+          "type": "string",
+          "enum": ["gemini-4-hydrogen", "gemini-3.1-flash-lite"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "archived"]
+        },
+        "messageCount": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["sessionId", "ownerId", "title", "model", "status", "messageCount", "createdAt", "updatedAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Individual message inside a ChatSession subcollection.",
+      "type": "object",
+      "properties": {
+        "messageId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "sessionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "modelUsed": {
+          "type": "string",
+          "enum": ["gemini-4-hydrogen", "gemini-3.1-flash-lite", "user-input"]
+        },
+        "groundingUrls": {
+          "type": "array",
+          "description": "Optional list of grounded Google Maps place URLs (max 10)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["messageId", "sessionId", "ownerId", "role", "text", "modelUsed", "createdAt"]
+    },
+    "SavedPlace": {
+      "title": "SavedPlace",
+      "description": "Google Maps grounded nearby Chitwan landmark or place bookmarked by an authenticated customer.",
+      "type": "object",
+      "properties": {
+        "placeId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "mapsUri": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 500,
+          "pattern": "^https://(www\\.)?google\\.com/maps|^https://maps\\.google\\.com|^https://maps\\.app\\.goo\\.gl"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["restaurant", "landmark", "transit", "medical", "atm", "other"]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["placeId", "userId", "title", "mapsUri", "category", "notes", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/admins/{uid}": {
+      "schema": {
+        "$ref": "#/entities/AdminRecord"
+      },
+      "description": "Verified administrator UID registry."
+    },
+    "/userPreferences/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserPreference"
+      },
+      "description": "Customer non-PII ordering and dining preferences isolated to the owner."
+    },
+    "/chatSessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/ChatSession"
+      },
+      "description": "Multi-turn Gemini dining concierge chat sessions."
+    },
+    "/chatSessions/{sessionId}/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/ChatMessage"
+      },
+      "description": "Messages inside a dining concierge chat session governed by the parent ChatSession owner."
+    },
+    "/savedPlaces/{placeId}": {
+      "schema": {
+        "$ref": "#/entities/SavedPlace"
+      },
+      "description": "Nearby Khairahani/Chitwan landmarks discovered via Maps Grounding and saved by customers."
+    }
+  }
+}

@@ -11,12 +11,21 @@ import {
     update,
     runTransaction,
     onAuthStateChanged,
+    onIdTokenChanged,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     updateProfile,
     sendPasswordResetEmail,
+    sendEmailVerification,
+    updatePassword,
+    verifyBeforeUpdateEmail,
+    EmailAuthProvider,
+    reauthenticateWithCredential,
     GoogleAuthProvider,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
+    linkWithPopup,
     signOut,
     setPersistence,
     browserLocalPersistence
@@ -64,6 +73,30 @@ function getSafeSessionId() {
     }
 }
 
+const SAFE_REDIRECT_PAGES = new Set([
+    "index.html",
+    "menu.html",
+    "about.html",
+    "contact.html",
+    "account.html"
+]);
+
+export function getSafeRedirectTarget(search = "") {
+    try {
+        const raw = new URLSearchParams(search || (typeof window !== "undefined" ? window.location.search : "")).get("redirect") || "";
+        const cleaned = raw.trim().replace(/^\/+/, "");
+        const [pagePart, hashPart] = cleaned.split("#");
+        if (!pagePart || !SAFE_REDIRECT_PAGES.has(pagePart)) return "";
+        return hashPart ? `${pagePart}#${hashPart.replace(/[^a-zA-Z0-9_-]/g, "")}` : pagePart;
+    } catch {
+        return "";
+    }
+}
+
+function isValidEmailFormat(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(email || "").trim());
+}
+
 export async function ensureCustomerProfile(user, extra = {}) {
     if (!user?.uid) return null;
     const now = Date.now();
@@ -75,6 +108,7 @@ export async function ensureCustomerProfile(user, extra = {}) {
         phone: String(extra.phone || user.phoneNumber || "").slice(0, 16),
         address: String(extra.address || "").slice(0, 180),
         authProvider: String(providerId).slice(0, 40),
+        emailVerified: Boolean(user.emailVerified),
         accountStatus: "active",
         loginCount: Number(extra.initialLoginCount || 1),
         lastLoginAt: now,
@@ -102,11 +136,12 @@ export async function ensureCustomerProfile(user, extra = {}) {
         const existing = snapshot.val() || {};
         const patch = {
             updatedAt: now,
-            lastActiveAt: now
+            lastActiveAt: now,
+            emailVerified: Boolean(user.emailVerified)
         };
         if (extra.name && !existing.name) patch.name = String(extra.name).slice(0, 80);
         if (extra.phone && !existing.phone) patch.phone = String(extra.phone).slice(0, 16);
-        if (user.email && !existing.email) patch.email = String(user.email).slice(0, 120);
+        if (user.email && existing.email !== user.email) patch.email = String(user.email).slice(0, 120);
         if (!existing.accountStatus) patch.accountStatus = "active";
         if (!existing.authProvider) patch.authProvider = String(providerId).slice(0, 40);
 
@@ -166,127 +201,272 @@ export async function updateCustomerProfile(uid, updates) {
     return currentProfile;
 }
 
-export async function loginCustomer(email, password) {
-    if (!email || !password) {
-        throw new Error("Email and password are required.");
-    }
-    const cleanEmail = email.trim();
+async function finalizeAuthenticatedCustomer(user, { method = "password", authProvider = "password", activityType = "login", extraProfile = {} } = {}) {
+    let profile = {
+        uid: user.uid,
+        name: extraProfile.name || user.displayName || (user.email ? user.email.split("@")[0] : "Customer"),
+        email: user.email || "",
+        phone: extraProfile.phone || "",
+        address: extraProfile.address || "",
+        authProvider,
+        emailVerified: Boolean(user.emailVerified)
+    };
+
     try {
-        await setPersistence(auth, browserLocalPersistence);
-        const cred = await signInWithEmailAndPassword(auth, cleanEmail, password);
-        const profile = await ensureCustomerProfile(cred.user, {
-            recordLogin: true,
-            authProvider: "password"
+        profile = await ensureCustomerProfile(user, {
+            recordLogin: activityType === "login",
+            authProvider,
+            ...extraProfile
         });
-        currentUser = cred.user;
-        currentProfile = profile;
-        markCustomerLoginStart();
-        await recordLoginEvent({
-            uid: cred.user.uid,
-            name: profile?.name || cred.user.displayName || "",
-            email: cred.user.email || cleanEmail,
-            role: "customer",
-            method: "password",
-            result: "success"
-        });
-        await logCustomerActivity(cred.user.uid, "login", { method: "password" });
-        notifySubscribers();
-        return { user: cred.user, profile };
-    } catch (error) {
-        await recordLoginEvent({
-            uid: "unauthenticated",
-            email: cleanEmail,
-            role: "customer",
-            method: "password",
-            result: "failed",
-            reason: error?.code || error?.message || "login_failed"
-        });
-        throw error;
+    } catch (profileErr) {
+        console.warn("Customer profile sync warning:", profileErr?.message || profileErr);
     }
+
+    currentUser = user;
+    currentProfile = profile;
+    markCustomerLoginStart();
+    notifySubscribers();
+
+    // Non-blocking telemetry: Worker/CORS/network errors must never fail valid Firebase sign-in.
+    recordLoginEvent({
+        action: "login",
+        result: "success",
+        method,
+        portal: "customer"
+    }).catch(() => {});
+
+    logCustomerActivity(user.uid, activityType, { method: authProvider }).catch(() => {});
+
+    return profile;
 }
 
-export async function registerCustomer({ name, phone, email, password, address = "" }) {
+export async function loginCustomer(email, password) {
+    const cleanEmail = String(email || "").trim();
+    if (!cleanEmail || !password) {
+        throw new Error("Email and password are required.");
+    }
+    if (!isValidEmailFormat(cleanEmail)) {
+        throw new Error("Please enter a valid email address.");
+    }
+
+    await setPersistence(auth, browserLocalPersistence).catch(() => {});
+    const cred = await signInWithEmailAndPassword(auth, cleanEmail, password);
+    const profile = await finalizeAuthenticatedCustomer(cred.user, {
+        method: "password",
+        authProvider: "password",
+        activityType: "login"
+    });
+    return { user: cred.user, profile };
+}
+
+export async function registerCustomer({
+    name,
+    phone = "",
+    email,
+    password,
+    confirmPassword,
+    address = ""
+}) {
     const cleanName = String(name || "").trim();
     const cleanPhone = String(phone || "").trim();
     const cleanEmail = String(email || "").trim();
 
-    if (cleanName.length < 2) throw new Error("Please enter your full name.");
+    if (cleanName.length < 2) throw new Error("Please enter your full name (at least 2 characters).");
     if (cleanPhone && !/^[0-9+()\- ]{7,16}$/.test(cleanPhone)) {
         throw new Error("Please enter a valid phone number.");
     }
-    if (!cleanEmail) throw new Error("Please enter a valid email address.");
+    if (!isValidEmailFormat(cleanEmail)) throw new Error("Please enter a valid email address.");
     if (!password || password.length < 6) {
         throw new Error("Password must be at least 6 characters.");
     }
+    if (confirmPassword !== undefined && password !== confirmPassword) {
+        throw new Error("Passwords do not match. Please re-enter the same password.");
+    }
 
-    await setPersistence(auth, browserLocalPersistence);
+    await setPersistence(auth, browserLocalPersistence).catch(() => {});
     const cred = await createUserWithEmailAndPassword(auth, cleanEmail, password);
     await updateProfile(cred.user, { displayName: cleanName }).catch(() => {});
-    const profile = await ensureCustomerProfile(cred.user, {
-        name: cleanName,
-        phone: cleanPhone,
-        address: String(address || "").trim(),
-        authProvider: "password",
-        initialLoginCount: 1
-    });
-    currentUser = cred.user;
-    currentProfile = profile;
-    markCustomerLoginStart();
-    await recordLoginEvent({
-        uid: cred.user.uid,
-        name: cleanName,
-        email: cred.user.email || cleanEmail,
-        role: "customer",
+
+    let verificationEmailSent = false;
+    try {
+        await sendEmailVerification(cred.user);
+        verificationEmailSent = true;
+    } catch (verifyErr) {
+        console.warn("Verification email dispatch skipped:", verifyErr?.message || verifyErr);
+    }
+
+    const profile = await finalizeAuthenticatedCustomer(cred.user, {
         method: "password_signup",
-        result: "success"
+        authProvider: "password",
+        activityType: "account_registered",
+        extraProfile: {
+            name: cleanName,
+            phone: cleanPhone,
+            address: String(address || "").trim(),
+            initialLoginCount: 1
+        }
     });
-    await logCustomerActivity(cred.user.uid, "account_registered", { method: "password" });
-    notifySubscribers();
-    return { user: cred.user, profile };
+    return { user: cred.user, profile, verificationEmailSent };
 }
 
 export async function loginWithGoogle() {
+    await setPersistence(auth, browserLocalPersistence).catch(() => {});
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+
     try {
-        await setPersistence(auth, browserLocalPersistence);
-        const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: "select_account" });
         const cred = await signInWithPopup(auth, provider);
-        const profile = await ensureCustomerProfile(cred.user, {
-            recordLogin: true,
-            authProvider: "google"
-        });
-        currentUser = cred.user;
-        currentProfile = profile;
-        markCustomerLoginStart();
-        await recordLoginEvent({
-            uid: cred.user.uid,
-            name: profile?.name || cred.user.displayName || "",
-            email: cred.user.email || "",
-            role: "customer",
+        const profile = await finalizeAuthenticatedCustomer(cred.user, {
             method: "google",
-            result: "success"
+            authProvider: "google",
+            activityType: "login"
         });
-        await logCustomerActivity(cred.user.uid, "login", { method: "google" });
-        notifySubscribers();
-        return { user: cred.user, profile };
+        return { user: cred.user, profile, redirecting: false };
     } catch (error) {
-        await recordLoginEvent({
-            uid: "unauthenticated",
-            email: "",
-            role: "customer",
-            method: "google",
-            result: "failed",
-            reason: error?.code || error?.message || "google_signin_failed"
-        });
+        if (
+            error?.code === "auth/popup-blocked" ||
+            error?.code === "auth/operation-not-supported-in-this-environment"
+        ) {
+            await signInWithRedirect(auth, provider);
+            return { user: null, profile: null, redirecting: true };
+        }
         throw error;
     }
 }
 
+export async function completeGoogleRedirectSignIn() {
+    try {
+        const result = await getRedirectResult(auth);
+        if (!result?.user) return null;
+        const profile = await finalizeAuthenticatedCustomer(result.user, {
+            method: "google",
+            authProvider: "google",
+            activityType: "login"
+        });
+        return { user: result.user, profile };
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function linkCustomerGoogleAccount() {
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error("Please sign in first.");
+    }
+    const alreadyLinked = Array.isArray(user.providerData) && user.providerData.some((p) => p?.providerId === "google.com");
+    if (alreadyLinked) {
+        throw new Error("Google sign-in is already linked to this account.");
+    }
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    const result = await linkWithPopup(user, provider);
+    currentUser = result.user || auth.currentUser;
+    if (currentUser?.uid) {
+        await update(ref(db, `users/${currentUser.uid}/profile`), {
+            emailVerified: Boolean(currentUser.emailVerified),
+            updatedAt: Date.now()
+        }).catch(() => {});
+        if (currentProfile) {
+            currentProfile = {
+                ...currentProfile,
+                emailVerified: Boolean(currentUser.emailVerified)
+            };
+        }
+        logCustomerActivity(currentUser.uid, "google_account_linked", { method: "google.com" }).catch(() => {});
+    }
+    notifySubscribers();
+    return currentUser;
+}
+
+export async function resendCustomerVerificationEmail() {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Please sign in first.");
+    if (user.emailVerified) {
+        throw new Error("Your email address is already verified.");
+    }
+    await sendEmailVerification(user);
+    return true;
+}
+
+export async function reloadCustomerUser() {
+    const user = auth.currentUser;
+    if (!user) return null;
+    await user.reload();
+    currentUser = auth.currentUser;
+    if (currentUser?.emailVerified) {
+        await update(ref(db, `users/${currentUser.uid}/profile`), {
+            emailVerified: true,
+            email: String(currentUser.email || "").slice(0, 120),
+            updatedAt: Date.now()
+        }).catch(() => {});
+        if (currentProfile) {
+            currentProfile = {
+                ...currentProfile,
+                emailVerified: true,
+                email: currentUser.email || currentProfile.email
+            };
+        }
+    }
+    notifySubscribers();
+    return currentUser;
+}
+
+export async function changeCustomerPassword(currentPassword, newPassword, confirmNewPassword) {
+    const user = auth.currentUser;
+    if (!user || !user.email) {
+        throw new Error("Please sign in to change your password.");
+    }
+    if (!currentPassword) {
+        throw new Error("Please enter your current password.");
+    }
+    if (!newPassword || newPassword.length < 6) {
+        throw new Error("New password must be at least 6 characters.");
+    }
+    if (confirmNewPassword !== undefined && newPassword !== confirmNewPassword) {
+        throw new Error("New passwords do not match.");
+    }
+    if (currentPassword === newPassword) {
+        throw new Error("New password must be different from your current password.");
+    }
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    await reauthenticateWithCredential(user, credential);
+    await updatePassword(user, newPassword);
+    logCustomerActivity(user.uid, "password_changed", { method: "password" }).catch(() => {});
+    return true;
+}
+
+export async function changeCustomerEmail(newEmail, currentPassword) {
+    const user = auth.currentUser;
+    const cleanEmail = String(newEmail || "").trim();
+    if (!user || !user.email) {
+        throw new Error("Please sign in to change your email address.");
+    }
+    if (!isValidEmailFormat(cleanEmail)) {
+        throw new Error("Please enter a valid new email address.");
+    }
+    if (cleanEmail.toLowerCase() === user.email.toLowerCase()) {
+        throw new Error("The new email address matches your current email.");
+    }
+    if (!currentPassword) {
+        throw new Error("Please enter your current password to confirm this change.");
+    }
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    await reauthenticateWithCredential(user, credential);
+    await verifyBeforeUpdateEmail(user, cleanEmail);
+    logCustomerActivity(user.uid, "email_change_requested", { requestedEmailDomain: cleanEmail.split("@")[1] || "" }).catch(() => {});
+    return true;
+}
+
 export async function resetCustomerPassword(email) {
-    if (!email || !email.trim()) {
+    const cleanEmail = String(email || "").trim();
+    if (!cleanEmail) {
         throw new Error("Enter your email address first to receive a password reset link.");
     }
-    await sendPasswordResetEmail(auth, email.trim());
+    if (!isValidEmailFormat(cleanEmail)) {
+        throw new Error("Please enter a valid email address.");
+    }
+    await sendPasswordResetEmail(auth, cleanEmail);
 }
 
 export async function logoutCustomer() {
@@ -350,6 +530,7 @@ function currentPageSlug() {
 }
 
 export function renderDynamicNavigation() {
+    if (typeof document === "undefined") return;
     const nav = document.getElementById("primary-nav");
     if (!nav) return;
 
@@ -459,9 +640,32 @@ onAuthStateChanged(auth, async (user) => {
     notifySubscribers();
 });
 
-document.addEventListener("DOMContentLoaded", () => {
-    renderDynamicNavigation();
+onIdTokenChanged(auth, async (user) => {
+    if (!user && currentUser) {
+        currentUser = null;
+        currentProfile = null;
+        notifySubscribers();
+        return;
+    }
+    if (user) {
+        try {
+            await user.getIdToken();
+        } catch (tokenErr) {
+            if (tokenErr?.code === "auth/user-token-expired" || tokenErr?.code === "auth/user-disabled") {
+                await signOut(auth).catch(() => {});
+                currentUser = null;
+                currentProfile = null;
+                notifySubscribers();
+            }
+        }
+    }
 });
+
+if (typeof document !== "undefined") {
+    document.addEventListener("DOMContentLoaded", () => {
+        renderDynamicNavigation();
+    });
+}
 
 export function mapAuthErrorMessage(error) {
     const code = error?.code || "";
@@ -472,12 +676,37 @@ export function mapAuthErrorMessage(error) {
             return "Invalid email or password. Please check your credentials and try again.";
         case "auth/email-already-in-use":
             return "An account with this email already exists. Please log in instead.";
+        case "auth/account-exists-with-different-credential":
+            return "An account already exists with this email using a different sign-in method (such as Email/Password). Log in with your original method first.";
+        case "auth/credential-already-in-use":
+            return "This Google account is already linked to a different user profile.";
+        case "auth/provider-already-linked":
+            return "Google sign-in is already linked to your account.";
         case "auth/weak-password":
             return "Password should be at least 6 characters long.";
         case "auth/invalid-email":
+        case "auth/missing-email":
             return "Please enter a valid email address.";
+        case "auth/user-disabled":
+            return "This account has been disabled. Please contact Siranchowk Khaja Ghar support.";
+        case "auth/requires-recent-login":
+            return "For your security, please verify your current password or sign in again before making this change.";
         case "auth/popup-closed-by-user":
             return "Sign-in window was closed before completing.";
+        case "auth/cancelled-popup-request":
+            return "A sign-in popup is already open. Please finish or close it and try again.";
+        case "auth/popup-blocked":
+            return "Popup was blocked by your browser. Redirecting to Google Sign-In instead.";
+        case "auth/unauthorized-domain":
+            return "This domain is not yet authorized in Firebase Authentication settings.";
+        case "auth/operation-not-allowed":
+            return "This sign-in method is not enabled yet in Firebase Authentication.";
+        case "auth/expired-action-code":
+            return "This verification or reset link has expired. Please request a new one.";
+        case "auth/invalid-action-code":
+            return "This verification or reset link is invalid or has already been used.";
+        case "auth/user-token-expired":
+            return "Your session has expired. Please sign in again.";
         case "auth/too-many-requests":
             return "Too many attempts. Please wait a few minutes and try again.";
         case "auth/network-request-failed":

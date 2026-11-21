@@ -748,58 +748,66 @@ async function placeOrder(event) {
             console.error("Order was saved, but tracking could not be saved:", trackingError);
         }
 
-        // Save strictly inside the authenticated customer's own UID namespace
+        // Save non-blocking authenticated user mirror, coupon lock, notifications, and history
         if (user?.uid) {
-            try {
-                await set(ref(db, `users/${user.uid}/orders/${orderId}`), {
-                    ...order,
-                    trackingSaved
-                });
-                if (appliedCoupon?.id) {
-                    await set(ref(db, `users/${user.uid}/coupons/${appliedCoupon.id}`), {
-                        id: appliedCoupon.id,
-                        code: appliedCoupon.code,
-                        title: appliedCoupon.title,
-                        summary: appliedCoupon.summary,
-                        used: true,
-                        orderId,
-                        usedAt: now
-                    });
-                    await logCustomerActivity(user.uid, "coupon_used", {
-                        orderId,
-                        code: appliedCoupon.code,
-                        summary: appliedCoupon.summary
-                    });
-                }
-                const templates = await getOrderNotificationTemplates();
-                const receivedMsg = renderOrderTemplate(templates, "pending", orderId);
-                await set(ref(db, `users/${user.uid}/notifications/ord_${orderId}_pending`), {
-                    id: `ord_${orderId}_pending`,
+            await set(ref(db, `users/${user.uid}/orders/${orderId}`), {
+                ...order,
+                trackingSaved
+            }).catch((userOrderErr) => {
+                console.warn("Could not mirror order under user profile:", userOrderErr?.message || userOrderErr);
+            });
+
+            if (appliedCoupon?.id) {
+                await set(ref(db, `users/${user.uid}/coupons/${appliedCoupon.id}`), {
+                    id: appliedCoupon.id,
+                    code: appliedCoupon.code,
+                    title: appliedCoupon.title,
+                    summary: appliedCoupon.summary,
+                    used: true,
                     orderId,
-                    status: "pending",
-                    title: `Order #${orderId.slice(-8).toUpperCase()} Received`,
-                    body: receivedMsg,
-                    createdAt: now,
-                    read: false
+                    usedAt: now
+                }).catch((couponErr) => {
+                    console.warn("Could not record coupon usage:", couponErr?.message || couponErr);
+                });
+
+                logCustomerActivity(user.uid, "coupon_used", {
+                    orderId,
+                    code: appliedCoupon.code,
+                    summary: appliedCoupon.summary
                 }).catch(() => {});
-                await recordNotificationHistory("orders", {
-                    id: `ord_${orderId}_pending`,
-                    title: `Order #${orderId.slice(-8).toUpperCase()} Received`,
-                    message: receivedMsg,
-                    type: "order_received",
-                    targetAudience: `customer:${user.uid}`,
-                    status: "created",
-                    actorUid: user.uid
-                });
-                await logCustomerActivity(user.uid, "order_placed", {
-                    orderId,
-                    orderType: values.method,
-                    itemCount: items.reduce((s, i) => s + Number(i.quantity || 1), 0),
-                    summary: order.summary.slice(0, 140)
-                });
-            } catch (userOrderErr) {
-                console.warn("Could not mirror order under user profile:", userOrderErr);
             }
+
+            const templates = await getOrderNotificationTemplates().catch(() => null);
+            const receivedMsg = renderOrderTemplate(templates, "pending", orderId);
+
+            await set(ref(db, `users/${user.uid}/notifications/ord_${orderId}_pending`), {
+                id: `ord_${orderId}_pending`,
+                orderId,
+                status: "pending",
+                title: `Order #${orderId.slice(-8).toUpperCase()} Received`,
+                body: receivedMsg,
+                createdAt: now,
+                read: false
+            }).catch((notifErr) => {
+                console.warn("Could not save customer inbox notification:", notifErr?.message || notifErr);
+            });
+
+            await recordNotificationHistory("orders", {
+                id: `ord_${orderId}_pending`,
+                title: `Order #${orderId.slice(-8).toUpperCase()} Received`,
+                message: receivedMsg,
+                type: "order_received",
+                targetAudience: `customer:${user.uid}`,
+                status: "created",
+                actorUid: user.uid
+            }).catch(() => {});
+
+            logCustomerActivity(user.uid, "order_placed", {
+                orderId,
+                orderType: values.method,
+                itemCount: items.reduce((s, i) => s + Number(i.quantity || 1), 0),
+                summary: order.summary.slice(0, 140)
+            }).catch(() => {});
         }
         window.AnalyticsTracker?.trackEvent?.("order_submitted", {
             orderType: values.method,

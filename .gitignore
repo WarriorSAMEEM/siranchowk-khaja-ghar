@@ -19,3 +19,10 @@ Siranchowk-Khaja-Ghar-Final-Production-Version.zip
 # Never place AI Studio/service-account credentials in public assets
 public/assets/aistudio/
 **/firebase-adminsdk*.json
+.gmp_cache/
+DRAFT_firestore.rules
+
+
+# Local Cloudflare Wrangler cache
+.wrangler/
+**/.wrangler/

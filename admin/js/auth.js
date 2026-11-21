@@ -262,7 +262,6 @@ export async function loginAdmin(email, password) {
         throw new Error("Email and password are required.");
     }
 
-    let authFailureLogged = false;
     try {
         await setPersistence(auth, browserSessionPersistence);
         const result = await signInWithEmailAndPassword(auth, email.trim(), password);
@@ -271,36 +270,38 @@ export async function loginAdmin(email, password) {
         const staff = await resolveStaffRecord(user);
         if (!staff || staff.disabled) {
             const denyReason = staff?.disabled ? "account_disabled" : "not_in_staff_directory";
-            await logAuditEvent({
-                actorUid: user.uid,
-                actorName: staff?.name || user.displayName || "",
-                actorEmail: user.email || "",
-                actorRole: staff?.role || "unauthorized",
-                action: "admin_login_denied",
-                target: user.uid,
-                status: "failed",
-                metadata: { reason: denyReason }
-            });
-            await recordLoginEvent({
-                uid: user.uid,
-                name: staff?.name || user.displayName || "",
-                email: user.email || email.trim(),
-                role: staff?.role || "unauthorized",
-                method: "password",
-                result: "failed",
-                reason: denyReason
-            });
-            await logSecurityEvent({
-                eventType: "unauthorized_admin_access",
-                severity: "high",
-                actorUid: user.uid,
-                actorEmail: user.email || email.trim(),
-                actorRole: staff?.role || "unauthorized",
-                target: user.uid,
-                details: { reason: denyReason }
-            });
-            authFailureLogged = true;
-            await signOut(auth);
+            await Promise.allSettled([
+                logAuditEvent({
+                    actorUid: user.uid,
+                    actorName: staff?.name || user.displayName || "",
+                    actorEmail: user.email || "",
+                    actorRole: staff?.role || "unauthorized",
+                    action: "admin_login_denied",
+                    target: user.uid,
+                    status: "failed",
+                    metadata: { reason: denyReason }
+                }),
+                recordLoginEvent({
+                    uid: user.uid,
+                    name: staff?.name || user.displayName || "",
+                    email: user.email || email.trim(),
+                    role: staff?.role || "unauthorized",
+                    method: "password",
+                    portal: "admin",
+                    result: "failed",
+                    reason: denyReason
+                }),
+                logSecurityEvent({
+                    eventType: "unauthorized_admin_access",
+                    severity: "high",
+                    actorUid: user.uid,
+                    actorEmail: user.email || email.trim(),
+                    actorRole: staff?.role || "unauthorized",
+                    target: user.uid,
+                    details: { reason: denyReason }
+                })
+            ]);
+            await signOut(auth).catch(() => {});
             throw new Error(
                 staff?.disabled
                     ? "This staff account is currently disabled. Contact the Owner."
@@ -317,11 +318,11 @@ export async function loginAdmin(email, password) {
                 name: staff.name || user.displayName || "",
                 email: user.email || email.trim(),
                 role: staff.role,
+                portal: "admin",
                 method: "password",
                 result: "failed",
                 reason: deviceErr?.message || "device_blocked_or_rejected"
             });
-            authFailureLogged = true;
             await signOut(auth).catch(() => {});
             throw deviceErr;
         }
@@ -345,17 +346,18 @@ export async function loginAdmin(email, password) {
         };
         markAdminLoginStart();
 
-        await recordLoginEvent({
+        recordLoginEvent({
             uid: user.uid,
             name: staff.name || user.displayName || "",
             email: user.email || "",
             role: staff.role,
+            portal: "admin",
             method: "password",
             result: "success",
             deviceId: deviceRecord.deviceId
-        });
+        }).catch(() => {});
 
-        await logAuditEvent({
+        logAuditEvent({
             actorUid: user.uid,
             actorName: staff.name || user.displayName || "",
             actorEmail: user.email || "",
@@ -364,7 +366,7 @@ export async function loginAdmin(email, password) {
             target: deviceRecord.deviceId,
             status: "success",
             metadata: { deviceName: deviceRecord.deviceName, approvalStatus: deviceRecord.approvalStatus }
-        });
+        }).catch(() => {});
 
         return user;
     } catch (error) {
@@ -394,18 +396,11 @@ export async function loginAdmin(email, password) {
             case "auth/operation-not-allowed":
                 message = "Email/password authentication is not enabled in Firebase.";
                 break;
+            case "auth/user-token-expired":
+                message = "Session expired. Please sign in again.";
+                break;
             default:
                 break;
-        }
-        if (!authFailureLogged) {
-            await recordLoginEvent({
-                uid: "unauthenticated",
-                email: String(email || "").trim(),
-                role: "staff",
-                method: "password",
-                result: "failed",
-                reason: error?.code || message
-            });
         }
         throw new Error(message);
     }
@@ -425,6 +420,7 @@ export async function logoutAdmin() {
             name: actor.staff?.name || actor.user.displayName || "",
             email: actor.user.email || "",
             role: actor.role || "staff",
+            portal: "admin",
             method: "password",
             action: "logout",
             result: "success",

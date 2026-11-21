@@ -33,6 +33,7 @@ import { ReportsExportsModule } from "./reports-exports.js";
 import { SettingsModule } from "./settings.js";
 import { InventoryModule } from "./inventory.js";
 import { UIModule } from "./ui.js";
+import { Utils } from "./utils.js";
 import {
     attachForegroundNotificationToast,
     refreshAdminFcmTokenIfEnabled
@@ -216,7 +217,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         banner.innerHTML = `
             <div>
               <strong>Device Pending Owner Approval</strong>
-              <p>This browser (<code>${session.device.deviceName || session.device.deviceId}</code>) is registered as <strong>pending</strong>. Push notifications and background admin alerts are disabled until approved by the Owner in Devices.</p>
+              <p>This browser (<code>${Utils.escapeHTML(session.device.deviceName || session.device.deviceId)}</code>) is registered as <strong>pending</strong>. Push notifications and background admin alerts are disabled until approved by the Owner in Devices.</p>
             </div>
             <span class="badge badge-warning">Pending Approval</span>
         `;
@@ -279,7 +280,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             main.innerHTML = `
               <section class="card">
                 <h2 class="card-title">This section could not be loaded</h2>
-                <p class="card-subtitle">${error?.message ? String(error.message) : "Check your connection and Firebase permissions, then try again."}</p>
+                <p class="card-subtitle">${Utils.escapeHTML(error?.message ? String(error.message) : "Check your connection and Firebase permissions, then try again.")}</p>
                 <button type="button" class="btn btn-primary" id="skg-retry-view">Try again</button>
               </section>`;
             main.querySelector("#skg-retry-view")?.addEventListener("click", () => navigateTo(key));

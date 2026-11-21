@@ -95,6 +95,7 @@ export const CustomerAnnouncementsModule = {
                         authToken,
                         payload: {
                             type: "customer_campaign",
+                            audience: campaign.audience || "opted_in",
                             title: campaign.title,
                             body: campaign.body,
                             targetUids

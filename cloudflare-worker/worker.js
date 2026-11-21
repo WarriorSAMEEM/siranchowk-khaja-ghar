@@ -51,17 +51,86 @@ const SECURITY_SEVERITY = {
     device_registered: "info"
 };
 
-function corsHeaders(env, origin) {
-    const allowed = env.ALLOWED_ORIGIN || "*";
-    const allowOrigin = allowed === "*" ? "*" : allowed;
+const DEFAULT_ALLOWED_ORIGINS = [
+    "https://siranchowk-khaja-ghar.pages.dev",
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000"
+];
+const MAX_BODY_BYTES = 32768;
+const RATE_LIMIT_BUCKETS = new Map();
 
-    return {
-        "Access-Control-Allow-Origin": allowOrigin,
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+function getClientIp(request) {
+    const cfIp = request.headers.get("CF-Connecting-IP") || "";
+    if (cfIp.trim()) return cfIp.trim().slice(0, 64);
+    const forwarded = request.headers.get("X-Forwarded-For") || "";
+    const first = forwarded.split(",")[0]?.trim();
+    return first ? first.slice(0, 64) : "unknown";
+}
+
+function checkRateLimit(bucketKey, maxRequests, windowMs = 60000) {
+    const now = Date.now();
+    if (RATE_LIMIT_BUCKETS.size > 1000) {
+        for (const [key, timestamps] of RATE_LIMIT_BUCKETS.entries()) {
+            const recent = timestamps.filter((ts) => now - ts < windowMs);
+            if (recent.length === 0) RATE_LIMIT_BUCKETS.delete(key);
+            else RATE_LIMIT_BUCKETS.set(key, recent);
+        }
+    }
+
+    const existing = RATE_LIMIT_BUCKETS.get(bucketKey) || [];
+    const active = existing.filter((ts) => now - ts < windowMs);
+    if (active.length >= maxRequests) {
+        const oldest = active[0] || now;
+        const retryAfterSec = Math.max(1, Math.ceil((windowMs - (now - oldest)) / 1000));
+        RATE_LIMIT_BUCKETS.set(bucketKey, active);
+        return { allowed: false, retryAfterSec };
+    }
+
+    active.push(now);
+    RATE_LIMIT_BUCKETS.set(bucketKey, active);
+    return { allowed: true, retryAfterSec: 0 };
+}
+
+function normalizeOrigin(origin) {
+    return String(origin || "").trim().replace(/\/+$/, "");
+}
+
+function getAllowedOrigins(env) {
+    const raw = [env?.ALLOWED_ORIGINS, env?.ALLOWED_ORIGIN]
+        .filter((val) => typeof val === "string" && val.trim().length > 0)
+        .join(",");
+
+    const parsed = raw
+        .split(",")
+        .map(normalizeOrigin)
+        .filter((origin) => origin && origin !== "*");
+
+    return new Set(parsed.length > 0 ? parsed : DEFAULT_ALLOWED_ORIGINS);
+}
+
+function isOriginAllowed(env, origin) {
+    const normalized = normalizeOrigin(origin);
+    if (!normalized) return false;
+    return getAllowedOrigins(env).has(normalized);
+}
+
+function corsHeaders(env, origin) {
+    const headers = {
         "Vary": "Origin",
         "Content-Type": "application/json"
     };
+
+    const normalized = normalizeOrigin(origin);
+    if (normalized && isOriginAllowed(env, normalized)) {
+        headers["Access-Control-Allow-Origin"] = normalized;
+        headers["Access-Control-Allow-Methods"] = "POST, OPTIONS";
+        headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
+        headers["Access-Control-Max-Age"] = "86400";
+    }
+
+    return headers;
 }
 
 function jsonResponse(data, status, headers) {
@@ -125,18 +194,18 @@ async function getGoogleAccessToken(env) {
     try {
         serviceAccount = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT_JSON || "{}");
     } catch {
-        throw new Error("Firebase service account JSON secret is invalid");
+        throw new ConfigError("Service account secret is not valid JSON", ["FIREBASE_SERVICE_ACCOUNT_JSON"]);
     }
 
     const email = serviceAccount.client_email;
     const privateKeyPem = serviceAccount.private_key;
 
     if (!email || !privateKeyPem) {
-        throw new Error("Firebase service account JSON is missing required fields");
+        throw new ConfigError("Service account secret is missing client_email/private_key", ["FIREBASE_SERVICE_ACCOUNT_JSON"]);
     }
 
     if (serviceAccount.project_id !== env.FIREBASE_PROJECT_ID) {
-        throw new Error("Service account project ID mismatch");
+        throw new ConfigError("Service account project_id does not match FIREBASE_PROJECT_ID", ["FIREBASE_SERVICE_ACCOUNT_JSON"]);
     }
 
     const header = base64UrlEncode(JSON.stringify({
@@ -158,13 +227,18 @@ async function getGoogleAccessToken(env) {
 
     const signingInput = `${header}.${claims}`;
 
-    const privateKey = await crypto.subtle.importKey(
-        "pkcs8",
-        pemToArrayBuffer(privateKeyPem),
-        { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-        false,
-        ["sign"]
-    );
+    let privateKey;
+    try {
+        privateKey = await crypto.subtle.importKey(
+            "pkcs8",
+            pemToArrayBuffer(privateKeyPem),
+            { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+            false,
+            ["sign"]
+        );
+    } catch {
+        throw new ConfigError("Service account private_key could not be parsed", ["FIREBASE_SERVICE_ACCOUNT_JSON"]);
+    }
 
     const signature = await crypto.subtle.sign(
         "RSASSA-PKCS1-v1_5",
@@ -183,6 +257,10 @@ async function getGoogleAccessToken(env) {
     });
 
     if (!response.ok) {
+        // 400/401 here means Google rejected the credential (revoked key, wrong project, clock skew).
+        if (response.status === 400 || response.status === 401) {
+            throw new ConfigError(`Google rejected the service account credential (${response.status})`, ["FIREBASE_SERVICE_ACCOUNT_JSON"]);
+        }
         throw new Error(`OAuth token exchange failed (${response.status})`);
     }
 
@@ -194,10 +272,10 @@ async function getGoogleAccessToken(env) {
     return TOKEN_CACHE.token;
 }
 
-async function getFirebaseJwks() {
+async function getFirebaseJwks(forceRefresh = false) {
     const now = Date.now();
 
-    if (JWK_CACHE.keys && JWK_CACHE.expiresAt > now) {
+    if (!forceRefresh && JWK_CACHE.keys && JWK_CACHE.expiresAt > now) {
         return JWK_CACHE.keys;
     }
 
@@ -249,18 +327,24 @@ async function verifyFirebaseIdToken(idToken, projectId) {
     }
 
     if (
-        !payload.sub ||
+        typeof payload.sub !== "string" ||
+        payload.sub.trim().length === 0 ||
         payload.sub.length > 128 ||
-        !payload.exp ||
+        !Number.isFinite(payload.exp) ||
         payload.exp <= nowSec ||
-        !payload.iat ||
+        !Number.isFinite(payload.iat) ||
         payload.iat > nowSec + 300
     ) {
         throw new Error("Token expired or invalid");
     }
 
-    const jwks = await getFirebaseJwks();
-    const jwk = jwks.find((key) => key.kid === header.kid);
+    let jwks = await getFirebaseJwks(false);
+    let jwk = jwks.find((key) => key.kid === header.kid && (!key.alg || key.alg === "RS256"));
+
+    if (!jwk) {
+        jwks = await getFirebaseJwks(true);
+        jwk = jwks.find((key) => key.kid === header.kid && (!key.alg || key.alg === "RS256"));
+    }
 
     if (!jwk) {
         throw new Error("Signing key not found");
@@ -288,9 +372,46 @@ async function verifyFirebaseIdToken(idToken, projectId) {
     return payload;
 }
 
+class ConfigError extends Error {
+    constructor(message, missing = []) {
+        super(message);
+        this.name = "ConfigError";
+        this.missing = missing;
+    }
+}
+
+// Names only (never values) of the configuration this Worker needs.
+const REQUIRED_VARS = ["FIREBASE_PROJECT_ID", "FIREBASE_DATABASE_URL", "PRIMARY_OWNER_UID"];
+const REQUIRED_SECRETS = ["FIREBASE_SERVICE_ACCOUNT_JSON"];
+
+function assertWorkerConfigured(env) {
+    const missing = [...REQUIRED_VARS, ...REQUIRED_SECRETS].filter(
+        (name) => typeof env?.[name] !== "string" || env[name].trim() === ""
+    );
+    if (missing.length > 0) {
+        throw new ConfigError("Worker configuration incomplete", missing);
+    }
+}
+
+// A single path segment from untrusted input must never be able to add "/", "..", "?" or "#".
+const SAFE_ID = /^[A-Za-z0-9_-]{1,128}$/;
+function isSafeId(value, min = 1) {
+    return typeof value === "string" && value.length >= min && SAFE_ID.test(value);
+}
+
+function rtdbUrl(env, path) {
+    const base = String(env.FIREBASE_DATABASE_URL || "").replace(/\/$/, "");
+    const encoded = String(path).split("/").map(encodeURIComponent).join("/");
+    return `${base}/${encoded}.json`;
+}
+
+function rtdbHeaders(accessToken, extra = {}) {
+    // OAuth2 token travels in the Authorization header so it never lands in URLs/logs.
+    return { Authorization: `Bearer ${accessToken}`, ...extra };
+}
+
 async function rtdbGet(env, accessToken, path) {
-    const url = `${env.FIREBASE_DATABASE_URL.replace(/\/$/, "")}/${path}.json?access_token=${encodeURIComponent(accessToken)}`;
-    const response = await fetch(url);
+    const response = await fetch(rtdbUrl(env, path), { headers: rtdbHeaders(accessToken) });
 
     if (!response.ok) {
         throw new Error(`Firebase read failed (${response.status})`);
@@ -300,11 +421,9 @@ async function rtdbGet(env, accessToken, path) {
 }
 
 async function rtdbPatch(env, accessToken, path, payload) {
-    const url = `${env.FIREBASE_DATABASE_URL.replace(/\/$/, "")}/${path}.json?access_token=${encodeURIComponent(accessToken)}`;
-
-    const response = await fetch(url, {
+    const response = await fetch(rtdbUrl(env, path), {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: rtdbHeaders(accessToken, { "Content-Type": "application/json" }),
         body: JSON.stringify(payload)
     });
 
@@ -316,11 +435,9 @@ async function rtdbPatch(env, accessToken, path, payload) {
 }
 
 async function rtdbPost(env, accessToken, path, payload) {
-    const url = `${env.FIREBASE_DATABASE_URL.replace(/\/$/, "")}/${path}.json?access_token=${encodeURIComponent(accessToken)}`;
-
-    const response = await fetch(url, {
+    const response = await fetch(rtdbUrl(env, path), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: rtdbHeaders(accessToken, { "Content-Type": "application/json" }),
         body: JSON.stringify(payload)
     });
 
@@ -333,6 +450,14 @@ async function rtdbPost(env, accessToken, path, payload) {
 
 function safeText(value, maxLength = 160) {
     return String(value ?? "").trim().slice(0, maxLength);
+}
+
+function safeClickAction(value, fallback = "/") {
+    const candidate = safeText(value || "", 180);
+    if (!candidate.startsWith("/") || candidate.startsWith("//")) {
+        return fallback;
+    }
+    return candidate;
 }
 
 function sanitizeMetadata(metadata = {}) {
@@ -572,6 +697,18 @@ async function dispatchToTargets(env, accessToken, targets, { title, body, click
 
         seenTokens.add(target.fcmToken);
 
+        if (!isPlausibleFcmToken(target.fcmToken)) {
+            failed += 1;
+            deliveryResults.push({
+                deviceId: safeText(target.deviceId || "", 80),
+                deviceName: safeText(target.deviceName || "Device", 80),
+                staffName: safeText(target.staffName || target.uid || "", 80),
+                status: "failed",
+                error: "Invalid FCM token format"
+            });
+            continue;
+        }
+
         const result = await sendFcmV1Detailed(
             env,
             accessToken,
@@ -597,6 +734,24 @@ async function dispatchToTargets(env, accessToken, targets, { title, body, click
         failed,
         deliveryResults
     };
+}
+
+// Mirrors DEFAULT_ROLE_PERMISSIONS in js/rbac.js (the client) and the `!== false`
+// fallbacks in database.rules.json. scripts/worker.test.js fails if these drift.
+// Used only when neither staff.customPermissions nor rbac/roles/<role> define a key.
+export const DEFAULT_ROLE_PERMISSIONS = Object.freeze({
+    owner: { viewOrders: true, updateOrders: true, cancelOrders: true, manageInventory: true, sendNotifications: true, sendCustomerCampaigns: true },
+    admin: { viewOrders: true, updateOrders: true, cancelOrders: true, manageInventory: true, sendNotifications: false, sendCustomerCampaigns: false },
+    moderator: { viewOrders: true, updateOrders: true, cancelOrders: false, manageInventory: false, sendNotifications: false, sendCustomerCampaigns: false },
+    officer: { viewOrders: true, updateOrders: true, cancelOrders: false, manageInventory: false, sendNotifications: false, sendCustomerCampaigns: false },
+    helper: { viewOrders: true, updateOrders: true, cancelOrders: false, manageInventory: false, sendNotifications: false, sendCustomerCampaigns: false }
+});
+
+// FCM registration tokens are URL-safe strings (letters, digits, ':', '_', '-', '.').
+// Rejecting anything else stops garbage/injected values from ever being sent to FCM.
+const FCM_TOKEN_PATTERN = /^[A-Za-z0-9:_.-]{10,4096}$/;
+export function isPlausibleFcmToken(token) {
+    return typeof token === "string" && FCM_TOKEN_PATTERN.test(token);
 }
 
 function collectApprovedAdminTargets(
@@ -669,7 +824,14 @@ export default {
         const origin = request.headers.get("Origin") || "";
         const headers = corsHeaders(env, origin);
 
+        if (origin && !isOriginAllowed(env, origin)) {
+            return jsonResponse({ error: "Origin not allowed" }, 403, headers);
+        }
+
         if (request.method === "OPTIONS") {
+            if (!origin) {
+                return jsonResponse({ error: "Origin not allowed" }, 403, headers);
+            }
             return new Response(null, { status: 204, headers });
         }
 
@@ -677,28 +839,51 @@ export default {
             return jsonResponse({ error: "Method not allowed" }, 405, headers);
         }
 
-        if (
-            env.ALLOWED_ORIGIN &&
-            env.ALLOWED_ORIGIN !== "*" &&
-            origin &&
-            origin !== env.ALLOWED_ORIGIN
-        ) {
-            return jsonResponse({ error: "Origin not allowed" }, 403, headers);
+        const contentLength = Number(request.headers.get("Content-Length") || 0);
+        if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
+            return jsonResponse({ error: "Request payload too large" }, 413, headers);
+        }
+
+        let body;
+        try {
+            const rawBody = await request.text();
+            if (rawBody.length > MAX_BODY_BYTES) {
+                return jsonResponse({ error: "Request payload too large" }, 413, headers);
+            }
+            body = JSON.parse(rawBody || "{}");
+            if (!body || typeof body !== "object" || Array.isArray(body)) {
+                return jsonResponse({ error: "JSON object body required" }, 400, headers);
+            }
+        } catch {
+            return jsonResponse({ error: "Invalid JSON request body" }, 400, headers);
         }
 
         try {
-            const body = await request.json();
+            assertWorkerConfigured(env);
+
             const type = body?.type;
+            const clientIp = getClientIp(request);
 
             // PUBLIC NEW-ORDER PUSH
             if (type === "new_order_alert") {
                 const orderId = safeText(body?.orderId || "", 128);
                 const trackingToken = safeText(body?.trackingToken || "", 64);
 
-                if (!orderId || trackingToken.length !== 48) {
+                if (!isSafeId(orderId, 8) || !/^[A-Za-z0-9]{48}$/.test(trackingToken)) {
                     return jsonResponse({
                         error: "Valid orderId and trackingToken required"
                     }, 400, headers);
+                }
+
+                const ipLimit = checkRateLimit(`new_order:ip:${clientIp}`, 12, 60000);
+                const orderLimit = checkRateLimit(`new_order:order:${orderId}`, 5, 60000);
+                if (!ipLimit.allowed || !orderLimit.allowed) {
+                    const retryAfter = Math.max(ipLimit.retryAfterSec, orderLimit.retryAfterSec, 1);
+                    return jsonResponse(
+                        { error: "Too many requests. Please try again shortly." },
+                        429,
+                        { ...headers, "Retry-After": String(retryAfter) }
+                    );
                 }
 
                 const accessToken = await getGoogleAccessToken(env);
@@ -808,6 +993,15 @@ export default {
             }
 
             const callerUid = decoded.sub;
+            const authRateLimit = checkRateLimit(`auth:${clientIp}:${callerUid}`, 60, 60000);
+            if (!authRateLimit.allowed) {
+                return jsonResponse(
+                    { error: "Too many requests. Please try again shortly." },
+                    429,
+                    { ...headers, "Retry-After": String(authRateLimit.retryAfterSec || 60) }
+                );
+            }
+
             const accessToken = await getGoogleAccessToken(env);
 
             // LOGIN HISTORY ROUTE — CUSTOMER AND STAFF
@@ -849,7 +1043,7 @@ export default {
             }
 
             const roleName = staffStatus.role;
-            const rolePerms = (!isOwner && roleName)
+            const rolePerms = (!isOwner && isSafeId(roleName))
                 ? await rtdbGet(env, accessToken, `rbac/roles/${roleName}`)
                 : null;
 
@@ -864,11 +1058,16 @@ export default {
                     return rolePerms[permissionKey];
                 }
 
-                return roleName === "admin";
+                // Same defaults the dashboard (js/rbac.js) and the database rules apply.
+                return DEFAULT_ROLE_PERMISSIONS[roleName]?.[permissionKey] === true;
             };
 
             if (type === "admin_alert") {
-                if (!hasPerm("sendNotifications") && !hasPerm("manageInventory")) {
+                // Order staff deduct stock automatically, which raises the "low_stock" alert
+                // (js/inventory-sync.js). Only that category is open to updateOrders staff.
+                const isLowStockAlert = safeText(body?.category || "", 48) === "low_stock" && hasPerm("updateOrders");
+
+                if (!hasPerm("sendNotifications") && !hasPerm("manageInventory") && !isLowStockAlert) {
                     return jsonResponse({
                         error: "Owner or notification permission required"
                     }, 403, headers);
@@ -905,7 +1104,7 @@ export default {
                     {
                         title,
                         body: messageBody,
-                        clickAction: body?.clickAction || "/admin/admin.html#orders"
+                        clickAction: safeClickAction(body?.clickAction, "/admin/admin.html#orders")
                     }
                 );
 
@@ -925,9 +1124,9 @@ export default {
 
                 const customerUid = safeText(body?.customerUid || "", 128);
 
-                if (!customerUid) {
+                if (!isSafeId(customerUid)) {
                     return jsonResponse({
-                        error: "customerUid is required"
+                        error: "A valid customerUid is required"
                     }, 400, headers);
                 }
 
@@ -970,6 +1169,15 @@ export default {
                 }
 
                 const audience = safeText(body?.audience || "opted_in", 40);
+                const hasTargetUids = Array.isArray(body?.targetUids);
+                const requestedUids = hasTargetUids
+                    ? new Set(
+                        body.targetUids
+                            .slice(0, 500)
+                            .map((uid) => safeText(uid, 128))
+                            .filter(Boolean)
+                    )
+                    : null;
 
                 const [users, orders] = await Promise.all([
                     rtdbGet(env, accessToken, "users"),
@@ -993,6 +1201,10 @@ export default {
                 const targets = [];
 
                 Object.entries(users || {}).forEach(([uid, user]) => {
+                    if (requestedUids !== null && !requestedUids.has(uid)) {
+                        return;
+                    }
+
                     const lastActivity = Number(
                         user?.profile?.lastActiveAt ||
                         user?.profile?.lastLoginAt ||
@@ -1001,6 +1213,10 @@ export default {
                     );
 
                     if (audience === "active_30d" && lastActivity < thirtyDaysAgo) {
+                        return;
+                    }
+
+                    if (user?.profile?.notificationPreferences?.offersOptIn === false) {
                         return;
                     }
 
@@ -1046,6 +1262,16 @@ export default {
             }, 400, headers);
 
         } catch (error) {
+            if (error instanceof ConfigError) {
+                // Operators see WHICH setting is missing (names only, never values) in
+                // `wrangler tail`; clients get a safe, specific message and a 503.
+                console.error(`[worker-config] ${error.message}: ${error.missing.join(", ")}`);
+                return jsonResponse({
+                    error: "Notification service is not configured yet. Please contact the site owner.",
+                    code: "worker_not_configured"
+                }, 503, headers);
+            }
+
             // Do not expose service-account or internal error details to clients.
             return jsonResponse({
                 error: "Worker execution error"

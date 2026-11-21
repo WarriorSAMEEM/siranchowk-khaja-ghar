@@ -16,9 +16,16 @@ import {
     loginCustomer,
     registerCustomer,
     loginWithGoogle,
+    completeGoogleRedirectSignIn,
+    linkCustomerGoogleAccount,
+    resendCustomerVerificationEmail,
+    reloadCustomerUser,
+    changeCustomerPassword,
+    changeCustomerEmail,
     resetCustomerPassword,
     updateCustomerProfile,
     logoutCustomer,
+    getSafeRedirectTarget,
     mapAuthErrorMessage
 } from "./customer-auth.js";
 import {
@@ -69,6 +76,16 @@ let cachedUsedCoupons = {};
 let cachedAnnouncements = [];
 let selectedOrderId = null;
 let ordersLoadError = false;
+let pendingAuthBanner = null;
+
+function redirectIfRequested() {
+    const target = getSafeRedirectTarget();
+    if (target && target !== "account.html") {
+        window.location.replace(target);
+        return true;
+    }
+    return false;
+}
 
 function renderAuthGate(initialMode = "login") {
     clearListeners();
@@ -135,6 +152,10 @@ function renderAuthGate(initialMode = "login") {
               <label for="signup-password">Password * (min. 6 characters)</label>
               <input id="signup-password" type="password" required minlength="6" autocomplete="new-password" placeholder="Create a password">
             </div>
+            <div class="auth-field">
+              <label for="signup-confirm-password">Confirm Password *</label>
+              <input id="signup-confirm-password" type="password" required minlength="6" autocomplete="new-password" placeholder="Re-enter your password">
+            </div>
             <button type="submit" class="btn btn-primary auth-submit" id="signup-submit-btn">Create Customer Account</button>
           </form>
 
@@ -153,6 +174,11 @@ function renderAuthGate(initialMode = "login") {
         feedback.textContent = msg;
         feedback.className = isSuccess ? "auth-feedback success" : "auth-feedback error";
     };
+
+    if (pendingAuthBanner) {
+        showFeedback(pendingAuthBanner.message, pendingAuthBanner.isSuccess);
+        pendingAuthBanner = null;
+    }
 
     const tabLogin = root.querySelector("#tab-login");
     const tabSignup = root.querySelector("#tab-signup");
@@ -184,6 +210,7 @@ function renderAuthGate(initialMode = "login") {
                 root.querySelector("#login-email").value,
                 root.querySelector("#login-password").value
             );
+            redirectIfRequested();
         } catch (err) {
             showFeedback(mapAuthErrorMessage(err));
             btn.disabled = false;
@@ -198,13 +225,21 @@ function renderAuthGate(initialMode = "login") {
         btn.disabled = true;
         btn.textContent = "Creating account…";
         try {
-            await registerCustomer({
+            const res = await registerCustomer({
                 name: root.querySelector("#signup-name").value,
                 phone: root.querySelector("#signup-phone").value,
                 email: root.querySelector("#signup-email").value,
                 address: root.querySelector("#signup-address").value,
-                password: root.querySelector("#signup-password").value
+                password: root.querySelector("#signup-password").value,
+                confirmPassword: root.querySelector("#signup-confirm-password").value
             });
+            if (res?.verificationEmailSent) {
+                pendingAuthBanner = {
+                    message: "Account created! A verification email has been sent to your inbox.",
+                    isSuccess: true
+                };
+            }
+            redirectIfRequested();
         } catch (err) {
             showFeedback(mapAuthErrorMessage(err));
             btn.disabled = false;
@@ -215,7 +250,10 @@ function renderAuthGate(initialMode = "login") {
     root.querySelector("#google-signin-btn").addEventListener("click", async () => {
         showFeedback("");
         try {
-            await loginWithGoogle();
+            const res = await loginWithGoogle();
+            if (!res?.redirecting) {
+                redirectIfRequested();
+            }
         } catch (err) {
             showFeedback(mapAuthErrorMessage(err));
         }
@@ -239,12 +277,15 @@ function renderDashboardShell(user, profile) {
 
     const notifPrefs = profile?.notificationPreferences || {};
     const browserPerm = typeof Notification !== "undefined" ? Notification.permission : "unsupported";
+    const isPasswordProvider = Array.isArray(user.providerData) && user.providerData.some((p) => p?.providerId === "password");
+    const hasGoogleProvider = Array.isArray(user.providerData) && user.providerData.some((p) => p?.providerId === "google.com");
+    const emailVerified = Boolean(user.emailVerified);
 
     root.innerHTML = `
       <section class="account-hero">
         <div class="account-hero-top">
           <div>
-            <span class="account-kicker">Verified Customer Account</span>
+            <span class="account-kicker">${emailVerified ? "Verified Email · Customer Account" : "Customer Account · Email Verification Pending"}</span>
             <h1>Welcome, ${safe(profile?.name || user.displayName || "Customer")}</h1>
             <p>${safe(user.email || "")} ${profile?.phone ? `· ${safe(profile.phone)}` : ""}</p>
           </div>
@@ -254,6 +295,22 @@ function renderDashboardShell(user, profile) {
           </div>
         </div>
       </section>
+
+      ${user.email && !emailVerified ? `
+        <section class="account-verify-banner" id="email-verify-banner" role="status">
+          <div>
+            <strong>Verify your email address</strong>
+            <p class="account-muted">Please check your inbox (${safe(user.email)}) and click the verification link to keep your account recovery secure.</p>
+            <div id="verify-feedback" class="auth-feedback" hidden></div>
+          </div>
+          <div class="account-verify-actions">
+            <button type="button" class="account-btn" id="resend-verification-btn">Resend Verification Email</button>
+            <button type="button" class="account-btn secondary" id="refresh-verification-btn">I Have Verified</button>
+          </div>
+        </section>
+      ` : ""}
+
+      <div id="dashboard-feedback" class="auth-feedback ${pendingAuthBanner?.isSuccess ? "success" : "error"}" style="margin-bottom:14px;" ${pendingAuthBanner ? "" : "hidden"}>${pendingAuthBanner ? safe(pendingAuthBanner.message) : ""}</div>
 
       <section class="account-grid" aria-label="Order summary">
         <div class="account-stat"><small>Total orders</small><strong id="account-total">0</strong></div>
@@ -348,9 +405,191 @@ function renderDashboardShell(user, profile) {
               Browser permission: <strong>${safe(browserPerm)}</strong>
             </p>
           </section>
+
+          <section class="account-card" id="account-security-card">
+            <h2>Account Security</h2>
+            <p class="account-muted">Update your sign-in credentials and email verification settings.</p>
+            ${isPasswordProvider ? `
+              <div id="security-feedback" class="auth-feedback" hidden></div>
+              <form id="change-password-form" class="auth-form">
+                <h3 class="account-subhead">Change Password</h3>
+                <div class="auth-field">
+                  <label for="sec-current-password">Current Password</label>
+                  <input id="sec-current-password" type="password" required minlength="6" autocomplete="current-password" placeholder="Current password">
+                </div>
+                <div class="auth-field">
+                  <label for="sec-new-password">New Password (min. 6 characters)</label>
+                  <input id="sec-new-password" type="password" required minlength="6" autocomplete="new-password" placeholder="New password">
+                </div>
+                <div class="auth-field">
+                  <label for="sec-confirm-password">Confirm New Password</label>
+                  <input id="sec-confirm-password" type="password" required minlength="6" autocomplete="new-password" placeholder="Re-enter new password">
+                </div>
+                <button type="submit" class="account-btn" id="change-password-btn">Update Password</button>
+              </form>
+
+              <form id="change-email-form" class="auth-form account-subform-divider">
+                <h3 class="account-subhead">Change Email Address</h3>
+                <div class="auth-field">
+                  <label for="sec-new-email">New Email Address</label>
+                  <input id="sec-new-email" type="email" required autocomplete="email" placeholder="new-email@example.com">
+                </div>
+                <div class="auth-field">
+                  <label for="sec-email-password">Current Password</label>
+                  <input id="sec-email-password" type="password" required minlength="6" autocomplete="current-password" placeholder="Confirm your current password">
+                </div>
+                <button type="submit" class="account-btn secondary" id="change-email-btn">Send Email Change Verification</button>
+              </form>
+
+              <div class="auth-form account-subform-divider">
+                <h3 class="account-subhead">Connected Sign-In Methods</h3>
+                ${hasGoogleProvider
+                    ? `<p class="account-muted">Google Sign-In is linked to this account.</p>`
+                    : `<p class="account-muted">Link your Google account so you can also sign in with Google using this same customer profile.</p>
+                       <button type="button" class="auth-google-btn" id="link-google-btn">Link Google Account</button>`
+                }
+              </div>
+            ` : `
+              <p class="account-muted">Signed in via Google (${safe(user.email || "")}). Password and email security are managed through your Google Account.</p>
+            `}
+          </section>
         </aside>
       </div>
     `;
+
+    pendingAuthBanner = null;
+
+    root.querySelector("#resend-verification-btn")?.addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        const fb = root.querySelector("#verify-feedback");
+        btn.disabled = true;
+        try {
+            await resendCustomerVerificationEmail();
+            if (fb) {
+                fb.hidden = false;
+                fb.className = "auth-feedback success";
+                fb.textContent = "Verification email sent. Please check your inbox and spam folder.";
+            }
+        } catch (err) {
+            if (fb) {
+                fb.hidden = false;
+                fb.className = "auth-feedback error";
+                fb.textContent = mapAuthErrorMessage(err);
+            }
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    root.querySelector("#refresh-verification-btn")?.addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+            const refreshed = await reloadCustomerUser();
+            if (refreshed?.emailVerified) {
+                const dashFb = root.querySelector("#dashboard-feedback");
+                if (dashFb) {
+                    dashFb.hidden = false;
+                    dashFb.className = "auth-feedback success";
+                    dashFb.textContent = "Your email address is now verified.";
+                }
+            } else if (refreshed) {
+                const liveFb = root.querySelector("#verify-feedback");
+                if (liveFb) {
+                    liveFb.hidden = false;
+                    liveFb.className = "auth-feedback error";
+                    liveFb.textContent = "Email is not marked verified yet. Click the link in your inbox, then try again.";
+                }
+            }
+        } catch (err) {
+            const liveFb = root.querySelector("#verify-feedback");
+            if (liveFb) {
+                liveFb.hidden = false;
+                liveFb.className = "auth-feedback error";
+                liveFb.textContent = mapAuthErrorMessage(err);
+            }
+        } finally {
+            const liveBtn = root.querySelector("#refresh-verification-btn");
+            if (liveBtn) liveBtn.disabled = false;
+        }
+    });
+
+    root.querySelector("#change-password-form")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fb = root.querySelector("#security-feedback");
+        const btn = root.querySelector("#change-password-btn");
+        btn.disabled = true;
+        try {
+            await changeCustomerPassword(
+                root.querySelector("#sec-current-password").value,
+                root.querySelector("#sec-new-password").value,
+                root.querySelector("#sec-confirm-password").value
+            );
+            e.target.reset();
+            fb.hidden = false;
+            fb.className = "auth-feedback success";
+            fb.textContent = "Password updated successfully.";
+        } catch (err) {
+            fb.hidden = false;
+            fb.className = "auth-feedback error";
+            fb.textContent = mapAuthErrorMessage(err);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    root.querySelector("#change-email-form")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fb = root.querySelector("#security-feedback");
+        const btn = root.querySelector("#change-email-btn");
+        btn.disabled = true;
+        try {
+            await changeCustomerEmail(
+                root.querySelector("#sec-new-email").value,
+                root.querySelector("#sec-email-password").value
+            );
+            e.target.reset();
+            fb.hidden = false;
+            fb.className = "auth-feedback success";
+            fb.textContent = "Verification link sent to your new email address. Open that link to finalize the email change.";
+        } catch (err) {
+            fb.hidden = false;
+            fb.className = "auth-feedback error";
+            fb.textContent = mapAuthErrorMessage(err);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    root.querySelector("#link-google-btn")?.addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        pendingAuthBanner = {
+            message: "Google account linked successfully.",
+            isSuccess: true
+        };
+        try {
+            await linkCustomerGoogleAccount();
+            const liveFb = root.querySelector("#security-feedback");
+            if (pendingAuthBanner && liveFb) {
+                liveFb.hidden = false;
+                liveFb.className = "auth-feedback success";
+                liveFb.textContent = pendingAuthBanner.message;
+                pendingAuthBanner = null;
+            }
+        } catch (err) {
+            pendingAuthBanner = null;
+            const liveFb = root.querySelector("#security-feedback");
+            if (liveFb) {
+                liveFb.hidden = false;
+                liveFb.className = "auth-feedback error";
+                liveFb.textContent = mapAuthErrorMessage(err);
+            }
+        } finally {
+            const liveBtn = root.querySelector("#link-google-btn");
+            if (liveBtn) liveBtn.disabled = false;
+        }
+    });
 
     root.querySelector("#account-logout-btn")?.addEventListener("click", async () => {
         try {
@@ -532,12 +771,6 @@ function watchUserOrderTracking(uid) {
                 target.status = live.status || target.status;
                 target.customerMessage = live.customerMessage || "";
                 target.updatedAt = live.updatedAt || target.updatedAt;
-                // Sync latest status into user's own order mirror
-                update(ref(db, `users/${uid}/orders/${order.id}`), {
-                    status: target.status,
-                    customerMessage: target.customerMessage,
-                    updatedAt: target.updatedAt
-                }).catch(() => {});
                 renderOrdersSection(uid);
             }
         }, () => {});
@@ -716,14 +949,24 @@ function renderAnnouncementsSection() {
     `).join("");
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     const params = new URLSearchParams(window.location.search);
     const initialMode = params.get("mode") || "login";
+
+    try {
+        const redirectRes = await completeGoogleRedirectSignIn();
+        if (redirectRes?.user && redirectIfRequested()) {
+            return;
+        }
+    } catch (err) {
+        pendingAuthBanner = { message: mapAuthErrorMessage(err), isSuccess: false };
+    }
 
     onCustomerAuthChange(({ user, profile }) => {
         if (!user) {
             renderAuthGate(initialMode);
         } else {
+            if (redirectIfRequested()) return;
             renderDashboardShell(user, profile);
         }
     });

@@ -12,6 +12,16 @@ self.addEventListener("activate", (event) => {
     event.waitUntil(self.clients.claim());
 });
 
+function sanitizeSameOriginUrl(rawUrl) {
+    try {
+        const parsed = new URL(String(rawUrl || "/"), self.location.origin);
+        if (parsed.origin !== self.location.origin) return "/";
+        return `${parsed.pathname}${parsed.search}${parsed.hash}` || "/";
+    } catch {
+        return "/";
+    }
+}
+
 self.addEventListener("push", (event) => {
     if (!event.data) return;
 
@@ -26,7 +36,7 @@ self.addEventListener("push", (event) => {
     const data = payload.data || {};
     const title = notif.title || data.title || "Siranchowk Khaja Ghar";
     const body = notif.body || data.body || "You have a new update.";
-    const targetUrl = data.clickAction || data.url || "/";
+    const targetUrl = sanitizeSameOriginUrl(data.clickAction || data.url || "/");
 
     event.waitUntil(
         self.registration.showNotification(title, {
@@ -40,12 +50,12 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
     event.notification.close();
-    const targetUrl = event.notification?.data?.url || "/";
+    const targetUrl = sanitizeSameOriginUrl(event.notification?.data?.url || "/");
 
     event.waitUntil(
         self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
             for (const client of clientList) {
-                if (client.url.includes(self.location.origin) && "focus" in client) {
+                if (client.url.startsWith(self.location.origin) && "focus" in client) {
                     client.navigate(targetUrl);
                     return client.focus();
                 }

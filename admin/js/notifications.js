@@ -93,7 +93,11 @@ export const NotificationsModule = {
 
         const buildChannelList = (ch) => {
             const direct = Object.values(rawHistory[ch] || {});
-            const seenIds = new Set(direct.map((x) => x.id));
+            const seenIds = new Set();
+            direct.forEach((x) => {
+                if (x?.id) seenIds.add(x.id);
+                if (x?.referenceId) seenIds.add(x.referenceId);
+            });
             if (ch === "admin") {
                 fallbackAdmin.forEach((a) => {
                     if (a && !seenIds.has(a.id)) {

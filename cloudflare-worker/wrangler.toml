@@ -7,8 +7,7 @@ FIREBASE_PROJECT_ID = "plasma-bounty-474104-m6"
 FIREBASE_DATABASE_URL = "https://plasma-bounty-474104-m6-default-rtdb.asia-southeast1.firebasedatabase.app"
 PRIMARY_OWNER_UID = "47SB1i4UL5hlUVPqM1tQoKJFdaM2"
 
-ALLOWED_ORIGINS = "https://siranchowk-khaja-ghar.pages.dev,http://127.0.0.1:5173,http://localhost:5173"
-
+ALLOWED_ORIGINS = "https://siranchowk-khaja-ghar.pages.dev,http://127.0.0.1:4173,http://localhost:4173,http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:3000,http://localhost:3000"
 
 # Configure secrets via CLI (NEVER commit secrets in this file):
 # Secret: FIREBASE_SERVICE_ACCOUNT_JSON (set separately; never commit its value)

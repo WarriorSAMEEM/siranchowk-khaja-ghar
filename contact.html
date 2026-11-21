@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contact & Map | Siranchowk Khaja Ghar (सिरानचोक खाजा घर)</title>
   <meta name="description" content="Contact Siranchowk Khaja Ghar in Khairahani 6, Parsa, Chitwan. Phone: 9821233154, WhatsApp: +977 9821233154. View map location behind Chaudhary Medical.">
-  <link rel="canonical" href="contact.html">
+  <link rel="canonical" href="https://siranchowk-khaja-ghar.pages.dev/contact.html">
   
   <meta property="og:type" content="website">
   <meta property="og:title" content="Contact Us - Siranchowk Khaja Ghar">
@@ -139,32 +139,63 @@
             </div>
           </div>
 
-          <!-- Google Maps Embed Container -->
+          <!-- Google Maps Interactive Container -->
           <div class="contact-map-card">
             <div class="map-card-header">
-              <h3>Find Us on Google Maps</h3>
-              <a href="https://share.google/TQzV5f70BfISX9l1h" target="_blank" rel="noopener" class="map-link-btn">Open Map App ↗</a>
+              <h3>Interactive Google Map</h3>
+              <a href="https://www.google.com/maps/dir/?api=1&destination=27.6087174620,84.5682702860" target="_blank" rel="noopener noreferrer" class="map-link-btn">Get Directions ↗</a>
+            </div>
+
+            <div class="skg-waypoint-bar" role="group" aria-label="Focus map landmark">
+              <button type="button" class="skg-waypoint-btn active" data-waypoint="restaurant">Siranchowk Khaja Ghar</button>
+              <button type="button" class="skg-waypoint-btn" data-waypoint="chaudhary-medical">Chaudhary Medical</button>
+              <button type="button" class="skg-waypoint-btn" data-waypoint="parsa-chowk">Parsa Chowk Highway</button>
             </div>
             
-            <div class="map-embed-container">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d397.5313425949759!2d84.5682702859736!3d27.608717462017758!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3994e953631484f1%3A0x99104c39edf612bc!2sSiranchowk%20Khaja%20Ghar!5e0!3m2!1sen!2snp!4v1790326160758!5m2!1sen!2snp"
-                width="100%"
-                height="100%"
-                style="border:0;"
-                allowfullscreen=""
-                loading="lazy"
-                referrerpolicy="strict-origin-when-cross-origin"
-                title="Siranchowk Khaja Ghar Map Location">
-              </iframe>
+            <div class="map-embed-container skg-map-host">
+              <div id="skg-interactive-map" class="skg-interactive-map" aria-label="Interactive Google Map showing Siranchowk Khaja Ghar in Khairahani-6, Parsa, Chitwan"></div>
             </div>
 
             <div class="map-card-footer">
-              <p>📍 Located behind Chaudhary Medical, Parsa, Khairahani 6.</p>
+              <p>📍 Located behind Chaudhary Medical, Parsa, Khairahani-6 (27.6087° N, 84.5683° E).</p>
             </div>
           </div>
 
         </div>
+
+        <!-- Nearby Khairahani Guide powered by Google Maps Grounding + Firestore -->
+        <section class="skg-nearby-card" id="skg-nearby-guide" aria-labelledby="skg-nearby-title">
+          <div class="skg-nearby-head">
+            <div>
+              <span class="section-subtitle">Google Maps Grounding Guide</span>
+              <h2 id="skg-nearby-title">Explore Around Khairahani-6, Parsa</h2>
+              <p>Ask about nearby bus stops, ATMs, medical stores, or landmarks around Siranchowk Khaja Ghar.</p>
+            </div>
+            <button type="button" class="btn btn-outline" id="skg-nearby-geo-btn">Use My Location</button>
+          </div>
+
+          <div class="skg-nearby-presets">
+            <button type="button" class="skg-preset-btn" data-nearby-prompt="What pharmacies or medical landmarks are near Chaudhary Medical in Khairahani-6, Parsa?">Nearby Medical Landmarks</button>
+            <button type="button" class="skg-preset-btn" data-nearby-prompt="Where are the nearest bus stops and transit junctions on East-West Highway near Parsa Chowk, Chitwan?">Parsa Chowk Transit</button>
+            <button type="button" class="skg-preset-btn" data-nearby-prompt="What banks or ATMs are closest to Siranchowk Khaja Ghar in Khairahani, Chitwan?">Nearby ATMs &amp; Banks</button>
+            <button type="button" class="skg-preset-btn" data-nearby-prompt="Describe the easiest walking route from Mahendra Highway Parsa Chowk to behind Chaudhary Medical in Khairahani-6.">Walking Directions</button>
+          </div>
+
+          <form class="skg-nearby-form" id="skg-nearby-form">
+            <label for="skg-nearby-input" class="sr-only">Ask about places near Khairahani-6, Parsa</label>
+            <input type="text" id="skg-nearby-input" maxlength="400" placeholder="e.g., Nearest ATM, bus stand, or landmark from Parsa Chowk..." required>
+            <button type="submit" class="btn btn-primary">Explore Nearby</button>
+          </form>
+
+          <p class="skg-nearby-status" id="skg-nearby-status" aria-live="polite"></p>
+          <div id="skg-nearby-answer"></div>
+          <div id="skg-nearby-places" class="skg-grounded-places-grid"></div>
+
+          <div class="skg-saved-places-box">
+            <h3>Your Saved Chitwan Spots</h3>
+            <div id="skg-saved-places-list"></div>
+          </div>
+        </section>
       </div>
     </section>
 
