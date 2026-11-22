@@ -16,7 +16,7 @@ import {
 import "./customer-auth.js";
 import "./firestore-service.js";
 import "./maps-locator.js";
-import "./chatbot-widget.js";
+
 
 // ============================================================================
 // 1. CENTRAL BUSINESS CONFIGURATION
