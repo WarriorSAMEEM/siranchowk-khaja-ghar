@@ -1,5 +1,5 @@
 // ============================================================================
-// SIRANCHOWK KHAJA GHAR — ADMIN SHELL CONTROLLER (ALL SECTIONS + RBAC + DEVICE)
+// SIRANCHOWK KHAJA GHAR — ADMIN SHELL CONTROLLER (CONSOLIDATED 7-SECTION NAV)
 // ============================================================================
 
 import {
@@ -8,30 +8,25 @@ import {
     getAdminSession,
     hasPermission
 } from "./auth.js";
-import { db, ref, onValue } from "../../js/firebase.js";
+import { db, ref, onValue, update } from "../../js/firebase.js";
 import { DashboardModule } from "./dashboard.js";
 import { OrdersModule, startOrderMonitor } from "./orders.js";
-import { MenuModule } from "./menu.js";
-import { CategoriesModule } from "./categories.js";
-import { CustomersModule } from "./customers.js";
 import { OffersModule } from "./offers.js";
-import { AnalyticsModule } from "./analytics.js";
-import { VisitorAnalyticsModule } from "./visitor-analytics.js";
-import { LoginHistoryModule } from "./login-history.js";
-import { UserActivityModule } from "./user-activity.js";
-import { CustomerEngagementModule } from "./customer-engagement.js";
-import { OrderAnalyticsModule } from "./order-analytics.js";
-import { NotificationsModule } from "./notifications.js";
-import { CustomerAnnouncementsModule } from "./customer-announcements.js";
-import { ActivityLogsModule } from "./activity-logs.js";
 import { DevicesModule } from "./devices.js";
 import { StaffModule } from "./staff.js";
 import { RolesModule } from "./roles.js";
-import { AuditLogsModule } from "./audit-logs.js";
-import { SecurityLogsModule } from "./security-logs.js";
-import { ReportsExportsModule } from "./reports-exports.js";
 import { SettingsModule } from "./settings.js";
 import { InventoryModule } from "./inventory.js";
+import { CreatorsModule } from "./creators.js";
+import { ModerationModule } from "./moderation.js";
+import { SeoManagerModule } from "./seo-manager.js";
+import {
+    AnalyticsHubModule,
+    CatalogHubModule,
+    CustomersHubModule,
+    NotificationsHubModule,
+    LogsHubModule
+} from "./hubs.js";
 import { UIModule } from "./ui.js";
 import { Utils } from "./utils.js";
 import {
@@ -40,6 +35,17 @@ import {
 } from "../../js/notifications-client.js";
 import { getStockHealth } from "../../js/inventory-sync.js";
 import { logSecurityEvent } from "../../js/activity-logger.js";
+import { logAuditEvent } from "../../js/audit-logger.js";
+
+const GROUP_LABELS = {
+    overview: "Overview",
+    restaurant: "Restaurant Management",
+    customers: "Customer Management",
+    content: "Content Management",
+    creators: "Creator Management",
+    notifications: "Notifications",
+    security: "Security & Administration"
+};
 
 document.addEventListener("DOMContentLoaded", async () => {
     let session = null;
@@ -84,19 +90,51 @@ document.addEventListener("DOMContentLoaded", async () => {
             .join("") || "SK";
     }
 
-    // Store Open indicator listener
+    // Store Open indicator listener + quick toggle for manageSettings role
+    let currentStoreOpen = true;
     const statusIndicator = document.getElementById("business-status-indicator");
     onValue(ref(db, "settings/business/storeOpen"), (snap) => {
         if (!statusIndicator) return;
-        const isOpen = snap.exists() ? snap.val() !== false : true;
-        statusIndicator.innerHTML = `<span class="status-dot"></span> ${isOpen ? "Store Open" : "Store Paused"}`;
-        statusIndicator.classList.toggle("is-paused", !isOpen);
+        currentStoreOpen = snap.exists() ? snap.val() !== false : true;
+        statusIndicator.innerHTML = `<span class="status-dot"></span> ${currentStoreOpen ? "Store Open" : "Store Paused"}`;
+        statusIndicator.classList.toggle("is-paused", !currentStoreOpen);
+        statusIndicator.title = hasPermission("manageSettings")
+            ? "Click to toggle Store Open / Store Paused"
+            : "Current store online order availability";
     }, () => {});
+
+    statusIndicator?.addEventListener("click", async () => {
+        if (!hasPermission("manageSettings")) return;
+        const nextOpen = !currentStoreOpen;
+        const ok = await UIModule.confirm({
+            title: nextOpen ? "Re-open Website Ordering?" : "Pause Website Ordering?",
+            message: nextOpen
+                ? "Customers will be able to place new online orders immediately."
+                : "New customer online checkout will be paused until you re-open the store.",
+            confirmText: nextOpen ? "Open Store" : "Pause Store",
+            dangerous: !nextOpen
+        });
+        if (!ok) return;
+        try {
+            await update(ref(db, "settings/business"), { storeOpen: nextOpen, updatedAt: Date.now() });
+            await logAuditEvent({
+                actorUid: session?.user?.uid,
+                actorName: session?.staff?.name,
+                actorEmail: session?.user?.email,
+                actorRole: session?.role,
+                action: nextOpen ? "store_reopened" : "store_paused",
+                target: "settings/business/storeOpen"
+            });
+            UIModule.showToast(nextOpen ? "Store is now Open for online orders." : "Store ordering is now Paused.", "info");
+        } catch (err) {
+            UIModule.showToast(err?.message || "Unable to update store status.", "error");
+        }
+    });
 
     // Live pending order monitor
     startOrderMonitor();
 
-    // Live pending devices count badge (for Owner / manageDevices)
+    // Live badges in sidebar
     if (hasPermission("manageDevices")) {
         onValue(ref(db, "adminDevices"), (snap) => {
             const devices = snap.exists() ? Object.values(snap.val() || {}) : [];
@@ -109,7 +147,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, () => {});
     }
 
-    // Live low/out-of-stock count badge
     if (hasPermission("viewInventory") || hasPermission("manageInventory") || hasPermission("manageProducts")) {
         onValue(ref(db, "inventory/items"), (snap) => {
             const invItems = snap.exists() ? Object.values(snap.val() || {}) : [];
@@ -122,7 +159,31 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, () => {});
     }
 
-    // Live in-panel admin notifications listener for approved & unblocked devices
+    if (hasPermission("moderateContent")) {
+        onValue(ref(db, "contentReports"), (snap) => {
+            const reps = snap.exists() ? Object.values(snap.val() || {}) : [];
+            const openCount = reps.filter((r) => (r?.status || "open") === "open").length;
+            const badge = document.getElementById("open-reports-count");
+            if (badge) {
+                badge.textContent = String(openCount);
+                badge.classList.toggle("hidden", openCount === 0);
+            }
+        }, () => {});
+    }
+
+    if (hasPermission("manageCreators")) {
+        onValue(ref(db, "creatorApplications"), (snap) => {
+            const apps = snap.exists() ? Object.values(snap.val() || {}) : [];
+            const pendCount = apps.filter((a) => ["pending", "under_review", "more_info_required"].includes(a?.status)).length;
+            const badge = document.getElementById("pending-creators-count");
+            if (badge) {
+                badge.textContent = String(pendCount);
+                badge.classList.toggle("hidden", pendCount === 0);
+            }
+        }, () => {});
+    }
+
+    // Live in-panel admin notifications listener
     let initialNotifSnapshot = true;
     onValue(ref(db, "adminNotifications"), (snap) => {
         if (initialNotifSnapshot) {
@@ -145,45 +206,50 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }, () => {});
 
+    // Canonical views + backward-compatible deep-link route aliases
     const viewRegistry = {
-        overview: { module: DashboardModule, title: "Business Overview", perm: null },
-        dashboard: { module: DashboardModule, title: "Business Overview", perm: null },
-        orders: { module: OrdersModule, title: "Orders", perm: "viewOrders" },
-        "website-analytics": { module: AnalyticsModule, title: "Website Analytics", perm: "viewAnalytics" },
-        analytics: { module: AnalyticsModule, title: "Website Analytics", perm: "viewAnalytics" },
-        "visitor-analytics": { module: VisitorAnalyticsModule, title: "Visitor Analytics", perm: "viewVisitorAnalytics" },
-        "customer-engagement": { module: CustomerEngagementModule, title: "Customer Engagement", perm: "viewCustomerEngagement" },
-        "order-analytics": { module: OrderAnalyticsModule, title: "Order Analytics", perm: "viewOrderAnalytics" },
-        "reports-exports": { module: ReportsExportsModule, title: "Reports & Exports", perm: "exportReports" },
-        customers: { module: CustomersModule, title: "Customer Management", perm: "viewCustomers" },
-        "login-history": { module: LoginHistoryModule, title: "User Login History", perm: "viewLoginHistory" },
-        "user-activity": { module: UserActivityModule, title: "User Activity", perm: "viewUserActivity" },
-        products: { module: MenuModule, title: "Products & Menu", perm: "manageProducts" },
-        inventory: { module: InventoryModule, title: "Inventory & Stock", perm: null, anyPerm: ["viewInventory", "manageInventory", "manageProducts"] },
-        categories: { module: CategoriesModule, title: "Categories", perm: "manageProducts" },
-        offers: { module: OffersModule, title: "Offers & Coupons", perm: "manageCoupons" },
-        notifications: { module: NotificationsModule, title: "Notification Center & History", perm: null },
-        "customer-announcements": { module: CustomerAnnouncementsModule, title: "Customer Announcements", perm: "sendCustomerCampaigns" },
-        "activity-logs": {
-            module: ActivityLogsModule,
-            title: "Activity Logs (10 Categories)",
-            perm: null,
-            anyPerm: ["viewLoginHistory", "viewAnalytics", "viewAuditLogs", "viewSecurityLogs", "sendNotifications", "sendCustomerCampaigns"]
-        },
-        devices: { module: DevicesModule, title: "Devices", perm: "manageDevices" },
-        staff: { module: StaffModule, title: "Staff", perm: "manageStaff" },
-        roles: { module: RolesModule, title: "Roles & Permissions", perm: "manageRoles" },
-        "audit-logs": { module: AuditLogsModule, title: "Admin Activity Logs", perm: "viewAuditLogs" },
-        "security-logs": { module: SecurityLogsModule, title: "Security Logs", perm: "viewSecurityLogs" },
-        settings: { module: SettingsModule, title: "Settings", perm: "manageSettings" }
+        overview: { navKey: "overview", group: "overview", module: DashboardModule, title: "Business Overview", perm: null },
+        dashboard: { navKey: "overview", group: "overview", module: DashboardModule, title: "Business Overview", perm: null },
+
+        analytics: { navKey: "analytics", group: "overview", module: AnalyticsHubModule, title: "Analytics & Reports", anyPerm: ["viewAnalytics", "viewVisitorAnalytics", "viewOrderAnalytics", "viewCustomerEngagement", "exportReports"] },
+        "website-analytics": { navKey: "analytics", group: "overview", module: AnalyticsHubModule, subtab: "website-analytics", title: "Website Analytics", perm: "viewAnalytics" },
+        "visitor-analytics": { navKey: "analytics", group: "overview", module: AnalyticsHubModule, subtab: "visitor-analytics", title: "Visitor Analytics", perm: "viewVisitorAnalytics" },
+        "order-analytics": { navKey: "analytics", group: "overview", module: AnalyticsHubModule, subtab: "order-analytics", title: "Order Analytics", perm: "viewOrderAnalytics" },
+        "customer-engagement": { navKey: "analytics", group: "overview", module: AnalyticsHubModule, subtab: "customer-engagement", title: "Customer Engagement", perm: "viewCustomerEngagement" },
+        "reports-exports": { navKey: "analytics", group: "overview", module: AnalyticsHubModule, subtab: "reports-exports", title: "Reports & Exports", perm: "exportReports" },
+
+        orders: { navKey: "orders", group: "restaurant", module: OrdersModule, title: "Orders & Bills", perm: "viewOrders" },
+        products: { navKey: "products", group: "restaurant", module: CatalogHubModule, subtab: "products", title: "Menu & Categories", perm: "manageProducts" },
+        categories: { navKey: "products", group: "restaurant", module: CatalogHubModule, subtab: "categories", title: "Dish Categories", perm: "manageProducts" },
+        inventory: { navKey: "inventory", group: "restaurant", module: InventoryModule, title: "Inventory & Stock", anyPerm: ["viewInventory", "manageInventory", "manageProducts"] },
+        offers: { navKey: "offers", group: "restaurant", module: OffersModule, title: "Offers & Coupons", perm: "manageCoupons" },
+
+        customers: { navKey: "customers", group: "customers", module: CustomersHubModule, subtab: "customers", title: "Customers & Activity", perm: "viewCustomers" },
+        "user-activity": { navKey: "customers", group: "customers", module: CustomersHubModule, subtab: "user-activity", title: "Customer Activity Timeline", perm: "viewUserActivity" },
+
+        moderation: { navKey: "moderation", group: "content", module: ModerationModule, title: "Moderation & Content", perm: "moderateContent" },
+        "seo-manager": { navKey: "seo-manager", group: "content", module: SeoManagerModule, title: "SEO & Community Topics", anyPerm: ["manageSeo", "viewContentAnalytics"] },
+
+        creators: { navKey: "creators", group: "creators", module: CreatorsModule, title: "Creators & Blue Tick", anyPerm: ["manageCreators", "manageBadges"] },
+
+        notifications: { navKey: "notifications", group: "notifications", module: NotificationsHubModule, subtab: "notifications", title: "Alerts & Campaigns", perm: null },
+        "customer-announcements": { navKey: "notifications", group: "notifications", module: NotificationsHubModule, subtab: "customer-announcements", title: "Customer Announcements", perm: "sendCustomerCampaigns" },
+
+        staff: { navKey: "staff", group: "security", module: StaffModule, title: "Staff", perm: "manageStaff" },
+        roles: { navKey: "roles", group: "security", module: RolesModule, title: "Roles & Permissions", perm: "manageRoles" },
+        logs: { navKey: "logs", group: "security", module: LogsHubModule, title: "Security & Activity Logs", anyPerm: ["viewSecurityLogs", "viewAuditLogs", "viewLoginHistory", "viewAnalytics", "sendNotifications", "sendCustomerCampaigns"] },
+        "security-logs": { navKey: "logs", group: "security", module: LogsHubModule, subtab: "security-logs", title: "Security Logs", perm: "viewSecurityLogs" },
+        "audit-logs": { navKey: "logs", group: "security", module: LogsHubModule, subtab: "audit-logs", title: "Admin Audit Logs", perm: "viewAuditLogs" },
+        "login-history": { navKey: "logs", group: "security", module: LogsHubModule, subtab: "login-history", title: "Login History", perm: "viewLoginHistory" },
+        "activity-logs": { navKey: "logs", group: "security", module: LogsHubModule, subtab: "activity-logs", title: "Activity Logs (10 Categories)", anyPerm: ["viewLoginHistory", "viewAnalytics", "viewAuditLogs", "viewSecurityLogs", "sendNotifications", "sendCustomerCampaigns"] },
+        devices: { navKey: "devices", group: "security", module: DevicesModule, title: "Trusted Devices", perm: "manageDevices" },
+        settings: { navKey: "settings", group: "security", module: SettingsModule, title: "Settings", perm: "manageSettings" }
     };
 
     function isViewAllowed(viewKey) {
         const entry = viewRegistry[viewKey];
         if (!entry) return false;
-        if (entry.anyPerm) {
-            return entry.anyPerm.some((p) => hasPermission(p));
-        }
+        if (entry.anyPerm) return entry.anyPerm.some((p) => hasPermission(p));
         if (!entry.perm) return true;
         return hasPermission(entry.perm);
     }
@@ -193,20 +259,54 @@ document.addEventListener("DOMContentLoaded", async () => {
         const key = item.dataset.view;
         const allowed = isViewAllowed(key);
         item.classList.toggle("hidden", !allowed);
+        item.dataset.allowed = allowed ? "1" : "0";
     });
 
-    // Hide empty nav section labels if all items under them are hidden
-    document.querySelectorAll(".nav-section-label[data-section]").forEach((label) => {
-        const group = label.dataset.section;
-        const visibleSibling = document.querySelector(`.nav-item[data-group="${group}"]:not(.hidden)`);
-        label.classList.toggle("hidden", !visibleSibling);
+    // Collapsible 7-section accordion setup
+    const groupWraps = [...document.querySelectorAll(".nav-group[data-group-wrap]")];
+    const refreshGroupVisibility = () => {
+        groupWraps.forEach((wrap) => {
+            const visibleItems = wrap.querySelectorAll(".nav-item:not(.hidden)").length;
+            wrap.classList.toggle("hidden", visibleItems === 0);
+        });
+    };
+    refreshGroupVisibility();
+
+    document.querySelectorAll(".nav-group-toggle").forEach((toggle) => {
+        toggle.addEventListener("click", () => {
+            const wrap = toggle.closest(".nav-group");
+            if (!wrap) return;
+            const collapsed = wrap.classList.toggle("is-collapsed");
+            toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        });
+    });
+
+    // Sidebar quick search
+    const sidebarSearch = document.getElementById("skg-sidebar-search");
+    sidebarSearch?.addEventListener("input", (e) => {
+        const q = String(e.target.value || "").trim().toLowerCase();
+        navItems.forEach((item) => {
+            if (item.dataset.allowed !== "1") {
+                item.classList.add("hidden");
+                return;
+            }
+            const text = item.textContent.trim().toLowerCase();
+            item.classList.toggle("hidden", Boolean(q && !text.includes(q)));
+        });
+        if (q) {
+            groupWraps.forEach((wrap) => {
+                wrap.classList.remove("is-collapsed");
+                wrap.querySelector(".nav-group-toggle")?.setAttribute("aria-expanded", "true");
+            });
+        }
+        refreshGroupVisibility();
     });
 
     const main = document.getElementById("main-content");
     const titleEl = document.getElementById("page-title-heading");
+    const breadcrumbEl = document.getElementById("skg-admin-breadcrumb");
     if (!main) return;
 
-    // Show non-intrusive pending device banner if current device is awaiting Owner approval
     const existingPendingBanner = document.getElementById("skg-pending-device-banner");
     if (existingPendingBanner) existingPendingBanner.remove();
     if (session?.device && session.device.approvalStatus !== "approved" && !session.device.blocked) {
@@ -226,10 +326,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function navigateTo(rawView) {
         const cleaned = (rawView || "overview").split("?")[0];
-        const requested = cleaned === "dashboard" ? "overview" : (cleaned === "analytics" ? "website-analytics" : cleaned);
-        let key = requested;
+        let key = cleaned === "dashboard" ? "overview" : cleaned;
 
-        if (viewRegistry[requested] && !isViewAllowed(requested)) {
+        if (viewRegistry[key] && !isViewAllowed(key)) {
             const active = getAdminSession();
             await logSecurityEvent({
                 eventType: "permission_denied",
@@ -237,25 +336,38 @@ document.addEventListener("DOMContentLoaded", async () => {
                 actorUid: active?.user?.uid || "unknown",
                 actorEmail: active?.user?.email || "",
                 actorRole: active?.role || "staff",
-                target: requested,
-                details: { attemptedSection: requested }
+                target: key,
+                details: { attemptedSection: key }
             });
             UIModule.showToast("Access restricted for your role.", "error");
             key = "overview";
-        } else if (!viewRegistry[requested]) {
+        } else if (!viewRegistry[key]) {
             key = "overview";
         }
 
         const target = viewRegistry[key];
+        const activeNavKey = target.navKey || key;
 
         navItems.forEach((item) => {
-            const active = item.dataset.view === key;
+            const active = item.dataset.view === activeNavKey;
             item.classList.toggle("active", active);
-            if (active) item.setAttribute("aria-current", "page");
-            else item.removeAttribute("aria-current");
+            if (active) {
+                item.setAttribute("aria-current", "page");
+                const parentGroup = item.closest(".nav-group");
+                if (parentGroup?.classList.contains("is-collapsed")) {
+                    parentGroup.classList.remove("is-collapsed");
+                    parentGroup.querySelector(".nav-group-toggle")?.setAttribute("aria-expanded", "true");
+                }
+            } else {
+                item.removeAttribute("aria-current");
+            }
         });
 
         if (titleEl) titleEl.textContent = target.title;
+        if (breadcrumbEl) {
+            const gLabel = GROUP_LABELS[target.group] || "Workspace";
+            breadcrumbEl.textContent = gLabel === target.title ? gLabel : `${gLabel} › ${target.title}`;
+        }
         UIModule.closeDrawer();
 
         if (typeof main._skgOrderUnsubscribe === "function") {
@@ -274,7 +386,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         main.innerHTML = '<div class="skg-admin-loading" role="status">Loading…</div>';
 
         try {
-            await target.module.render(main);
+            const gLabel = GROUP_LABELS[target.group] || "Workspace";
+            await target.module.render(main, target.subtab || null, {
+                onBreadcrumbSubtab: (subtabLabel) => {
+                    if (!subtabLabel) return;
+                    if (titleEl) titleEl.textContent = subtabLabel;
+                    if (breadcrumbEl) {
+                        breadcrumbEl.textContent = `${gLabel} › ${target.title} › ${subtabLabel}`;
+                    }
+                }
+            });
         } catch (error) {
             console.error(`Could not render admin view "${key}":`, error);
             main.innerHTML = `

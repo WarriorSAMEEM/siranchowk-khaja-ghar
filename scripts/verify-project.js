@@ -52,6 +52,8 @@ const pkg = readJson("package.json");
 const lock = readJson("package-lock.json");
 const firebase = readJson("firebase.json");
 const database = readJson("database.rules.json");
+const firestoreBlueprint = readJson("firebase-blueprint.json");
+const appMetadata = readJson("metadata.json");
 
 if (pkg && lock) {
     if (pkg.name !== lock.packages?.[""]?.name) fail("package-lock.json root package name does not match package.json");
@@ -84,9 +86,10 @@ if (database?.rules?.menu_items?.["$itemId"]?.available?.[".write"] &&
 
 const requiredFiles = [
     "index.html", "menu.html", "about.html", "contact.html", "account.html",
-    "admin/login.html", "admin/admin.html", "js/firebase.js",
+    "explore.html", "blog.html", "article.html", "profile.html", "creator-studio.html",
+    "admin/login.html", "admin/admin.html", "admin/css/brand-system.css", "css/brand-system.css", "js/firebase.js",
     "js/order-system.js", "js/inventory-sync.js", "public/firebase-messaging-sw.js",
-    "cloudflare-worker/worker.js", "cloudflare-worker/wrangler.toml"
+    "public/_redirects", "public/_headers", "cloudflare-worker/worker.js", "cloudflare-worker/wrangler.toml"
 ];
 for (const relative of requiredFiles) {
     if (!fs.existsSync(path.join(root, relative))) fail(`Required file missing: ${relative}`);
@@ -96,6 +99,90 @@ if (requiredFiles.every((f) => fs.existsSync(path.join(root, f)))) ok("required 
 const jsFiles = walk(root, (f) => f.endsWith(".js"));
 for (const file of jsFiles) checkJs(file);
 if (jsFiles.length) ok(`JavaScript syntax (${jsFiles.length} files)`);
+
+const tsFiles = walk(root, (f) => f.endsWith(".ts"));
+for (const file of tsFiles) {
+    const result = spawnSync(process.execPath, ["--experimental-strip-types", "--check", file], {
+        cwd: root, encoding: "utf8"
+    });
+    if (result.status !== 0) fail(`${path.relative(root, file)}: ${(result.stderr || result.stdout || "TypeScript syntax error").trim()}`);
+}
+if (tsFiles.length) ok(`TypeScript syntax (${tsFiles.length} files)`);
+
+// Customer orders must be authenticated and written only through the trusted Worker.
+const orderClient = fs.readFileSync(path.join(root, "js/order-system.js"), "utf8");
+const orderWriteRule = database?.rules?.orders?.["$orderId"]?.[".write"] || "";
+const trackingWriteRule = database?.rules?.orderTracking?.["$token"]?.[".write"] || "";
+if (orderWriteRule.includes("!data.exists()") || trackingWriteRule.includes("!data.exists()")) {
+    fail("Customer-side direct order/tracking creation must remain disabled");
+} else {
+    ok("direct customer order and tracking writes are disabled");
+}
+const workerSource = fs.readFileSync(path.join(root, "cloudflare-worker/worker.js"), "utf8");
+if (!workerSource.includes('type === "create_order"') || !orderClient.includes('type: "create_order"') || orderClient.includes("await set(orderRef, finalOrder)")) {
+    fail("Order checkout must use the authenticated server-side create_order endpoint");
+} else {
+    ok("authenticated server-side order creation flow");
+}
+if (!orderClient.includes("customerLoginRedirect") || !orderClient.includes("restorePendingCartIntent") ||
+    !orderClient.includes("function scopedStorageKey") || !orderClient.includes("scopedStorageKey(TRACKING_KEY)") ||
+    !orderClient.includes("getPendingOrderReference") || !workerSource.includes("idempotent: true")) {
+    fail("Add-to-cart login gate, pending cart restoration or per-customer storage isolation is missing");
+} else {
+    ok("customer login gate, pending cart restoration and per-customer storage isolation");
+}
+const brandedPages = ["index.html", "menu.html", "about.html", "contact.html", "account.html", "explore.html", "blog.html", "article.html", "profile.html", "creator-studio.html"];
+if (brandedPages.some((page) => !fs.readFileSync(path.join(root, page), "utf8").includes("brand-system.css")) ||
+    !fs.readFileSync(path.join(root, "admin/admin.html"), "utf8").includes("brand-system.css") ||
+    !fs.readFileSync(path.join(root, "admin/login.html"), "utf8").includes("SKG premium warm login overrides")) {
+    fail("Unified brand design system must be loaded on public and admin pages");
+} else {
+    ok("unified public/admin design system references");
+}
+if (!firestoreBlueprint || !appMetadata || /concierge/i.test(appMetadata.description || "") ||
+    fs.existsSync(path.join(root, "js/chatbot-widget.js")) ||
+    fs.readFileSync(path.join(root, "server.ts"), "utf8").includes('router.post("/chat"') ||
+    fs.readFileSync(path.join(root, "server.ts"), "utf8").includes("SYSTEM_INSTRUCTION") ||
+    fs.readFileSync(path.join(root, "css/style.css"), "utf8").includes("skg-concierge") ||
+    (firestoreBlueprint.firestore && Object.keys(firestoreBlueprint.firestore).some((key) => key.startsWith("/chatSessions")))) {
+    fail("Removed dining concierge code/schema must not be reintroduced in the package");
+} else {
+    ok("removed concierge widget, chat API and Firestore schema stay absent");
+}
+
+const notificationsClient = fs.readFileSync(path.join(root, "js/notifications-client.js"), "utf8");
+if (!notificationsClient.includes("envWorker || val.workerUrl || DEFAULT_PUSH_WORKER_URL")) {
+    fail("Pages Worker URL environment variable must override stale RTDB Worker URL");
+} else {
+    ok("Cloudflare Pages Worker URL precedence");
+}
+const mapsClient = fs.readFileSync(path.join(root, "js/maps-locator.js"), "utf8");
+if (!workerSource.includes('type === "maps_grounding"') || !mapsClient.includes('type: "maps_grounding"')) {
+    fail("Static Pages map grounding must use the Cloudflare Worker endpoint");
+} else {
+    ok("Cloudflare Worker-backed Maps grounding route");
+}
+const firestoreRules = fs.readFileSync(path.join(root, "firestore.rules"), "utf8");
+if (firestoreRules.includes("minecraftboot411@gmail.com") || !firestoreRules.includes("function isPrimaryOwner()") || !firestoreRules.includes("allow create: if isPrimaryOwner()")) {
+    fail("Firestore admin authority must be based on the primary owner UID, not an email address");
+} else {
+    ok("Firestore admin authority is UID-based and owner-controlled");
+}
+
+const headerPolicy = fs.readFileSync(path.join(root, "public/_headers"), "utf8");
+if (!headerPolicy.includes("geolocation=(self)") || !headerPolicy.includes("X-Frame-Options: DENY")) {
+    fail("Public security headers must permit same-origin geolocation and block framing");
+} else {
+    ok("public security headers and same-origin geolocation policy");
+}
+const viteConfig = fs.readFileSync(path.join(root, "vite.config.js"), "utf8");
+const serverSource = fs.readFileSync(path.join(root, "server.ts"), "utf8");
+if (viteConfig.includes("allowedHosts: true") || !viteConfig.includes('host: "127.0.0.1"') ||
+    !pkg?.scripts?.preview?.includes("--host 127.0.0.1") || !serverSource.includes('process.env.HOST || "127.0.0.1"')) {
+    fail("Vite/Node development and preview servers must default to localhost and restrict allowed hosts");
+} else {
+    ok("local development and preview host restrictions");
+}
 
 // Validate relative imports so a missing module is caught before Vite build.
 const importPattern = /(?:\bfrom\s*|\bimport\s*\(\s*)["'](\.{1,2}\/[^"']+)["']/g;
@@ -171,8 +258,9 @@ const worker = fs.readFileSync(path.join(root, "cloudflare-worker/worker.js"), "
 const wrangler = fs.readFileSync(path.join(root, "cloudflare-worker/wrangler.toml"), "utf8");
 if (!worker.includes("env.FIREBASE_SERVICE_ACCOUNT_JSON")) fail("Worker does not read FIREBASE_SERVICE_ACCOUNT_JSON");
 if (!wrangler.includes('name = "siranchowk-notifications"')) fail("Wrangler Worker name is incorrect");
+if (/^\s*\[secrets\]/m.test(wrangler)) fail("wrangler.toml must not define unsupported [secrets] table");
 if (/GOOGLE_SERVICE_ACCOUNT_EMAIL|GOOGLE_PRIVATE_KEY/.test(worker + wrangler)) fail("Obsolete split Worker secret references remain");
-if (worker.includes("env.FIREBASE_SERVICE_ACCOUNT_JSON") && wrangler.includes('name = "siranchowk-notifications"')) {
+if (worker.includes("env.FIREBASE_SERVICE_ACCOUNT_JSON") && wrangler.includes('name = "siranchowk-notifications"') && !/^\s*\[secrets\]/m.test(wrangler)) {
     ok("Cloudflare Worker secret/config consistency");
 }
 

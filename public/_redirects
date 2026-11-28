@@ -1,0 +1,8 @@
+/explore /explore.html 200
+/category/* /explore.html 200
+/blog /blog.html 200
+/blog/ /blog.html 200
+/blog/* /article.html 200
+/user/* /profile.html 200
+/creator/studio /creator-studio.html 200
+/creator/studio/* /creator-studio.html 200

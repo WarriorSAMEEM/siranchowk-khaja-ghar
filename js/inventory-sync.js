@@ -121,6 +121,7 @@ export async function triggerLowStockAdminAlert(item, session = null) {
                 authToken,
                 payload: {
                     type: "admin_alert",
+                    category: "low_stock",
                     title,
                     body,
                     targetType: "all"

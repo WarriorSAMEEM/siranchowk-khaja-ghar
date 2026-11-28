@@ -24,10 +24,16 @@ export async function loadAnalyticsSettings() {
     }
 }
 
+export const NPT_OFFSET_MS = (5 * 60 + 45) * 60 * 1000;
+
+export function nptStartOfDayMs(ms = Date.now()) {
+    const shifted = new Date(Number(ms || 0) + NPT_OFFSET_MS);
+    return Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate()) - NPT_OFFSET_MS;
+}
+
 export function getDateRangeFromPreset(preset = "7d", customStartStr = "", customEndStr = "", nowMs = Date.now()) {
-    const startOfToday = new Date(nowMs);
-    startOfToday.setHours(0, 0, 0, 0);
-    const todayStart = startOfToday.getTime();
+    const todayStart = nptStartOfDayMs(nowMs);
+    const nptNow = new Date(Number(nowMs || 0) + NPT_OFFSET_MS);
     const dayMs = 24 * 60 * 60 * 1000;
 
     let startMs = todayStart - 6 * dayMs;
@@ -47,27 +53,21 @@ export function getDateRangeFromPreset(preset = "7d", customStartStr = "", custo
         endMs = nowMs;
         label = "Last 30 Days";
     } else if (preset === "this_month") {
-        const d = new Date(nowMs);
-        d.setDate(1);
-        d.setHours(0, 0, 0, 0);
-        startMs = d.getTime();
+        startMs = Date.UTC(nptNow.getUTCFullYear(), nptNow.getUTCMonth(), 1) - NPT_OFFSET_MS;
         endMs = nowMs;
         label = "This Month";
     } else if (preset === "prev_month") {
-        const d = new Date(nowMs);
-        d.setDate(1);
-        d.setHours(0, 0, 0, 0);
-        endMs = d.getTime() - 1;
-        const prevStart = new Date(d.getFullYear(), d.getMonth() - 1, 1, 0, 0, 0, 0);
-        startMs = prevStart.getTime();
+        const thisMonthStart = Date.UTC(nptNow.getUTCFullYear(), nptNow.getUTCMonth(), 1) - NPT_OFFSET_MS;
+        endMs = thisMonthStart - 1;
+        startMs = Date.UTC(nptNow.getUTCFullYear(), nptNow.getUTCMonth() - 1, 1) - NPT_OFFSET_MS;
         label = "Previous Month";
     } else if (preset === "90d") {
         startMs = todayStart - 89 * dayMs;
         endMs = nowMs;
         label = "Last 90 Days";
     } else if (preset === "custom" && customStartStr && customEndStr) {
-        const parsedStart = new Date(`${customStartStr}T00:00:00`).getTime();
-        const parsedEnd = new Date(`${customEndStr}T23:59:59.999`).getTime();
+        const parsedStart = new Date(`${customStartStr}T00:00:00+05:45`).getTime();
+        const parsedEnd = new Date(`${customEndStr}T23:59:59.999+05:45`).getTime();
         if (Number.isFinite(parsedStart) && Number.isFinite(parsedEnd) && parsedEnd >= parsedStart) {
             startMs = parsedStart;
             endMs = parsedEnd;
@@ -112,30 +112,33 @@ export function formatDuration(seconds) {
 }
 
 export function dayKeyFromMs(ms) {
-    const d = new Date(Number(ms || 0));
+    const num = Number(ms);
+    if (!Number.isFinite(num)) return "unknown";
+    const d = new Date(num + NPT_OFFSET_MS);
     if (Number.isNaN(d.getTime())) return "unknown";
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
 }
 
 export function monthKeyFromMs(ms) {
-    const d = new Date(Number(ms || 0));
+    const num = Number(ms);
+    if (!Number.isFinite(num)) return "unknown";
+    const d = new Date(num + NPT_OFFSET_MS);
     if (Number.isNaN(d.getTime())) return "unknown";
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 export function enumerateDayKeys(startMs, endMs) {
     const keys = [];
-    const cur = new Date(startMs);
-    cur.setHours(0, 0, 0, 0);
-    const limit = new Date(endMs);
-    limit.setHours(23, 59, 59, 999);
+    const dayMs = 24 * 60 * 60 * 1000;
+    let curMs = nptStartOfDayMs(startMs);
+    const limitMs = nptStartOfDayMs(endMs);
     let guard = 0;
-    while (cur.getTime() <= limit.getTime() && guard < 120) {
-        keys.push(dayKeyFromMs(cur.getTime()));
-        cur.setDate(cur.getDate() + 1);
+    while (curMs <= limitMs && guard < 120) {
+        keys.push(dayKeyFromMs(curMs));
+        curMs += dayMs;
         guard += 1;
     }
     return keys;

@@ -208,6 +208,7 @@
     <script>
         document.documentElement.classList.add("auth-pending");
     </script>
+    <link rel="stylesheet" href="./css/brand-system.css">
 </head>
 
 <body class="admin-body">
@@ -381,114 +382,159 @@
 
 
             <!-- =================================================
-                 SIDEBAR NAVIGATION
+                 SIDEBAR SEARCH & 7 COLLAPSIBLE SECTIONS
                  ================================================= -->
 
-            <nav class="sidebar-nav" aria-label="Admin navigation">
-                <div class="nav-section-label" data-section="workspace">Workspace</div>
-                <a href="#overview" class="nav-item active" data-view="overview" data-group="workspace" aria-current="page">
-                    <span class="nav-icon" aria-hidden="true">⌂</span>
-                    <span>Business Overview</span>
-                </a>
-                <a href="#orders" class="nav-item" data-view="orders" data-group="workspace">
-                    <span class="nav-icon" aria-hidden="true">▤</span>
-                    <span>Orders</span>
-                    <span class="nav-badge hidden" id="pending-orders-count">0</span>
-                </a>
+            <div class="sidebar-search-wrap">
+                <label class="sr-only" for="skg-sidebar-search">Filter navigation</label>
+                <input
+                    type="search"
+                    id="skg-sidebar-search"
+                    class="sidebar-search-input"
+                    placeholder="Find section…"
+                    autocomplete="off"
+                >
+            </div>
 
-                <div class="nav-section-label" data-section="analytics">Analytics &amp; Intelligence</div>
-                <a href="#website-analytics" class="nav-item" data-view="website-analytics" data-group="analytics">
-                    <span class="nav-icon" aria-hidden="true">📊</span>
-                    <span>Website Analytics</span>
-                </a>
-                <a href="#visitor-analytics" class="nav-item" data-view="visitor-analytics" data-group="analytics">
-                    <span class="nav-icon" aria-hidden="true">🧭</span>
-                    <span>Visitor Analytics</span>
-                </a>
-                <a href="#customer-engagement" class="nav-item" data-view="customer-engagement" data-group="analytics">
-                    <span class="nav-icon" aria-hidden="true">📈</span>
-                    <span>Customer Engagement</span>
-                </a>
-                <a href="#order-analytics" class="nav-item" data-view="order-analytics" data-group="analytics">
-                    <span class="nav-icon" aria-hidden="true">🧾</span>
-                    <span>Order Analytics</span>
-                </a>
-                <a href="#reports-exports" class="nav-item" data-view="reports-exports" data-group="analytics">
-                    <span class="nav-icon" aria-hidden="true">⬇</span>
-                    <span>Reports &amp; Exports</span>
-                </a>
+            <nav class="sidebar-nav" id="sidebar-nav" aria-label="Admin navigation">
+                <!-- 1. Overview -->
+                <div class="nav-group" data-group-wrap="overview">
+                    <button type="button" class="nav-group-toggle" data-section="overview" aria-expanded="true">
+                        <span>Overview</span>
+                        <span class="nav-group-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="nav-group-items" data-group-items="overview">
+                        <a href="#overview" class="nav-item active" data-view="overview" data-group="overview" aria-current="page">
+                            <span class="nav-icon" aria-hidden="true">⌂</span>
+                            <span>Business Overview</span>
+                        </a>
+                        <a href="#analytics" class="nav-item" data-view="analytics" data-group="overview">
+                            <span class="nav-icon" aria-hidden="true">📊</span>
+                            <span>Analytics &amp; Reports</span>
+                        </a>
+                    </div>
+                </div>
 
-                <div class="nav-section-label" data-section="customers">Customer &amp; Activity</div>
-                <a href="#customers" class="nav-item" data-view="customers" data-group="customers">
-                    <span class="nav-icon" aria-hidden="true">👥</span>
-                    <span>Customer Management</span>
-                </a>
-                <a href="#login-history" class="nav-item" data-view="login-history" data-group="customers">
-                    <span class="nav-icon" aria-hidden="true">🔓</span>
-                    <span>User Login History</span>
-                </a>
-                <a href="#user-activity" class="nav-item" data-view="user-activity" data-group="customers">
-                    <span class="nav-icon" aria-hidden="true">📋</span>
-                    <span>User Activity</span>
-                </a>
+                <!-- 2. Restaurant Management -->
+                <div class="nav-group" data-group-wrap="restaurant">
+                    <button type="button" class="nav-group-toggle" data-section="restaurant" aria-expanded="true">
+                        <span>Restaurant Management</span>
+                        <span class="nav-group-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="nav-group-items" data-group-items="restaurant">
+                        <a href="#orders" class="nav-item" data-view="orders" data-group="restaurant">
+                            <span class="nav-icon" aria-hidden="true">▤</span>
+                            <span>Orders &amp; Bills</span>
+                            <span class="nav-badge hidden" id="pending-orders-count">0</span>
+                        </a>
+                        <a href="#products" class="nav-item" data-view="products" data-group="restaurant">
+                            <span class="nav-icon" aria-hidden="true">🍽</span>
+                            <span>Menu &amp; Categories</span>
+                        </a>
+                        <a href="#inventory" class="nav-item" data-view="inventory" data-group="restaurant">
+                            <span class="nav-icon" aria-hidden="true">📦</span>
+                            <span>Inventory &amp; Stock</span>
+                            <span class="nav-badge hidden" id="low-stock-count">0</span>
+                        </a>
+                        <a href="#offers" class="nav-item" data-view="offers" data-group="restaurant">
+                            <span class="nav-icon" aria-hidden="true">🏷</span>
+                            <span>Offers &amp; Coupons</span>
+                        </a>
+                    </div>
+                </div>
 
-                <div class="nav-section-label" data-section="catalog">Catalog &amp; Operations</div>
-                <a href="#products" class="nav-item" data-view="products" data-group="catalog">
-                    <span class="nav-icon" aria-hidden="true">🍽</span>
-                    <span>Products</span>
-                </a>
-                <a href="#inventory" class="nav-item" data-view="inventory" data-group="catalog">
-                    <span class="nav-icon" aria-hidden="true">📦</span>
-                    <span>Inventory &amp; Stock</span>
-                    <span class="nav-badge hidden" id="low-stock-count">0</span>
-                </a>
-                <a href="#categories" class="nav-item" data-view="categories" data-group="catalog">
-                    <span class="nav-icon" aria-hidden="true">▦</span>
-                    <span>Categories</span>
-                </a>
-                <a href="#offers" class="nav-item" data-view="offers" data-group="catalog">
-                    <span class="nav-icon" aria-hidden="true">🏷</span>
-                    <span>Offers / Coupons</span>
-                </a>
+                <!-- 3. Customer Management -->
+                <div class="nav-group" data-group-wrap="customers">
+                    <button type="button" class="nav-group-toggle" data-section="customers" aria-expanded="true">
+                        <span>Customer Management</span>
+                        <span class="nav-group-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="nav-group-items" data-group-items="customers">
+                        <a href="#customers" class="nav-item" data-view="customers" data-group="customers">
+                            <span class="nav-icon" aria-hidden="true">👥</span>
+                            <span>Customers &amp; Activity</span>
+                        </a>
+                    </div>
+                </div>
 
-                <div class="nav-section-label" data-section="security">Security &amp; Governance</div>
-                <a href="#notifications" class="nav-item" data-view="notifications" data-group="security">
-                    <span class="nav-icon" aria-hidden="true">🔔</span>
-                    <span>Notification Center</span>
-                </a>
-                <a href="#customer-announcements" class="nav-item" data-view="customer-announcements" data-group="security">
-                    <span class="nav-icon" aria-hidden="true">📣</span>
-                    <span>Customer Announcements</span>
-                </a>
-                <a href="#activity-logs" class="nav-item" data-view="activity-logs" data-group="security">
-                    <span class="nav-icon" aria-hidden="true">🗂</span>
-                    <span>Activity Logs (10 Types)</span>
-                </a>
-                <a href="#devices" class="nav-item" data-view="devices" data-group="security">
-                    <span class="nav-icon" aria-hidden="true">🛡</span>
-                    <span>Devices</span>
-                    <span class="nav-badge hidden" id="pending-devices-count">0</span>
-                </a>
-                <a href="#staff" class="nav-item" data-view="staff" data-group="security">
-                    <span class="nav-icon" aria-hidden="true">👤</span>
-                    <span>Staff</span>
-                </a>
-                <a href="#roles" class="nav-item" data-view="roles" data-group="security">
-                    <span class="nav-icon" aria-hidden="true">🔑</span>
-                    <span>Roles &amp; Permissions</span>
-                </a>
-                <a href="#audit-logs" class="nav-item" data-view="audit-logs" data-group="security">
-                    <span class="nav-icon" aria-hidden="true">📜</span>
-                    <span>Admin Activity Logs</span>
-                </a>
-                <a href="#security-logs" class="nav-item" data-view="security-logs" data-group="security">
-                    <span class="nav-icon" aria-hidden="true">🚨</span>
-                    <span>Security Logs</span>
-                </a>
-                <a href="#settings" class="nav-item" data-view="settings" data-group="security">
-                    <span class="nav-icon" aria-hidden="true">⚙</span>
-                    <span>Settings</span>
-                </a>
+                <!-- 4. Content Management -->
+                <div class="nav-group" data-group-wrap="content">
+                    <button type="button" class="nav-group-toggle" data-section="content" aria-expanded="true">
+                        <span>Content Management</span>
+                        <span class="nav-group-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="nav-group-items" data-group-items="content">
+                        <a href="#moderation" class="nav-item" data-view="moderation" data-group="content">
+                            <span class="nav-icon" aria-hidden="true">🛡</span>
+                            <span>Moderation &amp; Content</span>
+                            <span class="nav-badge hidden" id="open-reports-count">0</span>
+                        </a>
+                        <a href="#seo-manager" class="nav-item" data-view="seo-manager" data-group="content">
+                            <span class="nav-icon" aria-hidden="true">🔎</span>
+                            <span>SEO &amp; Topics</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 5. Creator Management -->
+                <div class="nav-group" data-group-wrap="creators">
+                    <button type="button" class="nav-group-toggle" data-section="creators" aria-expanded="true">
+                        <span>Creator Management</span>
+                        <span class="nav-group-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="nav-group-items" data-group-items="creators">
+                        <a href="#creators" class="nav-item" data-view="creators" data-group="creators">
+                            <span class="nav-icon" aria-hidden="true">✍</span>
+                            <span>Creators &amp; Blue Tick</span>
+                            <span class="nav-badge hidden" id="pending-creators-count">0</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 6. Notifications -->
+                <div class="nav-group" data-group-wrap="notifications">
+                    <button type="button" class="nav-group-toggle" data-section="notifications" aria-expanded="true">
+                        <span>Notifications</span>
+                        <span class="nav-group-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="nav-group-items" data-group-items="notifications">
+                        <a href="#notifications" class="nav-item" data-view="notifications" data-group="notifications">
+                            <span class="nav-icon" aria-hidden="true">🔔</span>
+                            <span>Alerts &amp; Campaigns</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 7. Security & Administration -->
+                <div class="nav-group" data-group-wrap="security">
+                    <button type="button" class="nav-group-toggle" data-section="security" aria-expanded="true">
+                        <span>Security &amp; Administration</span>
+                        <span class="nav-group-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="nav-group-items" data-group-items="security">
+                        <a href="#staff" class="nav-item" data-view="staff" data-group="security">
+                            <span class="nav-icon" aria-hidden="true">👤</span>
+                            <span>Staff</span>
+                        </a>
+                        <a href="#roles" class="nav-item" data-view="roles" data-group="security">
+                            <span class="nav-icon" aria-hidden="true">🔑</span>
+                            <span>Roles &amp; Permissions</span>
+                        </a>
+                        <a href="#logs" class="nav-item" data-view="logs" data-group="security">
+                            <span class="nav-icon" aria-hidden="true">📜</span>
+                            <span>Security &amp; Activity Logs</span>
+                        </a>
+                        <a href="#devices" class="nav-item" data-view="devices" data-group="security">
+                            <span class="nav-icon" aria-hidden="true">💻</span>
+                            <span>Trusted Devices</span>
+                            <span class="nav-badge hidden" id="pending-devices-count">0</span>
+                        </a>
+                        <a href="#settings" class="nav-item" data-view="settings" data-group="security">
+                            <span class="nav-icon" aria-hidden="true">⚙</span>
+                            <span>Settings</span>
+                        </a>
+                    </div>
+                </div>
             </nav>
 
 
@@ -636,17 +682,22 @@
 
                     <div class="header-page-title">
 
-                        <h1 id="page-title-heading">
-                            Dashboard
-                        </h1>
+                        <div class="header-title-stack">
+                            <span class="header-breadcrumb" id="skg-admin-breadcrumb">Overview</span>
+                            <h1 id="page-title-heading">
+                                Business Overview
+                            </h1>
+                        </div>
 
-                        <span
+                        <button
+                            type="button"
                             class="business-status-tag"
                             id="business-status-indicator"
+                            title="Store online ordering status"
                         >
                             <span class="status-dot"></span>
                             Store Open
-                        </span>
+                        </button>
 
                     </div>
 

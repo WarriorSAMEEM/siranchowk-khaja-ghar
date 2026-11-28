@@ -188,7 +188,7 @@ This document describes the Firebase Realtime Database schema, RBAC permissions,
 
 1. **Zero Browser Fingerprinting & Zero Public PII:**
    - Anonymous visitors receive random first-party identifiers (`vis_...` in `localStorage`, `ses_...` in `sessionStorage`) without canvas/audio/hardware fingerprinting.
-   - Public visitors have write-only access to `analytics/events`, `visitorSessions`, and `visitorProfiles` (reads are blocked for non-staff).
+   - Public visitors currently have write-only access to `analytics/events`, `visitorSessions`, and `visitorProfiles` (reads are blocked for non-staff). These browser-originated records do not expose private customer data, but they are not tamper-proof: automated clients can spoof or inflate analytics. Do not use them for billing, staff performance or other security-sensitive decisions until writes are moved behind a rate-limited Worker endpoint.
    - Anonymous pre-login visitor sessions are **never** silently linked or merged into registered customer identities.
 2. **Do Not Track & Explicit Opt-Out:**
    - `js/analytics-tracker.js` automatically pauses tracking when `navigator.doNotTrack === "1"` or when the visitor toggles **Privacy & Analytics Preferences** in the site footer (`skg_analytics_optout`).
@@ -211,7 +211,7 @@ This document describes the Firebase Realtime Database schema, RBAC permissions,
 
 ## 3. Firebase Spark Plan Efficiency & Data Retention
 
-- **Low-Write Tracking:** Client pages emit one initial `page_view` + session upsert on page load and at most one heartbeat write per 60 seconds while the tab is visible (no polling loops or live listeners on public traffic).
+- **Low-Write Tracking:** Client pages emit one initial `page_view` + session upsert on page load and at most one heartbeat write per 60 seconds while the tab is visible (no polling loops or live listeners on public traffic). This limits normal-client writes but is not a server-side rate limit; see the analytics integrity warning above.
 - **Bounded Admin Queries:** `loginHistory`, `auditLogs`, and `securityLogs` query `limitToLast(500)` indexed on `.indexOn` keys, supporting `Today`, `Yesterday`, `7d`, `30d`, `This Month`, `Previous Month`, `90d`, and `Custom` date filters.
 - **Owner Retention & Pruning:** Under **Settings → Analytics & Retention Settings**, the Owner configures `retentionDays` (default `90`), `dormantDays` (`30`), and engagement tiers. Under **Reports & Exports**, the Owner can prune expired anonymous `analytics/events` and `visitorSessions` records while preserving customer accounts, orders, audit logs, and security logs.
 

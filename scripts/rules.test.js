@@ -204,32 +204,30 @@ function visitorProfile(over = {}) {
 // ============================================================================
 // 1-6, 21: ORDERS
 // ============================================================================
-test("orders: anonymous customer can create a valid pending website order", () => {
-    expectAllow(as(null).write("/orders/-Onew00000000000000001", guestOrder({ id: "-Onew00000000000000001" })), "guest create");
-});
-
-test("orders: signed-in customer can create an order carrying own uid/email/coupon", () => {
-    const order = guestOrder({ customerUid: CUST_A, customerEmail: "a@example.com", couponCode: "WELCOME", couponSummary: "10% off" });
-    expectAllow(as(CUST_A).write("/orders/-Onew00000000000000001", { ...order, id: "-Onew00000000000000001" }), "signed-in create");
+test("orders: only owner/staff can write canonical orders; customer orders go through the trusted Worker", () => {
+    const id = "-Onew00000000000000001";
+    const order = guestOrder({ id, customerUid: CUST_A, customerEmail: "a@example.com", couponCode: "WELCOME", couponSummary: "10% off" });
+    expectDeny(as(null).write(`/orders/${id}`, guestOrder({ id })), "anonymous direct create denied");
+    expectDeny(as(CUST_A).write(`/orders/${id}`, order), "customer direct create denied");
+    expectDeny(as(OFFICER).write(`/orders/${id}`, order), "staff cannot create canonical orders directly");
+    expectAllow(as(OWNER).write(`/orders/${id}`, order), "owner write remains available");
 });
 
 test("orders: invalid order data is rejected", () => {
     const path = "/orders/-Onew00000000000000001";
     const mk = (over) => guestOrder({ id: "-Onew00000000000000001", ...over });
-    expectDeny(as(null).write(path, mk({ orderType: "Teleport" })), "bad orderType");
-    expectDeny(as(null).write(path, mk({ status: "delivered" })), "non-pending create");
-    expectDeny(as(null).write(path, mk({ source: "admin" })), "bad source");
-    expectDeny(as(null).write(path, mk({ customerName: "" })), "empty name");
-    expectDeny(as(null).write(path, mk({ customerName: "x".repeat(81) })), "long name");
-    expectDeny(as(null).write(path, mk({ customerPhone: "123" })), "short phone");
-    expectDeny(as(null).write(path, mk({ customerTrackingToken: "short" })), "short token");
-    expectDeny(as(null).write(path, mk({ items: [{ name: "Momo", quantity: 21 }] })), "qty 21");
-    expectDeny(as(null).write(path, mk({ items: [{ name: "Momo", quantity: 0 }] })), "qty 0");
-    expectDeny(as(null).write(path, mk({ items: [{ name: "", quantity: 1 }] })), "empty item name");
-    expectDeny(as(null).write(path, mk({ id: "someOtherId" })), "id != key");
-    expectDeny(as(null).write(path, mk({ currency: "USD" })), "bad currency");
-    expectDeny(as(null).write(path, mk({ customerUid: CUST_B })), "anonymous claiming a uid");
-    expectDeny(as(CUST_A).write(path, mk({ customerUid: CUST_B })), "claiming someone else's uid");
+    expectDeny(as(OWNER).write(path, mk({ orderType: "Teleport" })), "bad orderType");
+    expectDeny(as(OWNER).write(path, mk({ status: "delivered" })), "non-pending create");
+    expectDeny(as(OWNER).write(path, mk({ source: "admin" })), "bad source");
+    expectDeny(as(OWNER).write(path, mk({ customerName: "" })), "empty name");
+    expectDeny(as(OWNER).write(path, mk({ customerName: "x".repeat(81) })), "long name");
+    expectDeny(as(OWNER).write(path, mk({ customerPhone: "123" })), "short phone");
+    expectDeny(as(OWNER).write(path, mk({ customerTrackingToken: "short" })), "short token");
+    expectDeny(as(OWNER).write(path, mk({ items: [{ name: "Momo", quantity: 21 }] })), "qty 21");
+    expectDeny(as(OWNER).write(path, mk({ items: [{ name: "Momo", quantity: 0 }] })), "qty 0");
+    expectDeny(as(OWNER).write(path, mk({ items: [{ name: "", quantity: 1 }] })), "empty item name");
+    expectDeny(as(OWNER).write(path, mk({ id: "someOtherId" })), "id != key");
+    expectDeny(as(OWNER).write(path, mk({ currency: "USD" })), "bad currency");
 });
 
 test("orders: anonymous and customers cannot read all orders or any single order", () => {
@@ -269,10 +267,13 @@ test("orders: rbac/roles overrides are honoured by the rules", () => {
 // ============================================================================
 // 4-5: ORDER TRACKING
 // ============================================================================
-test("orderTracking: customer can create tracking for their own just-created order and read by token", () => {
-    // js/order-system.js:745 -- written right after the order itself
+test("orderTracking: customers cannot create tracking records; token holders can read", () => {
     const data = { orders: { "-Onew00000000000000001": guestOrder({ id: "-Onew00000000000000001", customerTrackingToken: TOKEN_2 }) } };
-    expectAllow(as(null, data).write(`/orderTracking/${TOKEN_2}`, { orderId: "-Onew00000000000000001", status: "pending", updatedAt: NOW }), "create tracking");
+    const tracking = { orderId: "-Onew00000000000000001", status: "pending", updatedAt: NOW };
+    expectDeny(as(null, data).write(`/orderTracking/${TOKEN_2}`, tracking), "anonymous tracking create denied");
+    expectDeny(as(CUST_A, data).write(`/orderTracking/${TOKEN_2}`, tracking), "customer tracking create denied");
+    expectDeny(as(OFFICER, data).write(`/orderTracking/${TOKEN_2}`, tracking), "staff cannot create tracking directly");
+    expectAllow(as(OWNER, data).write(`/orderTracking/${TOKEN_2}`, tracking), "owner tracking write remains available");
     expectAllow(as(null).read(`/orderTracking/${TOKEN}`), "read with correct token");
 });
 
@@ -340,13 +341,13 @@ test("users: activity is append-only and bound to the actor", () => {
     expectDeny(as(CUST_A, data).write(`/users/${CUST_A}/activity/-Oact000000000000001`, null), "delete existing");
 });
 
-test("users: customer order mirror, coupon, inbox notification (js/order-system.js:753-783)", () => {
+test("users: customer cannot forge order mirrors or coupon locks; own inbox remains writable", () => {
     const id = ORDER_ID;
     const mirror = { ...guestOrder({ customerUid: CUST_A }), trackingSaved: true };
-    expectAllow(as(CUST_A, { users: { [CUST_A]: {} } }).write(`/users/${CUST_A}/orders/${id}`, mirror), "mirror create");
+    expectDeny(as(CUST_A, { users: { [CUST_A]: {} } }).write(`/users/${CUST_A}/orders/${id}`, mirror), "customer cannot forge mirror create");
+    expectDeny(as(OFFICER, { users: { [CUST_A]: {} } }).write(`/users/${CUST_A}/orders/${id}`, mirror), "staff cannot create mirror directly");
     expectDeny(as(CUST_A).write(`/users/${CUST_B}/orders/${id}`, mirror), "mirror into B");
-    expectDeny(as(CUST_A).write(`/users/${CUST_A}/orders/${id}`, { ...mirror, status: "delivered" }), "mirror create non-pending");
-    expectAllow(as(CUST_A).write(`/users/${CUST_A}/coupons/c1`, { id: "c1", code: "WELCOME", title: "t", summary: "s", used: true, orderId: id, usedAt: NOW }), "coupon lock");
+    expectDeny(as(CUST_A).write(`/users/${CUST_A}/coupons/c1`, { id: "c1", code: "WELCOME", title: "t", summary: "s", used: true, orderId: id, usedAt: NOW }), "customer cannot forge coupon lock");
     expectAllow(as(CUST_A).write(`/users/${CUST_A}/notifications/ord_${id}_pending`, { id: `ord_${id}_pending`, orderId: id, status: "pending", title: "Order Received", body: "Thanks", createdAt: NOW, read: false }), "inbox");
 });
 
@@ -543,4 +544,256 @@ test("audit/notification history: staff append; customers limited to own order/c
     expectAllow(as(CUST_A).write("/notificationHistory/orders/h1", hist), "customer order history");
     expectDeny(as(CUST_A).write("/notificationHistory/campaigns/h2", { ...hist, id: "h2", channel: "campaigns" }), "customer campaign history");
     expectDeny(as(CUST_A).read("/notificationHistory"), "customer read history");
+});
+
+// ============================================================================
+// 17-24: GLOBAL CONTENT, CREATOR STUDIO, BADGES & SOCIAL GRAPH RULES
+// ============================================================================
+
+const asAuth = (authObj, extra) => db(extra).as(authObj);
+
+function publicProfile(uid, username, over = {}) {
+    return {
+        uid,
+        username,
+        displayName: "Creator Name",
+        bio: "Food & tech notes from Chitwan",
+        visibility: "public",
+        creatorStatus: "none",
+        followersCount: 0,
+        followingCount: 0,
+        articlesCount: 0,
+        badges: {
+            emailVerified: false,
+            verifiedCreator: false,
+            officialOrg: false,
+            expertSpecialist: false
+        },
+        updatedAt: NOW,
+        ...over
+    };
+}
+
+function publishedArticle(id, authorUid, over = {}) {
+    return {
+        id,
+        slug: `story-${id.toLowerCase()}`,
+        title: "Chitwan Food & Engineering Guide",
+        category: "food",
+        authorUid,
+        authorUsername: "creator_a",
+        authorName: "Creator A",
+        status: "published",
+        visibility: "public",
+        publishedAt: NOW,
+        updatedAt: NOW,
+        likesCount: 0,
+        commentsCount: 0,
+        repostsCount: 0,
+        viewsCount: 0,
+        sharesCount: 0,
+        contentMarkdown: "## Heading\n\nBody text.",
+        ...over
+    };
+}
+
+test("creatorDrafts: strict private per-user isolation (even owner/admin cannot read or write)", () => {
+    const draft = { id: "d1", authorUid: CUST_A, title: "My Private Draft", contentMarkdown: "wip", updatedAt: NOW };
+    expectAllow(as(CUST_A).write(`/creatorDrafts/${CUST_A}/d1`, draft), "creator saves own draft");
+    const data = { creatorDrafts: { [CUST_A]: { d1: draft } } };
+    expectAllow(as(CUST_A, data).read(`/creatorDrafts/${CUST_A}`), "creator reads own drafts");
+    expectDeny(as(CUST_B, data).read(`/creatorDrafts/${CUST_A}`), "other user reads A's drafts");
+    expectDeny(as(ADMIN, data).read(`/creatorDrafts/${CUST_A}`), "admin reads A's private drafts");
+    expectDeny(as(OWNER, data).read(`/creatorDrafts/${CUST_A}`), "owner reads A's private drafts");
+    expectDeny(as(CUST_B, data).write(`/creatorDrafts/${CUST_A}/d2`, { ...draft, id: "d2" }), "other user writes A's drafts");
+    expectDeny(as(CUST_A).write(`/creatorDrafts/${CUST_A}/d3`, { ...draft, id: "d3", authorUid: CUST_B }), "mismatched authorUid");
+});
+
+test("userBookmarks: private per-user isolation", () => {
+    const bm = { articleId: "art1", slug: "s1", title: "Story", savedAt: NOW };
+    expectAllow(as(CUST_A).write(`/userBookmarks/${CUST_A}/art1`, bm), "user saves bookmark");
+    const data = { userBookmarks: { [CUST_A]: { art1: bm } } };
+    expectAllow(as(CUST_A, data).read(`/userBookmarks/${CUST_A}`), "user reads own bookmarks");
+    expectDeny(as(CUST_B, data).read(`/userBookmarks/${CUST_A}`), "other user reads bookmarks");
+    expectDeny(as(OWNER, data).read(`/userBookmarks/${CUST_A}`), "owner reads private bookmarks");
+    expectDeny(as(null, data).read(`/userBookmarks/${CUST_A}`), "anon reads bookmarks");
+});
+
+test("creatorAnalytics: client writes always denied; reads restricted to creator or viewContentAnalytics staff", () => {
+    const data = { creatorAnalytics: { [CUST_A]: { summary: { totalViews: 12, readCompletes: 4, totalShares: 2 } } } };
+    expectAllow(as(CUST_A, data).read(`/creatorAnalytics/${CUST_A}`), "creator reads own analytics");
+    expectAllow(as(ADMIN, data).read(`/creatorAnalytics/${CUST_A}`), "admin (viewContentAnalytics) reads analytics");
+    expectAllow(as(OWNER, data).read(`/creatorAnalytics/${CUST_A}`), "owner reads analytics");
+    expectDeny(as(CUST_B, data).read(`/creatorAnalytics/${CUST_A}`), "other user reads A's analytics");
+    expectDeny(as(MOD, data).read(`/creatorAnalytics/${CUST_A}`), "moderator without viewContentAnalytics");
+    expectDeny(as(CUST_A, data).write(`/creatorAnalytics/${CUST_A}/summary/totalViews`, 999), "creator inflates views");
+    expectDeny(as(OWNER, data).write(`/creatorAnalytics/${CUST_A}/summary/totalViews`, 999), "client write even as owner");
+});
+
+test("publicProfiles: PII blocked, admin badges protected, emailVerified bound to auth token", () => {
+    const profA = publicProfile(CUST_A, "creator_a");
+    expectAllow(as(CUST_A).write(`/publicProfiles/${CUST_A}`, profA), "user creates own public profile");
+    expectDeny(as(CUST_A).write(`/publicProfiles/${CUST_A}`, { ...profA, email: "leak@x.com" }), "reject email PII");
+    expectDeny(as(CUST_A).write(`/publicProfiles/${CUST_A}`, { ...profA, phone: "9800000000" }), "reject phone PII");
+    expectDeny(as(CUST_A).write(`/publicProfiles/${CUST_A}`, { ...profA, address: "Parsa" }), "reject address PII");
+    expectDeny(as(CUST_A).write(`/publicProfiles/${CUST_A}`, { ...profA, creatorStatus: "approved" }), "user self-approves creator");
+    expectDeny(as(CUST_A).write(`/publicProfiles/${CUST_A}`, {
+        ...profA,
+        badges: { ...profA.badges, verifiedCreator: true }
+    }), "user self-grants verifiedCreator");
+    expectDeny(as(CUST_A).write(`/publicProfiles/${CUST_A}`, {
+        ...profA,
+        badges: { ...profA.badges, officialOrg: true }
+    }), "user self-grants officialOrg");
+    expectDeny(as(CUST_A).write(`/publicProfiles/${CUST_A}`, {
+        ...profA,
+        badges: { ...profA.badges, expertSpecialist: true }
+    }), "user self-grants expertSpecialist");
+    expectDeny(as(CUST_A).write(`/publicProfiles/${CUST_A}`, {
+        ...profA,
+        badges: { ...profA.badges, emailVerified: true }
+    }), "unverified token cannot claim emailVerified");
+
+    expectAllow(asAuth({ uid: CUST_A, token: { email_verified: true } }).write(`/publicProfiles/${CUST_A}`, {
+        ...profA,
+        badges: { ...profA.badges, emailVerified: true }
+    }), "verified auth token may sync emailVerified");
+
+    const withProf = { publicProfiles: { [CUST_A]: profA } };
+    expectAllow(as(ADMIN, withProf).update(`/publicProfiles/${CUST_A}/badges`, { verifiedCreator: true }), "admin grants verifiedCreator");
+    expectAllow(as(ADMIN, withProf).update(`/publicProfiles/${CUST_A}`, { specialtyNote: "Halal Culinary Expert" }), "admin sets specialtyNote");
+    expectDeny(as(OFFICER, withProf).update(`/publicProfiles/${CUST_A}/badges`, { verifiedCreator: true }), "officer cannot grant badge");
+    expectAllow(as(null, withProf).read(`/publicProfiles/${CUST_A}`), "public can read publicProfiles");
+});
+
+test("follows & following: self-follow denied; cross-user follow allowed only by follower", () => {
+    const data = {
+        publicProfiles: {
+            [CUST_A]: publicProfile(CUST_A, "creator_a"),
+            [CUST_B]: publicProfile(CUST_B, "creator_b")
+        }
+    };
+    expectDeny(as(CUST_A, data).write(`/follows/${CUST_A}/followers/${CUST_A}`, { uid: CUST_A, createdAt: NOW }), "self-follow in follows");
+    expectDeny(as(CUST_A, data).write(`/following/${CUST_A}/${CUST_A}`, { uid: CUST_A, createdAt: NOW }), "self-follow in following");
+    expectAllow(as(CUST_A, data).write(`/follows/${CUST_B}/followers/${CUST_A}`, { uid: CUST_A, createdAt: NOW }), "A follows B");
+    expectAllow(as(CUST_A, data).write(`/following/${CUST_A}/${CUST_B}`, { uid: CUST_B, createdAt: NOW }), "A records following B");
+    expectDeny(as(CUST_A, data).write(`/follows/${CUST_B}/followers/${OWNER}`, { uid: OWNER, createdAt: NOW }), "A spoofs follower");
+    expectAllow(as(CUST_A, data).write(`/publicProfiles/${CUST_B}/followersCount`, 1), "increment target followersCount by 1");
+    expectDeny(as(CUST_A, data).write(`/publicProfiles/${CUST_A}/followersCount`, 1), "increment own followersCount");
+});
+
+test("publishedArticles & moderatedArticles: creator approval + moderation boundaries", () => {
+    const data = {
+        publicProfiles: {
+            [CUST_A]: publicProfile(CUST_A, "creator_a", { creatorStatus: "approved" }),
+            [CUST_B]: publicProfile(CUST_B, "creator_b", { creatorStatus: "none" })
+        }
+    };
+    const artA = publishedArticle("art1", CUST_A);
+    const artB = publishedArticle("art2", CUST_B);
+    expectAllow(as(CUST_A, data).write("/publishedArticles/art1", artA), "approved creator publishes");
+    expectDeny(as(CUST_B, data).write("/publishedArticles/art2", artB), "unapproved user cannot publish");
+    expectDeny(as(CUST_A, data).write("/publishedArticles/art1", { ...artA, viewsCount: 500 }), "creator cannot fake viewsCount on create");
+
+    const withArt = {
+        ...data,
+        publishedArticles: { art1: artA }
+    };
+    expectAllow(as(CUST_B, withArt).write("/publishedArticles/art1/likesCount", 1), "reader increments likesCount by 1");
+    expectDeny(as(CUST_B, withArt).write("/publishedArticles/art1/likesCount", 50), "reader cannot jump likesCount by 50");
+    expectDeny(as(CUST_A, withArt).write("/publishedArticles/art1/viewsCount", 10), "creator cannot mutate viewsCount");
+    expectAllow(as(MOD, withArt).write("/moderatedArticles/art1", { ...artA, status: "moderated" }), "moderator moves article to moderatedArticles");
+    expectAllow(as(MOD, withArt).write("/publishedArticles/art1", null), "moderator removes hidden article from publishedArticles");
+    expectDeny(as(CUST_A, withArt).write("/moderatedArticles/art1", { ...artA, status: "moderated" }), "creator cannot write moderatedArticles");
+});
+
+test("creatorApplications & contentReports: lifecycle enforcement", () => {
+    const appA = { uid: CUST_A, displayName: "A", username: "creator_a", pitch: "Local Chitwan guides", status: "pending", updatedAt: NOW };
+    expectAllow(as(CUST_A).write(`/creatorApplications/${CUST_A}`, appA), "user submits pending application");
+    expectDeny(as(CUST_A).write(`/creatorApplications/${CUST_A}`, { ...appA, status: "approved" }), "user cannot self-approve application");
+    const suspendedData = { creatorApplications: { [CUST_A]: { ...appA, status: "suspended" } } };
+    expectDeny(as(CUST_A, suspendedData).write(`/creatorApplications/${CUST_A}`, appA), "suspended creator cannot overwrite to pending");
+    expectAllow(as(ADMIN, suspendedData).update(`/creatorApplications/${CUST_A}`, { status: "approved", updatedAt: NOW + 1 }), "admin updates creatorApplication");
+
+    const rep = { id: "rep1", targetType: "article", targetId: "art1", reporterUid: CUST_A, reason: "Spam link", status: "open", createdAt: NOW };
+    expectAllow(as(CUST_A).write("/contentReports/rep1", rep), "authenticated user creates open report");
+    expectDeny(as(CUST_A).write("/contentReports/rep2", { ...rep, id: "rep2", reporterUid: CUST_B }), "cannot spoof reporterUid");
+    expectDeny(as(CUST_A).read("/contentReports"), "user cannot read all contentReports");
+    expectAllow(as(MOD, { contentReports: { rep1: rep } }).read("/contentReports"), "moderator reads contentReports");
+});
+
+test("publicProfiles: moderator can suspend and restore profiles without gaining creator approval powers", () => {
+    const withCreator = {
+        publicProfiles: {
+            [CUST_A]: publicProfile(CUST_A, "creator_a", { creatorStatus: "approved" })
+        }
+    };
+    expectAllow(as(MOD, withCreator).update(`/publicProfiles/${CUST_A}`, { creatorStatus: "suspended", updatedAt: NOW + 1 }), "moderator suspends profile");
+    expectAllow(as(MOD, { publicProfiles: { [CUST_A]: publicProfile(CUST_A, "creator_a", { creatorStatus: "suspended" }) } }).update(`/publicProfiles/${CUST_A}`, { creatorStatus: "approved", updatedAt: NOW + 2 }), "moderator restores profile");
+    expectDeny(as(MOD, withCreator).update(`/publicProfiles/${CUST_A}`, { creatorStatus: "pending", updatedAt: NOW + 3 }), "moderator cannot set pending creatorStatus");
+    expectDeny(as(CUST_A, withCreator).update(`/publicProfiles/${CUST_A}`, { creatorStatus: "suspended", updatedAt: NOW + 4 }), "creator cannot change own creatorStatus");
+});
+
+test("inventory: manager restock clears lowStockAlertSentAt while order staff can only update stock/alert stamp", () => {
+    const data = {
+        inventory: {
+            items: {
+                it1: { id: "it1", name: "Chicken", currentStock: 1, minThreshold: 5, unit: "kg", lowStockAlertSentAt: NOW - 1000 }
+            }
+        }
+    };
+    expectAllow(as(ADMIN, data).update("/inventory/items/it1", { lowStockAlertSentAt: null, updatedAt: NOW }), "admin clears lowStockAlertSentAt on restock");
+    expectAllow(as(ADMIN, data).write("/inventory/items/it1/currentStock", 10), "admin updates stock");
+});
+
+test("security review: moderator cannot approve non-suspended creators and publicProfiles enforces strict key allowlist", () => {
+    const noneData = { publicProfiles: { [CUST_A]: publicProfile(CUST_A, "creator_a", { creatorStatus: "none" }) } };
+    const pendingData = { publicProfiles: { [CUST_A]: publicProfile(CUST_A, "creator_a", { creatorStatus: "pending" }) } };
+    const rejectedData = { publicProfiles: { [CUST_A]: publicProfile(CUST_A, "creator_a", { creatorStatus: "rejected" }) } };
+
+    expectDeny(as(MOD, noneData).update(`/publicProfiles/${CUST_A}`, { creatorStatus: "approved", updatedAt: NOW + 1 }), "moderator approves 'none' creator");
+    expectDeny(as(MOD, pendingData).update(`/publicProfiles/${CUST_A}`, { creatorStatus: "approved", updatedAt: NOW + 1 }), "moderator approves 'pending' creator");
+    expectDeny(as(MOD, rejectedData).update(`/publicProfiles/${CUST_A}`, { creatorStatus: "approved", updatedAt: NOW + 1 }), "moderator approves 'rejected' creator");
+    expectAllow(as(ADMIN, pendingData).update(`/publicProfiles/${CUST_A}`, { creatorStatus: "approved", updatedAt: NOW + 1 }), "admin with manageCreators approves 'pending' creator");
+
+    const profA = publicProfile(CUST_A, "creator_a");
+    for (const badKey of ["emailAddress", "phoneNumber", "mobile", "fcmToken", "homeAddress"]) {
+        expectDeny(as(CUST_A).write(`/publicProfiles/${CUST_A}`, { ...profA, [badKey]: "sensitive-pii" }), `reject un-allowlisted ${badKey}`);
+    }
+    expectDeny(as(ADMIN, noneData).update(`/publicProfiles/${CUST_A}/badges`, { customAdmin: true }), "reject arbitrary badge key");
+});
+
+test("security review: orders block internal server flags, unknown keys, and non-alphanumeric tracking tokens", () => {
+    const path = "/orders/-Onew00000000000000009";
+    const mk = (over = {}) => guestOrder({ id: "-Onew00000000000000009", ...over });
+    const nonAlphaToken = "!".repeat(48);
+
+    expectDeny(as(OWNER).write(path, mk({ pushAlertDispatched: true })), "guest sets pushAlertDispatched");
+    expectDeny(as(OWNER).write(path, mk({ inventoryDeducted: true })), "guest sets inventoryDeducted");
+    expectDeny(as(OWNER).write(path, mk({ updatedByUid: OWNER })), "guest spoofs updatedByUid");
+    expectDeny(as(OWNER).write(path, mk({ unknownField: "x" })), "guest adds unknown order field");
+    expectDeny(as(OWNER).write(path, mk({ items: [{ name: "Momo", quantity: 1, tamperedExtra: 99 }] })), "guest adds unknown item field");
+    expectDeny(as(OWNER).write(path, mk({ customerTrackingToken: nonAlphaToken })), "non-alphanumeric 48-char token");
+    expectDeny(as(null).read(`/orderTracking/${nonAlphaToken}`), "non-alphanumeric orderTracking read");
+});
+
+test("security review: staff cannot forge or escalate adminDevices.role and users read honors RBAC revocation", () => {
+    expectDeny(
+        as(OFFICER).write("/adminDevices/devOfficerForge1", adminDevice("devOfficerForge1", OFFICER, "owner", "pending")),
+        "officer registers device claiming role owner"
+    );
+    expectDeny(
+        as(HELPER).update("/adminDevices/devHelper000001", { role: "owner", lastActiveAt: NOW + 1 }),
+        "helper escalates own device role to owner"
+    );
+
+    expectAllow(as(MOD).read("/users"), "moderator reads users by default");
+    expectDeny(
+        as(MOD, { rbac: { roles: { moderator: { viewCustomers: false } } } }).read("/users"),
+        "moderator blocked when rbac/roles/moderator/viewCustomers is false"
+    );
+    expectDeny(
+        as(MOD, { staff: { ...baseData().staff, [MOD]: { ...staffRec(MOD, "moderator"), customPermissions: { viewCustomers: false } } } }).read(`/users/${CUST_A}`),
+        "moderator blocked when customPermissions.viewCustomers is false"
+    );
 });

@@ -73,6 +73,12 @@ function addAdminOrderStyles() {
         .skg-order-meta { display:flex; flex-wrap:wrap; gap:8px 14px; color:#6b807c; font-size:12px; }
         .skg-order-items { margin:14px 0; padding:12px 14px; border-radius:11px; background:#f6faf9; color:#294d47; font-size:14px; line-height:1.6; }
         .skg-order-items ul { margin:0; padding-left:18px; }
+        .skg-order-bill-table { width:100%; border-collapse:collapse; margin-top:6px; font-size:13px; }
+        .skg-order-bill-table th, .skg-order-bill-table td { padding:5px 6px; border-bottom:1px solid #e2ebe8; text-align:left; }
+        .skg-order-bill-table th:last-child, .skg-order-bill-table td:last-child { text-align:right; font-variant-numeric:tabular-nums; }
+        .skg-order-bill-totals { margin-top:8px; display:grid; gap:3px; font-size:13px; }
+        .skg-order-bill-row { display:flex; justify-content:space-between; }
+        .skg-order-bill-row.total { font-size:15px; font-weight:800; color:#123f3b; border-top:1px solid #c9dcd8; padding-top:5px; margin-top:3px; }
         .skg-order-details { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:10px 0; color:#49635e; font-size:13px; }
         .skg-order-details strong { display:block; margin-bottom:3px; color:#274640; }
         .skg-order-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:13px; padding-top:13px; border-top:1px solid #edf1ef; }
@@ -87,6 +93,10 @@ function addAdminOrderStyles() {
         .skg-status.ready, .skg-status.delivered, .skg-status.dispatched { background:#e8f7ef; color:#176b3b; }
         .skg-status.cancelled { background:#fff0ef; color:#a43b34; }
         .skg-order-empty, .skg-order-error { padding:28px; border:1px dashed #d6e3df; border-radius:14px; text-align:center; color:#6b817c; background:#fbfdfc; }
+        @media print {
+            body.skg-printing-admin > *:not(#skg-admin-print-host) { display:none !important; }
+            body.skg-printing-admin #skg-admin-print-host { display:block !important; padding:16px; color:#0f172a; background:#fff; }
+        }
         @media(max-width:600px) {
             .skg-order-details { grid-template-columns:1fr; }
             .skg-order-card-head { flex-direction:column; }
@@ -251,10 +261,94 @@ async function sendOrderCustomerNotification({
     return { skipped: false, status: notifStatus, targeted: pushTargeted, sentToProvider: pushSent, failed: pushFailed };
 }
 
+function renderOrderBillHtml(id, order) {
+    const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
+    const hasSnapshot = typeof order.totalAmount === "number" || items.some((i) => typeof i.unitPrice === "number");
+    const subtotal = typeof order.subtotalAmount === "number"
+        ? order.subtotalAmount
+        : items.reduce((sum, i) => sum + Number(i.lineTotal || (Number(i.unitPrice || 0) * Number(i.quantity || 0))), 0);
+    const discount = Number(order.discountAmount || 0);
+    const total = typeof order.totalAmount === "number" ? order.totalAmount : Math.max(0, subtotal - discount);
+
+    return `
+      <div style="max-width:520px;margin:0 auto;font-family:system-ui,-apple-system,sans-serif;border:1px solid #d5e1de;border-radius:12px;padding:18px;background:#fff;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #e2ebe8;padding-bottom:10px;margin-bottom:12px;">
+          <div>
+            <h2 style="margin:0;font-size:18px;">Siranchowk Khaja Ghar</h2>
+            <div style="font-size:12px;color:#475569;">Khairahani-6, Parsa, Chitwan · Tel: 9821233154</div>
+          </div>
+          <div style="text-align:right;">
+            <strong>Bill #${Utils.escapeHTML(id.slice(-8).toUpperCase())}</strong>
+            <div style="font-size:12px;color:#475569;">${Utils.escapeHTML(Utils.formatDate(order.createdAt))}</div>
+          </div>
+        </div>
+        <div style="font-size:13px;margin-bottom:10px;">
+          <strong>Customer:</strong> ${Utils.escapeHTML(order.customerName || "Customer")} (${Utils.escapeHTML(order.customerPhone || "-")}) · ${Utils.escapeHTML(order.orderType || "Order")}
+          ${order.deliveryAddress ? `<br><strong>Address:</strong> ${Utils.escapeHTML(order.deliveryAddress)}` : ""}
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px;">
+          <thead>
+            <tr style="border-bottom:1px solid #cbd5e1;">
+              <th style="text-align:left;padding:6px 4px;">Item</th>
+              <th style="text-align:center;padding:6px 4px;">Qty</th>
+              <th style="text-align:right;padding:6px 4px;">Rate</th>
+              <th style="text-align:right;padding:6px 4px;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map((item) => `
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:6px 4px;">${Utils.escapeHTML(item.name)}</td>
+                <td style="text-align:center;padding:6px 4px;">${Utils.escapeHTML(item.quantity)}</td>
+                <td style="text-align:right;padding:6px 4px;">${typeof item.unitPrice === "number" ? `Rs. ${item.unitPrice}` : "—"}</td>
+                <td style="text-align:right;padding:6px 4px;">${typeof item.lineTotal === "number" ? `Rs. ${item.lineTotal}` : (typeof item.unitPrice === "number" ? `Rs. ${item.unitPrice * item.quantity}` : "—")}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+        ${hasSnapshot ? `
+          <div style="display:grid;gap:4px;font-size:13px;border-top:1px solid #cbd5e1;padding-top:8px;">
+            <div style="display:flex;justify-content:space-between;"><span>Subtotal</span><span>Rs. ${subtotal}</span></div>
+            ${discount > 0 ? `<div style="display:flex;justify-content:space-between;color:#15803d;"><span>Discount (${Utils.escapeHTML(order.couponCode || "Coupon")})</span><span>− Rs. ${discount}</span></div>` : ""}
+            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;margin-top:4px;"><span>Grand Total (NPR)</span><span>Rs. ${total}</span></div>
+          </div>
+        ` : `<p style="font-size:12px;color:#475569;">Legacy order — confirm final counter total directly.</p>`}
+      </div>
+    `;
+}
+
+function triggerAdminPrintBill(id, order) {
+    let host = document.getElementById("skg-admin-print-host");
+    if (!host) {
+        host = document.createElement("div");
+        host.id = "skg-admin-print-host";
+        host.style.display = "none";
+        document.body.appendChild(host);
+    }
+    host.innerHTML = renderOrderBillHtml(id, order);
+    document.body.classList.add("skg-printing-admin");
+    host.style.display = "block";
+    window.print();
+    host.style.display = "none";
+    document.body.classList.remove("skg-printing-admin");
+}
+
 function renderOrderCard(id, order, canUpdate, allowedStatuses) {
     const safeId = Utils.escapeHTML(id);
     const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
-    const itemList = items.map((item) => `<li>${Utils.escapeHTML(item.quantity)} × ${Utils.escapeHTML(item.name)}</li>`).join("");
+    const hasPricedSnapshot = typeof order.totalAmount === "number" || items.some((i) => typeof i.unitPrice === "number");
+    const subtotal = typeof order.subtotalAmount === "number"
+        ? order.subtotalAmount
+        : items.reduce((sum, i) => sum + Number(i.lineTotal || (Number(i.unitPrice || 0) * Number(i.quantity || 0))), 0);
+    const discount = Number(order.discountAmount || 0);
+    const grandTotal = typeof order.totalAmount === "number" ? order.totalAmount : Math.max(0, subtotal - discount);
+
+    const priceBadgeLabel = order.priceStatus === "server_verified"
+        ? '<span class="badge badge-success">Server Verified Bill</span>'
+        : (order.priceStatus === "verified_menu"
+            ? '<span class="badge badge-info">Menu Price Verified</span>'
+            : '<span class="badge badge-warning">Confirm at Counter</span>');
+
     const status = STATUSES.includes(order.status) ? order.status : "pending";
     const phoneDigits = String(order.customerPhone || "").replace(/\D/g, "");
     const whatsappPhone = phoneDigits.length === 10 ? `977${phoneDigits}` : phoneDigits;
@@ -276,6 +370,7 @@ function renderOrderCard(id, order, canUpdate, allowedStatuses) {
                 <div>
                     <div class="skg-order-ref">
                         ORDER #${Utils.escapeHTML(id.slice(-8).toUpperCase())}
+                        ${priceBadgeLabel}
                         ${order.customerUid ? ' · <span class="badge badge-info">Registered Customer</span>' : ""}
                         ${order.couponCode ? ` · <span class="badge badge-success">Coupon: ${Utils.escapeHTML(order.couponCode)}</span>` : ""}
                         ${order.inventoryDeducted === true ? ' · <span class="badge badge-success">Stock Deducted</span>' : (order.inventoryRestoredAt ? ' · <span class="badge badge-warning">Stock Restored</span>' : "")}
@@ -290,15 +385,36 @@ function renderOrderCard(id, order, canUpdate, allowedStatuses) {
             </div>
 
             <div class="skg-order-items">
-                <strong>Items</strong>
-                <ul>${itemList || "<li>Item details unavailable</li>"}</ul>
+                <strong>Itemized Order &amp; Bill Snapshot</strong>
+                ${items.length ? `
+                  <table class="skg-order-bill-table">
+                    <thead><tr><th>Dish</th><th>Qty</th><th>Rate</th><th>Line Total</th></tr></thead>
+                    <tbody>
+                      ${items.map((item) => `
+                        <tr>
+                          <td>${Utils.escapeHTML(item.name)}</td>
+                          <td>${Utils.escapeHTML(item.quantity)}</td>
+                          <td>${typeof item.unitPrice === "number" ? Utils.formatCurrency(item.unitPrice) : "—"}</td>
+                          <td>${typeof item.lineTotal === "number" ? Utils.formatCurrency(item.lineTotal) : (typeof item.unitPrice === "number" ? Utils.formatCurrency(item.unitPrice * item.quantity) : "—")}</td>
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                  ${hasPricedSnapshot ? `
+                    <div class="skg-order-bill-totals">
+                      <div class="skg-order-bill-row"><span>Subtotal</span><span>${Utils.formatCurrency(subtotal)}</span></div>
+                      ${discount > 0 ? `<div class="skg-order-bill-row" style="color:#15803d;"><span>Discount (${Utils.escapeHTML(order.couponCode || "Coupon")})</span><span>− ${Utils.formatCurrency(discount)}</span></div>` : ""}
+                      <div class="skg-order-bill-row total"><span>Grand Total</span><span>${Utils.formatCurrency(grandTotal)}</span></div>
+                    </div>
+                  ` : ""}
+                ` : "<p>Item details unavailable</p>"}
             </div>
 
             <div class="skg-order-details">
                 <div><strong>Customer Phone</strong>${Utils.escapeHTML(order.customerPhone || "Not provided")}</div>
                 <div><strong>Delivery Address</strong>${Utils.escapeHTML(order.deliveryAddress || "Pickup / Not specified")}</div>
                 <div><strong>Special Instructions</strong>${Utils.escapeHTML(order.notes || "None")}</div>
-                <div><strong>Pricing Note</strong>Confirm total directly with customer before kitchen dispatch</div>
+                <div><strong>Pricing Integrity</strong>${hasPricedSnapshot ? `Locked snapshot (${Utils.escapeHTML(order.priceStatus || "verified")})` : "Legacy order — confirm total directly with customer"}</div>
             </div>
 
             <div class="skg-order-actions">
@@ -310,6 +426,7 @@ function renderOrderCard(id, order, canUpdate, allowedStatuses) {
                   <button type="button" class="skg-btn-muted" data-payment-order="${safeId}">Payment / Refund</button>
                 ` : '<span class="form-hint">Read-only order access for your role</span>'}
 
+                <button type="button" class="skg-btn-muted" data-print-order="${safeId}">Print Bill</button>
                 ${phoneDigits ? `<a href="tel:${Utils.escapeHTML(phoneDigits)}">Call customer</a>` : ""}
                 ${whatsappPhone ? `<a href="https://wa.me/${Utils.escapeHTML(whatsappPhone)}?text=${whatsappMessage}" target="_blank" rel="noopener noreferrer">WhatsApp customer</a>` : ""}
             </div>
@@ -654,6 +771,14 @@ const OrdersModule = {
                             UIModule.showToast(err?.message || "Failed to send update.", "error");
                         }
                     });
+                });
+            });
+
+            list.querySelectorAll("[data-print-order]").forEach((printBtn) => {
+                printBtn.addEventListener("click", () => {
+                    const id = printBtn.dataset.printOrder;
+                    const order = latest[id];
+                    if (order) triggerAdminPrintBill(id, order);
                 });
             });
         };

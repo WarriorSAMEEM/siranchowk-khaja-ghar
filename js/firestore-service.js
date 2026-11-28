@@ -6,7 +6,6 @@ import {
     getFirestore,
     doc,
     getDoc,
-    getDocFromServer,
     getDocs,
     setDoc,
     updateDoc,
@@ -15,9 +14,7 @@ import {
     query,
     where,
     limit,
-    writeBatch,
-    serverTimestamp,
-    increment
+    serverTimestamp
 } from "firebase/firestore";
 import { app, auth, isFirebaseConfigured } from "./firebase.js";
 import appletConfig from "../firebase-applet-config.json" with { type: "json" };
@@ -35,18 +32,12 @@ export function handleFirestoreError(error, operationType, path) {
     const errInfo = {
         error: error instanceof Error ? error.message : String(error),
         authInfo: {
-            userId: auth?.currentUser?.uid ?? null,
-            email: auth?.currentUser?.email ?? null,
-            emailVerified: auth?.currentUser?.emailVerified ?? null,
+            signedIn: Boolean(auth?.currentUser?.uid),
             isAnonymous: auth?.currentUser?.isAnonymous ?? null,
-            tenantId: auth?.currentUser?.tenantId ?? null,
-            providerInfo: (auth?.currentUser?.providerData || []).map((provider) => ({
-                providerId: provider.providerId,
-                email: provider.email
-            }))
+            providerIds: (auth?.currentUser?.providerData || []).map((provider) => provider.providerId)
         },
         operationType,
-        path
+        collection: String(path || "").split("/")[0] || "unknown"
     };
     console.error("Firestore Error: ", JSON.stringify(errInfo));
     throw new Error(JSON.stringify(errInfo));
@@ -57,21 +48,6 @@ const firestoreDatabaseId = appletConfig?.firestoreDatabaseId || "(default)";
 export const firestoreDb = isFirebaseConfigured && app
     ? getFirestore(app, firestoreDatabaseId)
     : null;
-
-export async function testFirestoreConnection() {
-    if (!firestoreDb) return;
-    try {
-        await getDocFromServer(doc(firestoreDb, "test", "connection"));
-    } catch (error) {
-        if (error instanceof Error && error.message.includes("the client is offline")) {
-            console.error("Please check your Firebase configuration.");
-        }
-    }
-}
-
-if (typeof window !== "undefined") {
-    testFirestoreConnection();
-}
 
 function makeFirestoreSafeId(prefix = "id") {
     const randomPart =
@@ -92,153 +68,6 @@ function isValidMapsUri(uri) {
         String(uri || "").trim()
     );
 }
-
-// ----------------------------------------------------------------------------
-// Chat Sessions & Messages (Master Gate + Batch Atomic Counter)
-// ----------------------------------------------------------------------------
-
-export async function listUserChatSessions(uid) {
-    if (!firestoreDb || !uid) return [];
-    const path = "chatSessions";
-    try {
-        const q = query(
-            collection(firestoreDb, path),
-            where("ownerId", "==", uid),
-            limit(20)
-        );
-        const snap = await getDocs(q);
-        const sessions = [];
-        snap.forEach((docSnap) => {
-            sessions.push(docSnap.data());
-        });
-        sessions.sort((a, b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
-        return sessions;
-    } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, path);
-        return [];
-    }
-}
-
-export async function createChatSession(title = "Kitchen Concierge", model = "gemini-4-hydrogen") {
-    const user = auth?.currentUser;
-    if (!firestoreDb || !user?.uid) {
-        throw new Error("Please sign in with Google to save chat history.");
-    }
-    const sessionId = makeFirestoreSafeId("sess");
-    const path = `chatSessions/${sessionId}`;
-    const safeModel = model === "gemini-3.1-flash-lite" ? "gemini-3.1-flash-lite" : "gemini-4-hydrogen";
-    const safeTitle = String(title || "Kitchen Concierge").trim().slice(0, 120) || "Kitchen Concierge";
-
-    try {
-        await setDoc(doc(firestoreDb, "chatSessions", sessionId), {
-            sessionId,
-            ownerId: user.uid,
-            title: safeTitle,
-            model: safeModel,
-            status: "active",
-            messageCount: 0,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-        });
-        return sessionId;
-    } catch (error) {
-        handleFirestoreError(error, OperationType.CREATE, path);
-        return null;
-    }
-}
-
-export async function loadChatMessages(sessionId, uid) {
-    if (!firestoreDb || !sessionId || !uid) return [];
-    const path = `chatSessions/${sessionId}/messages`;
-    try {
-        const q = query(
-            collection(firestoreDb, "chatSessions", sessionId, "messages"),
-            where("ownerId", "==", uid),
-            limit(80)
-        );
-        const snap = await getDocs(q);
-        const messages = [];
-        snap.forEach((docSnap) => {
-            messages.push(docSnap.data());
-        });
-        messages.sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
-        return messages;
-    } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, path);
-        return [];
-    }
-}
-
-export async function appendChatMessageBatch({
-    sessionId,
-    role,
-    text,
-    modelUsed = "gemini-4-hydrogen",
-    groundingUrls = []
-}) {
-    const user = auth?.currentUser;
-    if (!firestoreDb || !user?.uid || !sessionId) return null;
-
-    const messageId = makeFirestoreSafeId("msg");
-    const msgPath = `chatSessions/${sessionId}/messages/${messageId}`;
-    const safeRole = role === "model" ? "model" : "user";
-    const safeModel =
-        modelUsed === "gemini-3.1-flash-lite" || modelUsed === "user-input"
-            ? modelUsed
-            : "gemini-4-hydrogen";
-    const safeUrls = Array.isArray(groundingUrls)
-        ? groundingUrls.filter((u) => typeof u === "string" && u.length >= 10 && u.length <= 500).slice(0, 10)
-        : [];
-
-    try {
-        const batch = writeBatch(firestoreDb);
-        const sessionRef = doc(firestoreDb, "chatSessions", sessionId);
-        const msgRef = doc(firestoreDb, "chatSessions", sessionId, "messages", messageId);
-
-        const payload = {
-            messageId,
-            sessionId,
-            ownerId: user.uid,
-            role: safeRole,
-            text: String(text || "").trim().slice(0, 4000) || "Message",
-            modelUsed: safeModel,
-            createdAt: serverTimestamp()
-        };
-        if (safeUrls.length > 0) {
-            payload.groundingUrls = safeUrls;
-        }
-
-        batch.set(msgRef, payload);
-        batch.update(sessionRef, {
-            messageCount: increment(1),
-            model: safeModel === "user-input" ? "gemini-4-hydrogen" : safeModel,
-            updatedAt: serverTimestamp()
-        });
-
-        await batch.commit();
-        return messageId;
-    } catch (error) {
-        handleFirestoreError(error, OperationType.WRITE, msgPath);
-        return null;
-    }
-}
-
-export async function archiveChatSession(sessionId) {
-    if (!firestoreDb || !sessionId) return;
-    const path = `chatSessions/${sessionId}`;
-    try {
-        await updateDoc(doc(firestoreDb, "chatSessions", sessionId), {
-            status: "archived",
-            updatedAt: serverTimestamp()
-        });
-    } catch (error) {
-        handleFirestoreError(error, OperationType.UPDATE, path);
-    }
-}
-
-// ----------------------------------------------------------------------------
-// Saved Chitwan Places from Google Maps Grounding
-// ----------------------------------------------------------------------------
 
 export async function listSavedPlaces(uid) {
     if (!firestoreDb || !uid) return [];

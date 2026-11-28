@@ -1,118 +1,167 @@
-> **Data compatibility note:** The supplied RTDB export contains legacy `pushSubscriptions` and `pushNotificationEvents` records, but the current frontend and Worker do not use those paths. The current rules explicitly deny client access to them to protect stored FCM tokens. Existing records are not deleted. Do not re-enable these paths without a reviewed server-side migration.
+# Siranchowk Khaja Ghar — Final Deployment Guide
 
-# Siranchowk Khaja Ghar — Production Deployment & Setup Checklist
+This package changes the order-write architecture. **Do not publish the new frontend before the updated Cloudflare Worker is deployed and configured.** The browser no longer has permission to create canonical orders directly; checkout deliberately fails closed when the Worker is unavailable.
 
-Follow these steps to publish your upgraded site, Realtime Database security rules, and Web Push Worker without committing any private keys or credentials.
+## 0. Before touching production
 
----
+1. Keep a backup of the currently deployed project and current Firebase rules.
+2. The Firebase project configured in this source is `plasma-bounty-474104-m6`. Confirm that this is the intended production project in Firebase Console.
+3. If a Firebase service-account JSON/private key was ever included in an older ZIP, repository, prompt, or public folder, revoke that key in Google Cloud IAM and create a new one. Removing an exposed copy does not revoke the credential.
+4. Never put service-account JSON or a Gemini API key in frontend variables, source files, GitHub, or ChatGPT.
 
-## 1. Publish Firebase Realtime Database Security Rules (Required First)
+## 1. Prepare and deploy the Cloudflare Worker first
 
-1. Open the [Firebase Console](https://console.firebase.google.com/) and select project **`plasma-bounty-474104-m6`**.
-2. Go to **Build → Realtime Database → Rules**.
-3. Copy the entire contents of `database.rules.json` from the project root and paste it into the Firebase Rules editor.
-4. Click **Publish**.
-   - **Why this is required:** Customer account isolation (`users/$uid`, `users/$uid/activity`, `users/$uid/devices`), single-use coupon locks, 5-tier staff RBAC (`staff/` & `rbac/roles`), persistent admin device control & per-device preferences (`adminDevices/`), inventory & stock logs (`inventory/items`, `inventory/movements`, `inventory/stockAvailability`), write-only public visitor telemetry (`analytics/events`, `visitorSessions`, `visitorProfiles`), append-only `loginHistory`, `auditLogs`, and `securityLogs`, role-restricted 5-channel `notificationHistory`, editable notification templates, and `settings/analytics` permissions are enforced inside Firebase using these rules.
-   - Alternatively, deploy from CLI if Firebase CLI is installed:
-     ```bash
-     firebase deploy --only database
-     ```
+The Worker now handles:
+- `create_order`: verifies Firebase ID token, current menu/stock/coupon pricing, store-open status and expected total; writes order, tracking, customer order mirror and coupon-use record atomically.
+- `new_order_alert`: sends the admin order notification after the order is created.
+- `maps_grounding`: optional Google Maps grounded nearby-place search.
+- Existing admin/customer notification, creator moderation and protected media actions.
 
----
+### Required Worker secret
 
-## 2. Enable Firebase Authentication Providers
+From PowerShell, open the project folder, then run:
 
-1. In Firebase Console, open **Build → Authentication → Sign-in method**.
-2. Confirm **Email/Password** is **Enabled** (used for both Customer accounts and Staff Admin accounts).
-3. Enable **Google** Sign-In if you want customers to use **"Continue with Google"** on `account.html`.
-4. Under **Authentication → Settings → Authorized domains**, add your Cloudflare Pages domain (e.g. `siranchowk-khaja-ghar.pages.dev`) and any custom domain.
-
----
-
-## 3. Deploy Frontend Website via GitHub + Cloudflare Pages (Free Tier)
-
-1. Push the upgraded project directory to your GitHub repository (excluding `node_modules/`, `dist/`, and any `.env*` files — `.gitignore` already protects these).
-2. Log in to the [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages → Create → Pages → Connect to Git**.
-3. Select your repository and configure build settings:
-   - **Build command:** `npm run build`
-   - **Build output directory:** `dist`
-   - **Node version (Environment variable):** `NODE_VERSION = 22`
-4. Click **Save and Deploy**. Cloudflare Pages builds both the customer site and `/admin/admin.html`.
-
----
-
-## 4. Enable Background Push Notifications via Cloudflare Worker (Optional / Free Tier)
-
-In-panel live alerts and customer tracking work immediately via Firebase Realtime Database. To also send background OS/browser push notifications when tabs are closed:
-
-1. **Generate Web Push VAPID Key in Firebase:**
-   - Firebase Console → **Project Settings → Cloud Messaging → Web Push certificates**.
-   - Click **Generate key pair** and copy the **public key**.
-   - Paste it inside **Admin Panel → Settings → Public VAPID Key** and save.
-
-2. **Create a Firebase Service Account Key (Keep Private — Never Upload to GitHub):**
-   - Firebase Console → **Project Settings → Service accounts → Generate new private key**.
-   - Keep the downloaded JSON safely on your computer; extract `client_email` and `private_key`.
-
-3. **Set the single private Worker secret and deploy:**
-   - Keep the downloaded service-account JSON outside the website project and outside `public/`.
-   - In PowerShell, from the project folder, set the full JSON as one Worker secret (the value is read from the private file and is never printed). `wrangler secret put` immediately publishes a Worker version:
-     ```powershell
-     Get-Content -Raw "$env:USERPROFILE\SKG-PRIVATE\firebase-service-account.json" | npx wrangler secret put FIREBASE_SERVICE_ACCOUNT_JSON --name siranchowk-notifications
-     ```
-   - Then deploy the Worker:
-     ```powershell
-     cd cloudflare-worker
-     npx wrangler deploy
-     ```
-   - The Worker expects exactly `FIREBASE_SERVICE_ACCOUNT_JSON`; the older split secrets `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_PRIVATE_KEY` are not used by this version.
-   - Never paste the JSON or private key into ChatGPT, source files, GitHub, or the website's `public/` folder.
-   *(If upgrading an existing deployment, confirm the Cloudflare secret name and Worker configuration match `cloudflare-worker/worker.js` so new-order and per-device notifications execute server-side.)*
-4. Copy your deployed Worker URL (e.g., `https://siranchowk-push-worker.yourname.workers.dev`).
-5. Sign in to **Admin Panel (`admin/admin.html`) → Settings → Cloudflare Push Worker URL**, paste the URL, and save.
-6. Update `ALLOWED_ORIGIN` in `cloudflare-worker/wrangler.toml` if you use a custom domain, then re-run `npx wrangler deploy`.
-
----
-
-## 5. First-Time Owner Sign-In Checklist
-
-1. Open `/admin/login.html` and sign in with your Owner email & password (UID: `47SB1i4UL5hlUVPqM1tQoKJFdaM2`).
-2. The very first Owner device automatically bootstraps as `approved`. Any additional Owner devices (2nd/3rd phone or laptop) and all Admin/Staff devices register as `pending` until you approve them under **Devices**.
-3. Open **Devices** (or **Notification Center → My Device Preferences**) to enable push alerts and customize per-device categories (`New Website Orders`, `Order Cancellations`, `Important Order Updates`, `Security Alerts`, `Staff Announcements`).
-4. Open **Notification Center → Order Templates** to customize automatic customer order messages (`pending`, `accepted`, `preparing`, `ready`, `dispatched`, `delivered`, `cancelled`, `delayed`, `payment_update`).
-5. Open **Categories** (`#categories`) and click **Initialize Standard Categories** if you want the standard menu categories saved to Firebase RTDB.
-6. Open **Inventory & Stock** (`#inventory`) to add real ingredients or portion items, set low-stock alert thresholds, and link them to dishes so stock deducts automatically when orders are accepted and dishes auto-mark unavailable at `0` stock.
-7. Open **Staff** (`#staff`) and **Roles & Permissions** (`#roles`) to configure granular access to analytics, visitor sessions, customer PII (`viewCustomerContactDetails`), 10-category Activity Logs, security logs, notifications, and CSV exports.
-8. Open **Settings** (`#settings`) → **Analytics & Retention Settings** to customize `retentionDays` (default `90`), `dormantDays` (`30`), and customer engagement tier thresholds, and use **Reports & Exports** (`#reports-exports`) for CSV/print exports and Spark-plan pruning.
-
-
-
----
-
-## Audit additions (rules verification and Worker configuration)
-
-### Verify rules before publishing
-1. `npm test` runs `scripts/rules.test.js` (31 scenarios) against `database.rules.json` using the offline `targaryen` simulator. This is **not** the official emulator.
-2. Before publishing, repeat the key scenarios in the Firebase Console **Rules Playground** (anonymous create order, anonymous read `/orders`, staff update order, anonymous read `/analytics/events`) or in the Firebase Emulator Suite (`firebase emulators:start --only database`), which needs Java and network access to Google.
-3. Publish only after you approve. Keep the previous rules (Console -> Realtime Database -> Rules -> history) for rollback.
-
-### Worker configuration (names only; never commit values)
-| Name | Kind | Where |
-|---|---|---|
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | **Secret** | `npx wrangler secret put FIREBASE_SERVICE_ACCOUNT_JSON --name siranchowk-notifications` |
-| `FIREBASE_PROJECT_ID` | Variable | `cloudflare-worker/wrangler.toml` `[vars]` |
-| `FIREBASE_DATABASE_URL` | Variable | `wrangler.toml` `[vars]` |
-| `PRIMARY_OWNER_UID` | Variable | `wrangler.toml` `[vars]` |
-| `ALLOWED_ORIGINS` | Variable | `wrangler.toml` `[vars]` (comma separated, no `*`) |
-
-If any of these is missing the Worker answers `503 {"code":"worker_not_configured"}` and `npx wrangler tail` shows which name is missing (names only).
-
-### Deploy
 ```powershell
-cd cloudflare-worker
-npx wrangler deploy --dry-run      # validates config, uploads nothing
-npx wrangler deploy                # only after owner approval
+Set-Location .\cloudflare-worker
+Get-Content -Raw "$env:USERPROFILE\SKG-PRIVATE\firebase-service-account.json" | npx wrangler secret put FIREBASE_SERVICE_ACCOUNT_JSON
 ```
-Frontend build variable `VITE_PUSH_WORKER_URL` (Cloudflare Pages -> Settings -> Variables) must be the deployed Worker URL.
 
-See `AUDIT-REPORT.md` for the full audit, permission matrix and checklist.
+Use the newly rotated service-account JSON stored outside the project. Do not print or paste its contents into chat. The service account needs the Realtime Database and Firebase Cloud Messaging access required by this Worker.
+
+### Optional Maps grounding secret
+
+Only if you want the nearby-place question feature to return Google Maps grounded results:
+
+```powershell
+npx wrangler secret put GEMINI_API_KEY
+```
+
+The key is stored as a Worker secret. It is never sent to the browser. If omitted, the interactive map can still load, but grounded nearby-place search returns a safe “not configured” response.
+
+### Validate and deploy
+
+Still inside `cloudflare-worker`:
+
+```powershell
+npx wrangler deploy --dry-run
+npx wrangler deploy
+```
+
+The actual deploy is a production change. Run it only after reviewing the dry-run and approving it.
+
+Check the Worker health URL in a browser:
+
+`https://siranchowk-notifications.minecraftboot411-cloudflare.workers.dev/health`
+
+Use the exact URL returned by your Cloudflare account if it differs. The health response should report `ok: true`.
+
+## 2. Publish Firebase Realtime Database rules
+
+1. Open Firebase Console → project `plasma-bounty-474104-m6` → Build → Realtime Database → Rules.
+2. Back up the current live rules.
+3. Paste the complete `database.rules.json` from this package and review the diff.
+4. Publish only after approving it.
+
+Important behavior after these rules are published:
+- Customers cannot write directly to `/orders`, `/orderTracking`, `/users/{uid}/orders`, or coupon-use locks.
+- The trusted Cloudflare Worker writes those records using the service account.
+- Customers can read their own account order history; tracking remains available only with the high-entropy tracking token.
+- Owner/staff order updates continue through the existing RBAC rules.
+
+Because the rules block direct customer order creation, make sure the new Worker is live first. If it is not live, checkout is supposed to fail rather than accept a client-calculated total.
+
+## 3. Publish Firestore rules (only if the Firestore features are used)
+
+`firestore.rules` was also hardened:
+- Admin authority is based on the primary owner UID, not a hard-coded email address.
+- Only the primary owner can create, update or remove admin records.
+- An admin cannot grant admin access to another account.
+
+The Firestore rules were not validated with the official emulator in this review. First run the Firestore Emulator/rules tests in a separate staging project. Then, after reviewing the diff, publish with:
+
+```powershell
+firebase deploy --only firestore:rules
+```
+
+Do not skip emulator validation if saved places or user-preference features are important to production.
+
+## 4. Firebase Authentication
+
+In Firebase Console → Authentication → Sign-in method:
+1. Enable Email/Password.
+2. Enable Google only if you want Google sign-in.
+3. Under Authorized domains, add `siranchowk-khaja-ghar.pages.dev` and any production custom domain.
+4. Confirm the primary owner UID is `47SB1i4UL5hlUVPqM1tQoKJFdaM2` before deploying rules.
+
+## 5. Configure Cloudflare Pages
+
+Pages → your project → Settings → Environment variables. Configure these for Production (and Preview if needed):
+
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_DATABASE_URL`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_PUSH_WORKER_URL` — exact deployed Worker URL, without guessing it
+- `VITE_VAPID_PUBLIC_KEY` — the public Web Push VAPID key if background push is enabled
+- `VITE_GOOGLE_MAPS_API_KEY` — optional browser Maps JavaScript key
+
+`VITE_FIREBASE_API_KEY`, `VITE_GOOGLE_MAPS_API_KEY`, and VAPID public key are browser-side configuration, not service-account secrets. Restrict the Firebase web API key and Maps key by allowed HTTP referrers and only the APIs actually used.
+
+The Pages environment `VITE_PUSH_WORKER_URL` takes precedence over an older Worker URL saved under `settings/pushPublic`, so the frontend uses the Worker you configured for this build.
+
+### Build settings
+
+- Build command: `npm run build`
+- Output directory: `dist`
+- Node version: `22.12.0` or later
+
+Deploy from the Git repository only after the local checks below pass and the Worker/rules are ready.
+
+## 6. Local verification before publishing
+
+Use Node.js 22.12+ on the Windows machine:
+
+```powershell
+npm ci
+npm run check
+npm test
+npm run build
+npm run preview
+```
+
+The Express/Vite development server is `http://127.0.0.1:3000/`. The static production preview is `http://127.0.0.1:4173/`.
+
+This review environment completed `npm run check` and the Worker hardening tests, but its `npm ci` timed out. Therefore the full test suite and Vite production build must still be run successfully on your machine before publishing.
+
+## 7. Required live smoke tests
+
+Use a staging/test customer account and a small test order first:
+
+1. Signed-out visitor clicks Add to cart → redirected to login; the selected item is restored after successful login.
+2. Signed-out visitor cannot submit checkout or WhatsApp order actions.
+3. Signed-in customer adds Chicken Momo and checks the displayed total is Rs. 130.
+4. Place a test order. Confirm the Worker creates `/orders/{id}`, `/orderTracking/{token}` and `/users/{uid}/orders/{id}` with `priceStatus: server_verified`.
+5. Tamper with the browser-side price or expected total in a test environment → Worker must reject the mismatch and create no order.
+6. Confirm Roti remains non-orderable online while its price is unset.
+7. Confirm customer can see only their own order history and can track with their own token.
+8. Update order status as an authorized staff account; verify customer account tracking and notifications.
+9. Test admin new-order push on a real phone/browser if FCM is configured.
+10. Test Maps grounding only if `GEMINI_API_KEY` was configured.
+11. Test at desktop, tablet and mobile widths; inspect contrast, keyboard focus and horizontal overflow.
+
+## 8. Important hosting limitation
+
+Cloudflare Pages deploys the Vite `dist/` static website. It does **not** automatically deploy the Express routes in `server.ts` or `server-platform.ts`. The production order and Maps-grounding flows now use the Cloudflare Worker. Client-side community/profile content uses Firebase directly. Article/profile-specific server-rendered SEO metadata is still not implemented for the static Pages deployment; a separate Pages Functions/Worker SSR implementation is required if that becomes a production requirement.
+
+## 9. Rollback
+
+Keep the old Pages deployment and old Firebase rules version available. If a smoke test fails:
+- Roll back the Pages deployment to the previous known-good version.
+- Restore the previous RTDB rules only if necessary and only after assessing the security impact; the old rules may permit direct client order writes.
+- Do not restore a revoked service-account key.
+
+
+For the latest file-by-file review summary and exact verification limitations, read `FINAL-LOCAL-REVIEW.md`.

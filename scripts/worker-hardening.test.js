@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync, createPublicKey, createSign } from "node:crypto";
 
-import worker, { DEFAULT_ROLE_PERMISSIONS, isPlausibleFcmToken } from "../cloudflare-worker/worker.js";
+import worker, { DEFAULT_ROLE_PERMISSIONS, isPlausibleFcmToken, verifyOrderPricingServer } from "../cloudflare-worker/worker.js";
 import { DEFAULT_ROLE_PERMISSIONS as CLIENT_DEFAULTS } from "../js/rbac.js";
 
 const PROJECT_ID = "plasma-bounty-474104-m6";
@@ -361,5 +361,183 @@ test("responses and unexpected errors never contain credentials", async () => {
         assert.ok(!text.includes("tok-unit") && !text.includes("boom"));
     } finally {
         globalThis.fetch = original;
+    }
+});
+
+// ---------------------------------------------------------------- trusted order creation
+
+test("create_order requires an authenticated customer and atomically writes server-priced order + tracking", async () => {
+    const original = globalThis.fetch;
+    const writes = [];
+    const database = new Map();
+    globalThis.fetch = async (input, init = {}) => {
+        const url = new URL(String(input));
+        if (url.hostname === "www.googleapis.com") return Response.json({ keys: [jwk] });
+        if (url.hostname === "oauth2.googleapis.com") return Response.json({ access_token: "tok-unit", expires_in: 3600 });
+        if (url.hostname.endsWith("firebasedatabase.app")) {
+            if ((init.method || "GET") === "PATCH") {
+                const body = JSON.parse(String(init.body || "{}"));
+                writes.push({ path: url.pathname, body });
+                for (const [path, value] of Object.entries(body)) database.set(path, value);
+                return Response.json(null);
+            }
+            const path = decodeURIComponent(url.pathname.slice(1).replace(/\.json$/, ""));
+            return Response.json(database.get(path) ?? null);
+        }
+        return new Response("unexpected", { status: 404 });
+    };
+    try {
+        const orderId = "-OcreateOrder000000000001";
+        const trackingToken = "c".repeat(48);
+        const payload = {
+            type: "create_order",
+            orderId,
+            trackingToken,
+            expectedTotal: 130,
+            customerName: "Test Customer",
+            customerPhone: "9800000000",
+            orderType: "Pickup",
+            items: [{ id: "momo-chicken", name: "Chicken Momo", quantity: 1 }]
+        };
+        const denied = await worker.fetch(req(payload), makeEnv());
+        assert.equal(denied.status, 401, "anonymous order creation must be refused");
+
+        const res = await worker.fetch(req(payload, { token: idToken(CUSTOMER_UID) }), makeEnv());
+        const data = await res.json();
+        assert.equal(res.status, 201);
+        assert.equal(data.ok, true);
+        assert.equal(data.order.customerUid, CUSTOMER_UID);
+        assert.equal(data.order.priceStatus, "server_verified");
+        assert.equal(data.order.totalAmount, 130);
+        assert.equal(data.order.items[0].unitPrice, 130);
+        assert.equal(data.trackingSaved, true);
+        assert.equal(writes.length, 1, "one atomic root PATCH writes order and tracking");
+        assert.equal(writes[0].body[`orders/${orderId}`].priceStatus, "server_verified");
+        assert.equal(writes[0].body[`orderTracking/${trackingToken}`].orderId, orderId);
+        assert.equal(writes[0].body[`users/${CUSTOMER_UID}/orders/${orderId}`].totalAmount, 130);
+
+        const retry = await worker.fetch(req(payload, { token: idToken(CUSTOMER_UID) }), makeEnv());
+        const retryData = await retry.json();
+        assert.equal(retry.status, 200);
+        assert.equal(retryData.idempotent, true);
+        assert.equal(retryData.order.id, orderId);
+        assert.equal(writes.length, 1, "retries with the same idempotency reference must not create a second order");
+    } finally {
+        globalThis.fetch = original;
+    }
+});
+
+test("create_order fails closed when the displayed total differs from the server price", async () => {
+    const original = globalThis.fetch;
+    const writes = [];
+    globalThis.fetch = async (input, init = {}) => {
+        const url = new URL(String(input));
+        if (url.hostname === "www.googleapis.com") return Response.json({ keys: [jwk] });
+        if (url.hostname === "oauth2.googleapis.com") return Response.json({ access_token: "tok-unit", expires_in: 3600 });
+        if (url.hostname.endsWith("firebasedatabase.app")) {
+            if ((init.method || "GET") === "PATCH") writes.push(init);
+            return Response.json(null);
+        }
+        return new Response("unexpected", { status: 404 });
+    };
+    try {
+        const res = await worker.fetch(req({
+            type: "create_order",
+            orderId: "-OcreateDrift000000000001",
+            trackingToken: "d".repeat(48),
+            expectedTotal: 1,
+            customerName: "Test Customer",
+            customerPhone: "9800000000",
+            orderType: "Pickup",
+            items: [{ id: "momo-chicken", quantity: 1 }]
+        }, { token: idToken(CUSTOMER_UID) }), makeEnv());
+        const data = await res.json();
+        assert.equal(res.status, 409);
+        assert.equal(data.bill.totalAmount, 130);
+        assert.equal(writes.length, 0, "no database write occurs until the customer confirms the server total");
+    } finally {
+        globalThis.fetch = original;
+    }
+});
+
+test("canonical server menu preserves all supplied NPR prices and keeps Roti unpriced", () => {
+    const expected = {
+        "momo-chicken": 130,
+        "momo-buff": 140,
+        "chowmein-veg": 100,
+        "chowmein-chicken": 150,
+        "roti-paratha": 30,
+        "tea-milk": 25,
+        "tea-black": 19,
+        "special-biryani": 350,
+        "snack-chana": 30,
+        "snack-keema": 120,
+        "snack-sukuti": 120,
+        "snack-boiled-egg": 30,
+        "snack-fried-chicken": 200
+    };
+    for (const [id, price] of Object.entries(expected)) {
+        const result = verifyOrderPricingServer({ requestedItems: [{ id, quantity: 1 }] });
+        assert.equal(result.ok, true, `${id} should be orderable`);
+        assert.equal(result.bill.totalAmount, price, `${id} price must remain Rs. ${price}`);
+    }
+    const roti = verifyOrderPricingServer({ requestedItems: [{ id: "roti-plain", quantity: 1 }] });
+    assert.equal(roti.ok, false);
+    assert.match(roti.error, /does not have an online price set/i);
+});
+
+test("maps_grounding proxies to Gemini Maps with a server-side key and returns grounded place links", async () => {
+    const original = globalThis.fetch;
+    let requestSeen = null;
+    globalThis.fetch = async (input, init = {}) => {
+        const url = new URL(String(input));
+        if (url.hostname === "generativelanguage.googleapis.com") {
+            requestSeen = { url, init };
+            return Response.json({
+                candidates: [{
+                    content: { parts: [{ text: "A nearby landmark is available in the Maps results." }] },
+                    groundingMetadata: { groundingChunks: [{ maps: {
+                        title: "Chaudhary Medical",
+                        uri: "https://www.google.com/maps/place/Chaudhary+Medical",
+                        placeId: "place-123",
+                        placeAnswerSources: { reviewSnippets: [{ content: "A nearby landmark." }] }
+                    } }, { maps: {
+                        title: "Untrusted Link",
+                        uri: "https://evil.example/phishing",
+                        placeId: "bad-place"
+                    } }] }
+                }]
+            });
+        }
+        return new Response("unexpected", { status: 404 });
+    };
+    try {
+        const res = await worker.fetch(req({ type: "maps_grounding", query: "nearby landmarks", lat: 27.6087, lng: 84.5682 }),
+            makeEnv({ GEMINI_API_KEY: "server-only-test-key" }));
+        const data = await res.json();
+        assert.equal(res.status, 200);
+        assert.match(data.answer, /nearby landmark/i);
+        assert.equal(data.places[0].title, "Chaudhary Medical");
+        assert.equal(data.places[0].placeId, "place-123");
+        assert.equal(data.places.length, 1, "non-Google Maps hosts must be discarded");
+        assert.equal(requestSeen.init.headers["x-goog-api-key"], "server-only-test-key");
+        assert.equal(requestSeen.url.searchParams.has("key"), false, "API key must not be placed in URL");
+    } finally {
+        globalThis.fetch = original;
+    }
+});
+
+test("maps_grounding returns a safe 503 when the optional Gemini secret is absent", async () => {
+    const restore = mockFetch();
+    try {
+        const env = makeEnv();
+        delete env.GEMINI_API_KEY;
+        const res = await worker.fetch(req({ type: "maps_grounding", query: "nearby landmarks" }), env);
+        const data = await res.json();
+        assert.equal(res.status, 503);
+        assert.equal(data.code, "maps_grounding_not_configured");
+        assert.doesNotMatch(JSON.stringify(data), /GEMINI_API_KEY|private_key/i);
+    } finally {
+        restore();
     }
 });

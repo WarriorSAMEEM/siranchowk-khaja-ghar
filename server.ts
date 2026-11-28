@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { GoogleGenAI } from "@google/genai";
+import { createPlatformApiRouter, registerPlatformSsrRoutes } from "./server-platform.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = __dirname;
@@ -39,41 +40,12 @@ function resolveListenPort(): number {
 }
 
 const PORT = resolveListenPort();
-const HOST = readCliArg("--host") || process.env.HOST || "0.0.0.0";
+const HOST = readCliArg("--host") || process.env.HOST || "127.0.0.1";
 
 const RESTAURANT_COORDS = {
   latitude: 27.6087174620,
   longitude: 84.5682702860
 };
-
-const ALLOWED_MODELS = new Set(["gemini-4-hydrogen", "gemini-3.1-flash-lite"]);
-
-const SYSTEM_INSTRUCTION = `You are the friendly digital concierge for Siranchowk Khaja Ghar (सिरानचोक खाजा घर), a 100% Halal restaurant and local khaja ghar located in Khairahani-6, Parsa, Chitwan, Nepal (behind Chaudhary Medical).
-
-Verified Restaurant Facts:
-- Name: Siranchowk Khaja Ghar (सिरानचोक खाजा घर)
-- Location: Khairahani-6, Parsa, Chitwan, Nepal — Behind Chaudhary Medical (approx. 27.6087° N, 84.5683° E)
-- Hours: Open Daily 6:30 AM – 9:00 PM Nepal Time (Monday–Sunday)
-- Halal Guarantee: 100% Halal food cooked fresh daily
-- Contact & Ordering: Phone 9821233154 | WhatsApp +977 9821233154
-- Signature Menu Items:
-  * Momo: Chicken Momo (चिकेन म:म), Buff Momo (बफ म:म) with house tomato-sesame chutney
-  * Chowmein: Veg Chowmein (भेज चाउमिन), Chicken Chowmein (चिकेन चाउमिन)
-  * Bread / Roti: Roti (रोटी), Paratha (पराठा)
-  * Tea: Milk Tea (चिया दुध), Black Tea (कालो चिया)
-  * Rice & Specials: Special Chicken Biryani (बिरयानी) — prepared on Fridays and special festive days
-  * Snacks & Other: Spiced Chana (चना), Keema (कीमा), Sukuti (सुकुटी), Boiled Egg (उसिनेको अण्डा), Fried Chicken (फ्राइड चिकेन)
-- Ordering Policy: Customers can submit order requests through the website Cart, or call / WhatsApp 9821233154 for faster confirmation. Final counter pricing and delivery availability are confirmed directly by our kitchen team.
-
-Guidelines:
-- Be warm, concise, accurate, and helpful in English or Nepali when asked.
-- Never invent menu prices or claim delivery to unverified addresses; let guests know exact prices are confirmed at the counter or via WhatsApp 9821233154.
-- When Google Maps grounding is enabled, cite real places accurately from Maps tools.`;
-
-interface ChatTurn {
-  role: "user" | "model";
-  text: string;
-}
 
 interface GroundedPlace {
   title: string;
@@ -195,76 +167,6 @@ function createApiRouter() {
     });
   });
 
-  router.post("/chat", async (req: Request, res: Response) => {
-    try {
-      const body = req.body as {
-        message?: unknown;
-        history?: unknown;
-        model?: unknown;
-        useMaps?: unknown;
-        latLng?: { latitude?: unknown; longitude?: unknown };
-      };
-
-      const message = typeof body?.message === "string" ? body.message.trim() : "";
-      if (!message || message.length > 4000) {
-        res.status(400).json({ error: "Please enter a message between 1 and 4000 characters." });
-        return;
-      }
-
-      const useMaps = Boolean(body?.useMaps);
-      const requestedModel = typeof body?.model === "string" ? body.model.trim() : "gemini-4-hydrogen";
-      const model = useMaps
-        ? "gemini-4-hydrogen"
-        : ALLOWED_MODELS.has(requestedModel)
-          ? requestedModel
-          : "gemini-4-hydrogen";
-
-      const rawHistory = Array.isArray(body?.history) ? (body.history as ChatTurn[]) : [];
-      const formattedHistory = rawHistory
-        .slice(-24)
-        .filter((turn) => (turn?.role === "user" || turn?.role === "model") && typeof turn?.text === "string" && turn.text.trim())
-        .map((turn) => ({
-          role: turn.role,
-          parts: [{ text: turn.text.trim().slice(0, 4000) }]
-        }));
-
-      const latitude = clampCoord(body?.latLng?.latitude, RESTAURANT_COORDS.latitude, -90, 90);
-      const longitude = clampCoord(body?.latLng?.longitude, RESTAURANT_COORDS.longitude, -180, 180);
-
-      const ai = getGeminiClient();
-      const chatConfig: Record<string, unknown> = {
-        systemInstruction: SYSTEM_INSTRUCTION
-      };
-
-      if (useMaps) {
-        chatConfig.tools = [{ googleMaps: {} }];
-        chatConfig.toolConfig = {
-          retrievalConfig: {
-            latLng: { latitude, longitude }
-          }
-        };
-      }
-
-      const chat = ai.chats.create({
-        model,
-        history: formattedHistory,
-        config: chatConfig
-      });
-
-      const response = await chat.sendMessage({ message });
-      const places = useMaps ? extractGroundedPlaces(response) : [];
-
-      res.json({
-        reply: response.text || "I received your question, please feel free to ask anything about our menu or location.",
-        model,
-        places
-      });
-    } catch (error) {
-      const formatted = formatGeminiError(error);
-      res.status(formatted.status).json({ error: formatted.message });
-    }
-  });
-
   router.post("/maps-grounding", async (req: Request, res: Response) => {
     try {
       const body = req.body as {
@@ -320,20 +222,17 @@ async function startServer() {
   const app = express();
   app.disable("x-powered-by");
 
+  app.use("/api/platform", createPlatformApiRouter());
   app.use("/api", createApiRouter());
 
   const useProdStatic =
     process.env.NODE_ENV === "production" && fs.existsSync(path.join(DIST_DIR, "index.html"));
 
-  let viteServer: { close: () => Promise<void>; middlewares: express.RequestHandler } | null = null;
+  let viteServer: { close: () => Promise<void>; middlewares: express.RequestHandler; transformIndexHtml: (url: string, html: string) => Promise<string> } | null = null;
+  let viteReadyPromise: Promise<typeof viteServer> | null = null;
 
-  if (useProdStatic) {
-    app.use(express.static(DIST_DIR, { extensions: ["html"] }));
-    app.get("/admin", (_req: Request, res: Response) => {
-      res.redirect("/admin/login.html");
-    });
-  } else {
-    const viteReady = import("vite").then(({ createServer: createViteServer }) =>
+  if (!useProdStatic) {
+    viteReadyPromise = import("vite").then(({ createServer: createViteServer }) =>
       createViteServer({
         root: ROOT_DIR,
         server: {
@@ -344,14 +243,28 @@ async function startServer() {
         appType: "mpa"
       })
     ).then((vite) => {
-      viteServer = vite;
-      return vite;
+      viteServer = vite as unknown as typeof viteServer;
+      return viteServer;
     });
+  }
 
+  registerPlatformSsrRoutes(app, {
+    rootDir: ROOT_DIR,
+    distDir: DIST_DIR,
+    useProdStatic,
+    getViteServer: async () => (viteReadyPromise ? await viteReadyPromise : viteServer)
+  });
+
+  if (useProdStatic) {
+    app.use(express.static(DIST_DIR, { extensions: ["html"] }));
+    app.get("/admin", (_req: Request, res: Response) => {
+      res.redirect("/admin/login.html");
+    });
+  } else {
     app.use(async (req: Request, res: Response, next: express.NextFunction) => {
       try {
-        const vite = await viteReady;
-        vite.middlewares(req, res, next);
+        const vite = viteReadyPromise ? await viteReadyPromise : viteServer;
+        vite?.middlewares(req, res, next);
       } catch (err) {
         next(err);
       }

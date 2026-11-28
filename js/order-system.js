@@ -1,5 +1,5 @@
 // ============================================================================
-// SIRANCHOWK KHAJA GHAR — CART, CHECKOUT, COUPONS & LIVE ORDER TRACKING
+// SIRANCHOWK KHAJA GHAR — CART, CHECKOUT, COUPONS, BILLING & LIVE ORDER TRACKING
 // ============================================================================
 
 import {
@@ -18,9 +18,19 @@ import {
     renderOrderTemplate,
     dispatchWorkerPush
 } from "./notifications-client.js";
+import {
+    mergeMenuWithDefaults,
+    findMenuItem,
+    isItemPriceValid,
+    calculateOrderBill,
+    computeCouponDiscount,
+    slugifyDishKey
+} from "./menu-catalog.js";
 
 const BUSINESS = {
     name: "Siranchowk Khaja Ghar",
+    nepaliName: "सिरानचोक खाजा घर",
+    address: "Khairahani-6, Parsa, Chitwan (Behind Chaudhary Medical)",
     phone: "9821233154",
     whatsapp: "9779821233154"
 };
@@ -28,10 +38,13 @@ const BUSINESS = {
 const CART_KEY = "skg_cart_v2";
 const TRACKING_KEY = "skg_customer_tracking_v2";
 const COUPON_KEY = "skg_applied_coupon_v1";
+let activeStorageUid = getCustomerState().user?.uid || "signed_out";
 
 const cart = new Map();
 let appliedCoupon = null;
 let isSubmittingOrder = false;
+let lastConfirmedTotal = null;
+let lastReceiptHtml = "";
 
 const escapeHTML = (value) =>
     String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -42,35 +55,86 @@ const escapeHTML = (value) =>
         "'": "&#39;"
     }[char]));
 
-function slugifyDishKey(name) {
-    return String(name || "")
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)+/g, "");
+function getLiveMenu() {
+    if (Array.isArray(window.__SKG_MENU_ITEMS) && window.__SKG_MENU_ITEMS.length) {
+        return window.__SKG_MENU_ITEMS;
+    }
+    return mergeMenuWithDefaults({}, {});
 }
 
-function isDishUnavailable(name) {
-    const key = slugifyDishKey(name);
+async function getPendingOrderReference(uid, orderIntent) {
+    const storageKey = `${PENDING_ORDER_KEY}_${uid}`;
+    const fingerprintBytes = new TextEncoder().encode(JSON.stringify(orderIntent));
+    const digest = await crypto.subtle.digest("SHA-256", fingerprintBytes);
+    const fingerprint = Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, "0")).join("");
+    try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+        if (saved?.orderId && saved?.trackingToken && saved.fingerprint === fingerprint &&
+            Date.now() - Number(saved.createdAt || 0) < 24 * 60 * 60 * 1000) {
+            return { orderId: saved.orderId, trackingToken: saved.trackingToken, storageKey };
+        }
+    } catch {}
+
+    const orderId = push(ref(db, "orders")).key;
+    const trackingToken = createTrackingToken();
+    if (!orderId) throw new Error("Could not generate a secure order reference.");
+    try {
+        localStorage.setItem(storageKey, JSON.stringify({ orderId, trackingToken, fingerprint, createdAt: Date.now() }));
+    } catch {}
+    return { orderId, trackingToken, storageKey };
+}
+
+function clearPendingOrderReference(storageKey) {
+    try { if (storageKey) localStorage.removeItem(storageKey); } catch {}
+}
+
+function getMenuItemForCardOrName(nameOrId) {
+    return findMenuItem(getLiveMenu(), nameOrId);
+}
+
+function isDishUnavailable(nameOrId) {
+    const item = getMenuItemForCardOrName(nameOrId);
+    if (item && item.available === false) return true;
+    const key = slugifyDishKey(nameOrId);
     if (!key) return false;
     return Boolean(window.__SKG_UNAVAILABLE_DISHES && window.__SKG_UNAVAILABLE_DISHES.has(key));
 }
 
+function isDishPriceMissing(nameOrId) {
+    const item = getMenuItemForCardOrName(nameOrId);
+    if (!item) return false;
+    return !isItemPriceValid(item);
+}
+
 function syncAddCartButtonsAvailability() {
     document.querySelectorAll(".dish-card").forEach((card) => {
+        const dishId = card.dataset.dishId || "";
         const name = card.querySelector("h3")?.textContent?.trim();
         const button = card.querySelector(".skg-add-cart");
         if (!button || !name) return;
-        const unavailable = card.classList.contains("dish-sold-out") || isDishUnavailable(name);
-        button.disabled = unavailable;
+
+        const lookupKey = dishId || name;
+        const unavailable = card.classList.contains("dish-sold-out") || isDishUnavailable(lookupKey);
+        const unpriced = card.classList.contains("dish-price-unset") || isDishPriceMissing(lookupKey);
+
+        button.disabled = unavailable || unpriced;
         if (unavailable) {
             button.textContent = "Currently Unavailable";
             button.style.opacity = "0.55";
             button.style.cursor = "not-allowed";
-        } else if (button.textContent === "Currently Unavailable") {
-            button.textContent = "+ Add to cart";
+            button.title = "This dish is currently out of stock.";
+        } else if (unpriced) {
+            button.textContent = "Counter / WhatsApp Only";
+            button.style.opacity = "0.65";
+            button.style.cursor = "not-allowed";
+            button.title = "Online price not set yet. Please ask at the counter or on WhatsApp.";
+        } else {
+            if (button.textContent !== "Added") {
+                button.textContent = "+ Add to cart";
+            }
             button.style.opacity = "";
             button.style.cursor = "";
+            button.title = "";
         }
     });
 }
@@ -87,9 +151,27 @@ function syncStorePausedUI() {
     }
 }
 
+function scopedStorageKey(baseKey) {
+    return `${baseKey}_${activeStorageUid || "signed_out"}`;
+}
+
+function switchCartStorageScope(user) {
+    const nextUid = user?.uid || "signed_out";
+    if (nextUid === activeStorageUid) return;
+    activeStorageUid = nextUid;
+    cart.clear();
+    appliedCoupon = null;
+    lastConfirmedTotal = null;
+    document.getElementById("skg-restored-tracking")?.remove();
+    loadCart();
+    refreshCart();
+    renderCouponStatus();
+    restoreTracking();
+}
+
 function loadCart() {
     try {
-        const saved = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+        const saved = JSON.parse(localStorage.getItem(scopedStorageKey(CART_KEY)) || "[]");
         if (Array.isArray(saved)) {
             saved.forEach((item) => {
                 if (
@@ -103,7 +185,7 @@ function loadCart() {
                 }
             });
         }
-        const savedCoupon = JSON.parse(localStorage.getItem(COUPON_KEY) || "null");
+        const savedCoupon = JSON.parse(localStorage.getItem(scopedStorageKey(COUPON_KEY)) || "null");
         if (savedCoupon && savedCoupon.code) {
             appliedCoupon = savedCoupon;
         }
@@ -115,13 +197,13 @@ function loadCart() {
 function saveCart() {
     try {
         localStorage.setItem(
-            CART_KEY,
+            scopedStorageKey(CART_KEY),
             JSON.stringify([...cart].map(([name, quantity]) => ({ name, quantity })))
         );
         if (appliedCoupon) {
-            localStorage.setItem(COUPON_KEY, JSON.stringify(appliedCoupon));
+            localStorage.setItem(scopedStorageKey(COUPON_KEY), JSON.stringify(appliedCoupon));
         } else {
-            localStorage.removeItem(COUPON_KEY);
+            localStorage.removeItem(scopedStorageKey(COUPON_KEY));
         }
     } catch (error) {
         console.warn("Cart could not be saved on this device.", error);
@@ -134,62 +216,162 @@ function createTrackingToken() {
     return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+const PENDING_CART_KEY = "skg_pending_cart_intent_v1";
+const PENDING_ORDER_KEY = "skg_pending_order_v1";
+
+function customerLoginRedirect(pendingItem = null) {
+    if (pendingItem) {
+        try {
+            localStorage.setItem(PENDING_CART_KEY, JSON.stringify({
+                id: String(pendingItem.id || pendingItem.name || "").slice(0, 100),
+                createdAt: Date.now()
+            }));
+        } catch {}
+    }
+    const path = window.location.pathname === "/" ? "/index.html" : window.location.pathname;
+    const returnTo = `${path}${window.location.search}${window.location.hash}`;
+    window.location.assign(`/account.html?mode=login&redirect=${encodeURIComponent(returnTo)}`);
+}
+
+function addResolvedItemToCart(lookupKey, { authenticated = false, button = null, userOverride = null } = {}) {
+    const currentUser = userOverride || getCustomerState().user;
+    switchCartStorageScope(currentUser);
+    const resolved = getMenuItemForCardOrName(lookupKey);
+    if (!resolved) {
+        showCartMessage("This menu item could not be found. Please refresh the menu and try again.");
+        return false;
+    }
+    const canonicalName = resolved.name;
+    if (resolved.available === false || isDishUnavailable(lookupKey)) {
+        syncAddCartButtonsAvailability();
+        showCartMessage(`${canonicalName} is currently unavailable.`);
+        return false;
+    }
+    if (!isItemPriceValid(resolved)) {
+        syncAddCartButtonsAvailability();
+        showCartMessage(`${canonicalName} does not have an online price yet. Please inquire on WhatsApp or at the counter.`);
+        return false;
+    }
+    if (!authenticated && !currentUser?.uid) {
+        customerLoginRedirect({ id: resolved.id || canonicalName });
+        return false;
+    }
+
+    const nextQuantity = (cart.get(canonicalName) || 0) + 1;
+    if (nextQuantity > 20) {
+        showCartMessage("Maximum 20 portions per menu item.");
+        return false;
+    }
+    cart.set(canonicalName, nextQuantity);
+    lastConfirmedTotal = null;
+    saveCart();
+    const submit = document.querySelector("#skg-checkout-form [type='submit']");
+    if (submit && window.__SKG_STORE_OPEN !== false) submit.textContent = "Send website order";
+    refreshCart();
+    window.AnalyticsTracker?.trackEvent?.("add_to_cart", { productName: canonicalName, quantity: nextQuantity });
+    if (currentUser?.uid) {
+        logCustomerActivity(currentUser.uid, "add_to_cart", { productName: canonicalName, quantity: nextQuantity });
+    }
+    if (button) {
+        button.textContent = "Added";
+        window.setTimeout(() => {
+            syncAddCartButtonsAvailability();
+            if (!button.disabled) button.textContent = "+ Add to cart";
+        }, 900);
+    }
+    return true;
+}
+
+function restorePendingCartIntent(user) {
+    if (!user?.uid) return;
+    try {
+        const raw = localStorage.getItem(PENDING_CART_KEY);
+        if (!raw) return;
+        localStorage.removeItem(PENDING_CART_KEY);
+        const pending = JSON.parse(raw);
+        if (!pending?.id || Date.now() - Number(pending.createdAt || 0) > 20 * 60 * 1000) return;
+        addResolvedItemToCart(pending.id, { authenticated: true, userOverride: user });
+    } catch {
+        try { localStorage.removeItem(PENDING_CART_KEY); } catch {}
+    }
+}
+
 function addStyles() {
     if (document.getElementById("skg-order-styles")) return;
 
     const style = document.createElement("style");
     style.id = "skg-order-styles";
     style.textContent = `
-      .skg-add-cart{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:10px 15px;border:1px solid #087f78;border-radius:12px;background:#087f78;color:#fff;font-family:inherit;font-size:14px;font-weight:700;line-height:1.2;cursor:pointer;transition:transform .18s ease,background .18s ease}
-      .skg-add-cart:hover{background:#066b65;transform:translateY(-1px)}
-      .skg-add-cart:focus-visible,.skg-cart-fab:focus-visible,.skg-panel button:focus-visible{outline:3px solid #67d5c8;outline-offset:3px}
-      .skg-cart-fab{position:fixed;z-index:1000;right:20px;bottom:20px;display:flex;align-items:center;gap:10px;padding:13px 18px;border:0;border-radius:999px;background:#123f3b;color:#fff;font-weight:800;box-shadow:0 12px 34px #102f2d35;cursor:pointer}
-      .skg-cart-count{display:grid;place-items:center;min-width:23px;height:23px;padding:0 6px;border-radius:99px;background:#fff;color:#123f3b;font-size:12px;font-variant-numeric:tabular-nums}
-      .skg-modal{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;padding:16px;background:#102b2bcc;backdrop-filter:blur(5px)}
+      .skg-add-cart{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:10px 15px;border:1px solid var(--color-primary, #A8442B);border-radius:12px;background:var(--color-primary, #A8442B);color:#fff;font-family:inherit;font-size:14px;font-weight:700;line-height:1.2;cursor:pointer;transition:transform .18s ease,background .18s ease}
+      .skg-add-cart:hover:not(:disabled){background:var(--color-primary-dark, #85351F);transform:translateY(-1px)}
+      .skg-add-cart:focus-visible,.skg-cart-fab:focus-visible,.skg-panel button:focus-visible{outline:3px solid #D5A25B;outline-offset:3px}
+      .skg-cart-fab{position:fixed;z-index:1000;right:20px;bottom:20px;display:flex;align-items:center;gap:10px;padding:13px 18px;border:0;border-radius:999px;background:var(--color-primary, #A8442B);color:#fff;font-weight:800;box-shadow:0 12px 34px rgba(41,54,62,.22);cursor:pointer}
+      .skg-cart-count{display:grid;place-items:center;min-width:23px;height:23px;padding:0 6px;border-radius:99px;background:#FFFCF7;color:var(--color-primary, #A8442B);font-size:12px;font-variant-numeric:tabular-nums}
+      .skg-modal{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(35,44,50,.72);backdrop-filter:blur(5px)}
       .skg-modal.open{display:flex}
-      .skg-panel{width:min(620px,100%);max-height:min(92vh,880px);overflow:auto;padding:clamp(20px,4vw,30px);border:1px solid #e3eeeb;border-radius:20px;background:#fff;color:#183b39;box-shadow:0 25px 90px #061d1b55}
+      .skg-panel{width:min(640px,100%);max-height:min(92vh,880px);overflow:auto;padding:clamp(20px,4vw,30px);border:1px solid var(--color-border, #E5D9C9);border-radius:20px;background:var(--color-surface-light, #FFFCF7);color:var(--color-dark, #29363E);box-shadow:0 25px 90px rgba(41,54,62,.18)}
       .skg-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
       .skg-panel h2{margin:0 0 5px;font-size:clamp(22px,4vw,28px);letter-spacing:-.03em}
-      .skg-panel-subtitle{margin:0;color:#5d7370;font-size:13px;line-height:1.5}
-      .skg-close{flex:0 0 auto;width:38px;height:38px;border:0;border-radius:50%;background:#eef5f3;color:#183b39;font-size:19px;cursor:pointer}
-      .skg-cart-lines{margin:12px 0 16px}
-      .skg-line{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #e8efed}
+      .skg-panel-subtitle{margin:0;color:var(--color-text-muted, #58676D);font-size:13px;line-height:1.5}
+      .skg-close{flex:0 0 auto;width:38px;height:38px;border:0;border-radius:50%;background:#F1E8DC;color:var(--color-dark, #29363E);font-size:19px;cursor:pointer}
+      .skg-cart-lines{margin:12px 0 12px}
+      .skg-line{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--color-border, #E5D9C9)}
+      .skg-line-info{display:grid;gap:2px;min-width:0}
       .skg-line-name{font-weight:700;overflow-wrap:anywhere}
+      .skg-line-meta{font-size:12px;color:var(--color-text-muted, #58676D)}
+      .skg-line-warn{font-size:12px;color:#a53e35;font-weight:700}
+      .skg-line-right{display:flex;align-items:center;gap:12px}
+      .skg-line-total{font-weight:800;font-variant-numeric:tabular-nums;color:var(--color-primary, #A8442B);min-width:68px;text-align:right}
       .skg-qty-controls{display:flex;align-items:center;gap:8px;white-space:nowrap}
-      .skg-qty-controls button{width:32px;height:32px;border:1px solid #dbe7e4;border-radius:9px;background:#f7faf9;color:#21413e;font-weight:800;cursor:pointer}
+      .skg-qty-controls button{width:32px;height:32px;border:1px solid var(--color-border, #E5D9C9);border-radius:9px;background:#F7F3EB;color:#40515A;font-weight:800;cursor:pointer}
       .skg-remove{border-color:#f0d8d5!important;background:#fff7f6!important;color:#a53e35!important}
-      .skg-empty{padding:22px 10px;text-align:center;color:#71837f}
-      .skg-coupon-box{display:flex;gap:8px;align-items:center;margin:12px 0;padding:10px;border:1px solid #dce9e6;border-radius:12px;background:#f8fbfa}
-      .skg-coupon-box input{flex:1;min-height:40px;padding:8px 11px;border:1px solid #d5e2df;border-radius:9px;background:#fff;color:#183b39;font:inherit;text-transform:uppercase}
-      .skg-coupon-box button{min-height:40px;padding:8px 14px;border:0;border-radius:9px;background:#123f3b;color:#fff;font-weight:700;cursor:pointer;white-space:nowrap}
+      .skg-empty{padding:22px 10px;text-align:center;color:#647178}
+      .skg-bill-summary{margin:10px 0 14px;padding:12px 14px;border:1px solid var(--color-border, #E5D9C9);border-radius:12px;background:#F8F4EC;display:grid;gap:6px;font-size:14px}
+      .skg-bill-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+      .skg-bill-row.discount{color:#15803d;font-weight:700}
+      .skg-bill-row.total{padding-top:8px;border-top:1px dashed #D8CBB9;font-size:16px;font-weight:800;color:var(--color-primary, #A8442B)}
+      .skg-coupon-box{display:flex;gap:8px;align-items:center;margin:12px 0;padding:10px;border:1px solid var(--color-border, #E5D9C9);border-radius:12px;background:#F8F4EC}
+      .skg-coupon-box input{flex:1;min-height:40px;padding:8px 11px;border:1px solid #D3C6B6;border-radius:9px;background:var(--color-surface-light, #FFFCF7);color:var(--color-dark, #29363E);font:inherit;text-transform:uppercase}
+      .skg-coupon-box button{min-height:40px;padding:8px 14px;border:0;border-radius:9px;background:var(--color-primary, #A8442B);color:#fff;font-weight:700;cursor:pointer;white-space:nowrap}
       .skg-coupon-applied{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;margin:10px 0;border:1px solid #b9e1d6;border-radius:10px;background:#f0faf6;color:#195947;font-size:13px}
       .skg-coupon-applied button{border:0;background:transparent;color:#9b2c2c;font-weight:700;cursor:pointer}
       .skg-field{display:grid;gap:6px;margin:13px 0}
-      .skg-field label{font-size:13px;font-weight:800;color:#294a46}
-      .skg-field input,.skg-field select,.skg-field textarea{width:100%;min-height:44px;box-sizing:border-box;padding:10px 12px;border:1px solid #d5e2df;border-radius:10px;background:#fff;color:#183b39;font:inherit}
+      .skg-field label{font-size:13px;font-weight:800;color:#35434B}
+      .skg-field input,.skg-field select,.skg-field textarea{width:100%;min-height:44px;box-sizing:border-box;padding:10px 12px;border:1px solid #D3C6B6;border-radius:10px;background:var(--color-surface-light, #FFFCF7);color:var(--color-dark, #29363E);font:inherit}
       .skg-field textarea{min-height:78px;resize:vertical}
-      .skg-field input:focus,.skg-field select:focus,.skg-field textarea:focus{outline:0;border-color:#087f78;box-shadow:0 0 0 3px #087f7822}
+      .skg-field input:focus,.skg-field select:focus,.skg-field textarea:focus{outline:0;border-color:var(--color-primary, #A8442B);box-shadow:0 0 0 3px rgba(168,68,43,.12)}
       .skg-form-error{margin:10px 0;padding:11px 13px;border:1px solid #f0c3be;border-radius:10px;background:#fff5f4;color:#9f2c22;font-size:13px;font-weight:600}
       .skg-order-notice{margin:14px 0;padding:12px 14px;border:1px solid #e6d7b9;border-radius:12px;background:#fffbf2;color:#6d4f1d;font-size:13px;line-height:1.55}
       .skg-order-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
       .skg-order-actions button,.skg-order-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border:0;border-radius:11px;font-family:inherit;font-size:14px;font-weight:800;text-decoration:none;cursor:pointer}
-      .skg-submit{flex:1 1 190px;background:#087f78;color:#fff}
+      .skg-submit{flex:1 1 190px;background:var(--color-primary, #A8442B);color:#fff}
       .skg-whatsapp{flex:1 1 170px;background:#e8f7ef;color:#176b3b}
-      .skg-call{flex:1 1 130px;background:#eef4f3;color:#21413e}
+      .skg-call{flex:1 1 130px;background:#F0ECE4;color:#40515A}
       .skg-submit:disabled{opacity:.6;cursor:wait}
       .skg-result{margin-top:16px;padding:15px;border:1px solid #b9e1d6;border-radius:14px;background:#f0faf6;color:#205a49;line-height:1.55}
       .skg-result strong{display:block;margin-bottom:4px}
       .skg-result-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:11px}
-      .skg-result-actions button,.skg-result-actions a{padding:9px 12px;border:1px solid #cbded8;border-radius:10px;background:#fff;color:#205a49;font-weight:700;text-decoration:none;cursor:pointer}
-      .skg-tracking{margin:14px 0;padding:12px 14px;border:1px solid #d9e9e5;border-radius:12px;background:#f6fbfa;color:#355c55;font-size:13px}
-      @media(max-width:520px){.skg-cart-fab{right:14px;bottom:14px;padding:11px 15px}.skg-order-actions{display:grid}.skg-order-actions>*{width:100%}.skg-line{align-items:flex-start}}
+      .skg-result-actions button,.skg-result-actions a{padding:9px 12px;border:1px solid #cbded8;border-radius:10px;background:var(--color-surface-light, #FFFCF7);color:#205a49;font-weight:700;text-decoration:none;cursor:pointer}
+      .skg-tracking{margin:14px 0;padding:12px 14px;border:1px solid #d9e9e5;border-radius:12px;background:#F4F0E8;color:#465B56;font-size:13px}
+      .skg-receipt-card{margin-top:12px;padding:14px;border:1px solid #D8CBB9;border-radius:12px;background:var(--color-surface-light, #FFFCF7);color:var(--color-dark, #29363E);font-size:13px}
+      .skg-receipt-table{width:100%;border-collapse:collapse;margin:8px 0}
+      .skg-receipt-table th,.skg-receipt-table td{padding:5px 4px;border-bottom:1px solid #ECE5DA;text-align:left}
+      .skg-receipt-table th:last-child,.skg-receipt-table td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+      @media(max-width:520px){.skg-cart-fab{right:14px;bottom:14px;padding:11px 15px}.skg-order-actions{display:grid}.skg-order-actions>*{width:100%}.skg-line{align-items:flex-start;flex-direction:column}}
       @media(prefers-reduced-motion:reduce){.skg-add-cart{transition:none}}
     `;
     document.head.appendChild(style);
 }
 
 function orderItems() {
-    return [...cart].map(([name, quantity]) => ({ name, quantity }));
+    return [...cart].map(([name, quantity]) => {
+        const resolved = getMenuItemForCardOrName(name);
+        return {
+            id: resolved?.id || slugifyDishKey(name),
+            name: resolved?.name || name,
+            quantity
+        };
+    });
 }
 
 function totalQuantity() {
@@ -256,6 +438,15 @@ async function applyCouponCode(rawCode) {
             }
         }
 
+        const currentBill = calculateOrderBill(orderItems(), getLiveMenu(), null);
+        if (currentBill.subtotalAmount > 0) {
+            const check = computeCouponDiscount(match, currentBill.subtotalAmount, now);
+            if (!check.valid) {
+                showFormError(check.reason);
+                return false;
+            }
+        }
+
         const summary = match.discountType === "percent"
             ? `${match.discountValue}% off`
             : (match.discountValue ? `Rs. ${match.discountValue} off` : match.title);
@@ -264,10 +455,14 @@ async function applyCouponCode(rawCode) {
             id: match.id,
             code,
             title: match.title || code,
+            discountType: match.discountType || "flat",
+            discountValue: Number(match.discountValue || 0),
+            minOrderNpr: Number(match.minOrderNpr || match.minOrder || 0),
             summary
         };
         saveCart();
         renderCouponStatus();
+        refreshCart();
         return true;
     } catch (error) {
         console.warn("Coupon validation error:", error);
@@ -298,6 +493,7 @@ function renderCouponStatus() {
         if (input) input.value = "";
         saveCart();
         renderCouponStatus();
+        refreshCart();
     });
 }
 
@@ -342,12 +538,13 @@ function mountUI() {
             <div class="skg-panel-head">
               <div>
                 <h2 id="skg-title">Your order</h2>
-                <p class="skg-panel-subtitle">Review your items and send your order to our team.</p>
+                <p class="skg-panel-subtitle">Live menu pricing &amp; itemized bill preview in NPR.</p>
               </div>
               <button class="skg-close" type="button" aria-label="Close order panel">×</button>
             </div>
 
             <div id="skg-cart-lines" class="skg-cart-lines" aria-live="polite"></div>
+            <div id="skg-bill-summary" class="skg-bill-summary" hidden></div>
 
             <div class="skg-coupon-box">
               <input id="skg-coupon-input" type="text" maxlength="24" placeholder="Promo / Coupon code (optional)" aria-label="Promo or coupon code">
@@ -357,8 +554,7 @@ function mountUI() {
 
             <div class="skg-order-notice">
               <strong>Order confirmation notice</strong><br>
-              Website orders are requests only. Our team will contact you to confirm availability,
-              final prices, coupon eligibility, and delivery. For urgent orders, message us on WhatsApp or call ${BUSINESS.phone}.
+              All line items use live verified menu prices. If a dish is unavailable or unpriced (such as Roti when price is unset), please order via WhatsApp or call ${BUSINESS.phone}.
             </div>
 
             <div id="skg-store-paused-notice" class="skg-form-error" role="status" hidden>
@@ -429,48 +625,22 @@ function mountUI() {
     document.querySelectorAll(".dish-card").forEach((card) => {
         const footer = card.querySelector(".dish-footer");
         if (!footer || footer.querySelector(".skg-add-cart")) return;
+        const dishId = card.dataset.dishId || "";
         const name = card.querySelector("h3")?.textContent?.trim();
         if (!name) return;
 
-        const unavailable = card.classList.contains("dish-sold-out") || isDishUnavailable(name);
         const button = document.createElement("button");
         button.type = "button";
         button.className = "skg-add-cart";
-        button.textContent = unavailable ? "Currently Unavailable" : "+ Add to cart";
-        button.disabled = unavailable;
-        if (unavailable) {
-            button.style.opacity = "0.55";
-            button.style.cursor = "not-allowed";
-        }
         button.setAttribute("aria-label", `Add ${name} to cart`);
 
         button.addEventListener("click", () => {
-            if (card.classList.contains("dish-sold-out") || isDishUnavailable(name)) {
+            const lookupKey = card.dataset.dishId || card.querySelector("h3")?.textContent?.trim() || name;
+            if (card.classList.contains("dish-sold-out") || card.classList.contains("dish-price-unset")) {
                 syncAddCartButtonsAvailability();
                 return;
             }
-            const nextQuantity = (cart.get(name) || 0) + 1;
-            if (nextQuantity > 20) {
-                showCartMessage("Maximum 20 portions per menu item.");
-                return;
-            }
-            cart.set(name, nextQuantity);
-            saveCart();
-            const submit = document.querySelector("#skg-checkout-form [type='submit']");
-            if (submit && window.__SKG_STORE_OPEN !== false) submit.textContent = "Send website order";
-            refreshCart();
-
-            window.AnalyticsTracker?.trackEvent?.("add_to_cart", { productName: name, quantity: nextQuantity });
-            const { user } = getCustomerState();
-            if (user?.uid) {
-                logCustomerActivity(user.uid, "add_to_cart", { productName: name, quantity: nextQuantity });
-            }
-
-            button.textContent = "Added";
-            window.setTimeout(() => {
-                syncAddCartButtonsAvailability();
-                if (!button.disabled) button.textContent = "+ Add to cart";
-            }, 900);
+            addResolvedItemToCart(lookupKey, { button });
         });
 
         footer.appendChild(button);
@@ -496,6 +666,7 @@ function showCartMessage(message) {
 function refreshCart() {
     syncNavCount();
     const lines = document.getElementById("skg-cart-lines");
+    const billSummaryEl = document.getElementById("skg-bill-summary");
     if (!lines) return;
 
     if (!cart.size) {
@@ -505,20 +676,73 @@ function refreshCart() {
                 Add a few favourites from the menu to get started.
             </div>
         `;
+        if (billSummaryEl) {
+            billSummaryEl.hidden = true;
+            billSummaryEl.innerHTML = "";
+        }
+        lastConfirmedTotal = null;
         return;
     }
 
-    lines.innerHTML = [...cart.entries()].map(([name, quantity]) => `
-      <div class="skg-line">
-        <span class="skg-line-name">${escapeHTML(name)}</span>
-        <span class="skg-qty-controls">
-          <button type="button" data-dec="${escapeHTML(name)}" aria-label="Decrease ${escapeHTML(name)}">−</button>
-          <strong>${quantity}</strong>
-          <button type="button" data-inc="${escapeHTML(name)}" aria-label="Increase ${escapeHTML(name)}">+</button>
-          <button type="button" class="skg-remove" data-del="${escapeHTML(name)}" aria-label="Remove ${escapeHTML(name)}">×</button>
-        </span>
-      </div>
-    `).join("");
+    const menuList = getLiveMenu();
+    let subtotal = 0;
+
+    lines.innerHTML = [...cart.entries()].map(([name, quantity]) => {
+        const item = findMenuItem(menuList, name);
+        const unavailable = !item || item.available === false;
+        const unpriced = item && !isItemPriceValid(item);
+        const unitPrice = item && isItemPriceValid(item) ? Math.round(item.price) : null;
+        const lineTotal = unitPrice ? unitPrice * quantity : 0;
+        if (!unavailable && !unpriced) subtotal += lineTotal;
+
+        let warnMsg = "";
+        if (!item) warnMsg = "Not found on live menu — remove to continue";
+        else if (unavailable) warnMsg = "Currently out of stock — remove to continue";
+        else if (unpriced) warnMsg = "Online price not set — Counter / WhatsApp only";
+
+        return `
+          <div class="skg-line">
+            <div class="skg-line-info">
+              <span class="skg-line-name">${escapeHTML(item?.name || name)}</span>
+              ${warnMsg
+                  ? `<span class="skg-line-warn">${escapeHTML(warnMsg)}</span>`
+                  : `<span class="skg-line-meta">Rs. ${unitPrice} × ${quantity}</span>`}
+            </div>
+            <div class="skg-line-right">
+              <span class="skg-line-total">${unitPrice ? `Rs. ${lineTotal}` : "Unset"}</span>
+              <span class="skg-qty-controls">
+                <button type="button" data-dec="${escapeHTML(name)}" aria-label="Decrease ${escapeHTML(name)}">−</button>
+                <strong>${quantity}</strong>
+                <button type="button" data-inc="${escapeHTML(name)}" aria-label="Increase ${escapeHTML(name)}" ${unpriced || unavailable ? "disabled" : ""}>+</button>
+                <button type="button" class="skg-remove" data-del="${escapeHTML(name)}" aria-label="Remove ${escapeHTML(name)}">×</button>
+              </span>
+            </div>
+          </div>
+        `;
+    }).join("");
+
+    if (billSummaryEl) {
+        let discountAmount = 0;
+        let couponNotice = "";
+        if (appliedCoupon && subtotal > 0) {
+            const couponRes = computeCouponDiscount(appliedCoupon, subtotal);
+            if (couponRes.valid) {
+                discountAmount = couponRes.discountAmount;
+            } else {
+                couponNotice = couponRes.reason;
+            }
+        }
+        const total = Math.max(0, subtotal - discountAmount);
+        lastConfirmedTotal = total;
+
+        billSummaryEl.hidden = false;
+        billSummaryEl.innerHTML = `
+          <div class="skg-bill-row"><span>Items Subtotal</span><strong>Rs. ${subtotal}</strong></div>
+          ${discountAmount > 0 ? `<div class="skg-bill-row discount"><span>Coupon (${escapeHTML(appliedCoupon.code)})</span><span>− Rs. ${discountAmount}</span></div>` : ""}
+          ${couponNotice ? `<div class="skg-line-warn">${escapeHTML(couponNotice)}</div>` : ""}
+          <div class="skg-bill-row total"><span>Estimated Total</span><span>Rs. ${total}</span></div>
+        `;
+    }
 
     lines.querySelectorAll("[data-dec]").forEach((button) => {
         button.addEventListener("click", () => {
@@ -614,17 +838,25 @@ function validateOrder(values, requireContact = true) {
 }
 
 function makeWhatsAppMessage(values) {
+    const menu = getLiveMenu();
+    const bill = calculateOrderBill(orderItems(), menu, appliedCoupon);
     const lines = [
         `Namaste ${BUSINESS.name}! I would like to place an order:`,
         "",
-        ...orderItems().map((item) => `${item.quantity} × ${item.name}`),
+        ...orderItems().map((item) => {
+            const match = findMenuItem(menu, item.id || item.name);
+            return match && isItemPriceValid(match)
+                ? `${item.quantity} × ${match.name} (Rs. ${match.price} = Rs. ${match.price * item.quantity})`
+                : `${item.quantity} × ${item.name}`;
+        }),
         "",
+        bill.ok ? `Estimated Total: Rs. ${bill.totalAmount}` : "",
         `Name: ${values.name || "Not provided"}`,
         `Phone: ${values.phone || "Not provided"}`,
         `Order type: ${values.method}`,
         `Address: ${values.address || "Not applicable"}`,
         `Instructions: ${values.notes || "None"}`
-    ];
+    ].filter(Boolean);
     if (appliedCoupon) {
         lines.push(`Coupon: ${appliedCoupon.code} (${appliedCoupon.summary})`);
     }
@@ -634,6 +866,12 @@ function makeWhatsAppMessage(values) {
 
 function sendWhatsApp() {
     showFormError("");
+    const { user } = getCustomerState();
+    if (!user?.uid) {
+        customerLoginRedirect();
+        return;
+    }
+    switchCartStorageScope(user);
     const values = getFormValues();
     const error = validateOrder(values, true);
     if (error) {
@@ -644,7 +882,6 @@ function sendWhatsApp() {
         itemCount: totalQuantity(),
         orderType: values.method
     });
-    const { user } = getCustomerState();
     if (user?.uid) {
         logCustomerActivity(user.uid, "whatsapp_order_clicked", { itemCount: totalQuantity(), orderType: values.method });
     }
@@ -658,19 +895,77 @@ function sendWhatsApp() {
     link.remove();
 }
 
+function renderReceiptCardHtml(order) {
+    const items = Array.isArray(order.items) ? order.items : [];
+    const shortId = escapeHTML(String(order.id || "").slice(-8).toUpperCase());
+    const createdStr = new Date(Number(order.createdAt || Date.now())).toLocaleString("en-NP", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: "Asia/Kathmandu"
+    });
+    return `
+      <div class="skg-receipt-card" id="skg-printable-receipt">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid #e4ecea;padding-bottom:8px;">
+          <div>
+            <strong>${BUSINESS.name}</strong>
+            <div class="skg-line-meta">${BUSINESS.address} · Tel: ${BUSINESS.phone}</div>
+          </div>
+          <div style="text-align:right;">
+            <strong>Bill #${shortId}</strong>
+            <div class="skg-line-meta">${escapeHTML(createdStr)}</div>
+          </div>
+        </div>
+        <div style="margin:8px 0;font-size:12px;">
+          Customer: <strong>${escapeHTML(order.customerName)}</strong> (${escapeHTML(order.customerPhone)}) · ${escapeHTML(order.orderType)}
+        </div>
+        <table class="skg-receipt-table">
+          <thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
+          <tbody>
+            ${items.map((it) => `
+              <tr>
+                <td>${escapeHTML(it.name)}</td>
+                <td>${escapeHTML(it.quantity)}</td>
+                <td>${it.unitPrice ? `Rs. ${escapeHTML(it.unitPrice)}` : "—"}</td>
+                <td>${it.lineTotal ? `Rs. ${escapeHTML(it.lineTotal)}` : "—"}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+        <div class="skg-bill-row"><span>Subtotal</span><span>Rs. ${escapeHTML(order.subtotalAmount ?? 0)}</span></div>
+        ${Number(order.discountAmount || 0) > 0 ? `<div class="skg-bill-row discount"><span>Discount (${escapeHTML(order.couponCode || "Coupon")})</span><span>− Rs. ${escapeHTML(order.discountAmount)}</span></div>` : ""}
+        <div class="skg-bill-row total"><span>Total (NPR)</span><span>Rs. ${escapeHTML(order.totalAmount ?? order.subtotalAmount ?? 0)}</span></div>
+      </div>
+    `;
+}
+
+function triggerInPlaceReceiptPrint(receiptHtml) {
+    let host = document.getElementById("skg-print-host");
+    if (!host) {
+        host = document.createElement("div");
+        host.id = "skg-print-host";
+        host.style.cssText = "display:none;";
+        document.body.appendChild(host);
+    }
+    host.innerHTML = receiptHtml;
+    host.style.display = "block";
+    window.print();
+    host.style.display = "none";
+}
+
 async function placeOrder(event) {
     event.preventDefault();
     if (isSubmittingOrder) return;
     showFormError("");
 
-    if (window.__SKG_STORE_OPEN === false) {
-        showFormError(`Website ordering is currently paused. Please call ${BUSINESS.phone} or message us on WhatsApp.`);
+    const { user } = getCustomerState();
+    if (!user?.uid) {
+        customerLoginRedirect();
         return;
     }
+    switchCartStorageScope(user);
 
-    const unavailableInCart = orderItems().filter((item) => isDishUnavailable(item.name));
-    if (unavailableInCart.length > 0) {
-        showFormError(`Currently unavailable: ${unavailableInCart.map((i) => i.name).join(", ")}. Please remove unavailable items before ordering.`);
+    if (window.__SKG_STORE_OPEN === false) {
+        showFormError(`Website ordering is currently paused. Please call ${BUSINESS.phone} or message us on WhatsApp.`);
         return;
     }
 
@@ -686,94 +981,170 @@ async function placeOrder(event) {
 
     isSubmittingOrder = true;
     submit.disabled = true;
-    submit.textContent = "Sending securely…";
-
-    const orderRef = push(ref(db, "orders"));
-    const orderId = orderRef.key;
-
-    if (!orderId) {
-        showFormError("Could not generate an order reference. Please try again.");
-        submit.disabled = false;
-        submit.textContent = "Send website order";
-        return;
-    }
-
-    const trackingToken = createTrackingToken();
-    const now = Date.now();
-    const items = orderItems();
-    const { user } = getCustomerState();
-
-    const order = {
-        id: orderId,
-        customerName: values.name,
-        customerPhone: values.phone,
-        items,
-        summary: items.map((item) => `${item.quantity} × ${item.name}`).join(", "),
-        orderType: values.method,
-        deliveryAddress: values.address,
-        notes: values.notes,
-        status: "pending",
-        source: "website",
-        currency: "NPR",
-        priceStatus: "confirm_at_counter",
-        customerTrackingToken: trackingToken,
-        createdAt: now,
-        updatedAt: now
-    };
-
-    if (user?.uid) {
-        order.customerUid = user.uid;
-        if (user.email) order.customerEmail = user.email;
-    }
-    if (appliedCoupon) {
-        order.couponCode = appliedCoupon.code;
-        order.couponSummary = appliedCoupon.summary;
-    }
-
-    const tracking = {
-        orderId,
-        status: "pending",
-        updatedAt: now
-    };
-
-    let trackingSaved = false;
+    submit.textContent = "Verifying live prices…";
 
     try {
-        await set(orderRef, order);
+        // Fetch fresh menu, stock availability, and offer rules before placing order
+        const [menuSnap, stockSnap, offersSnap] = await Promise.all([
+            get(ref(db, "menu_items")).catch(() => null),
+            get(ref(db, "inventory/stockAvailability")).catch(() => null),
+            appliedCoupon ? get(ref(db, "offers")).catch(() => null) : Promise.resolve(null)
+        ]);
 
-        try {
-            await set(ref(db, `orderTracking/${trackingToken}`), tracking);
-            trackingSaved = true;
-        } catch (trackingError) {
-            console.error("Order was saved, but tracking could not be saved:", trackingError);
+        const freshMenuMap = menuSnap?.exists() ? (menuSnap.val() || {}) : {};
+        const freshStockMap = stockSnap?.exists() ? (stockSnap.val() || {}) : {};
+        const freshMenu = mergeMenuWithDefaults(freshMenuMap, freshStockMap);
+        window.__SKG_MENU_ITEMS = freshMenu;
+
+        let freshCoupon = null;
+        if (appliedCoupon?.code && offersSnap?.exists()) {
+            const nowCheck = Date.now();
+            freshCoupon = Object.entries(offersSnap.val() || {})
+                .map(([id, val]) => ({ id, ...val }))
+                .find((off) =>
+                    off &&
+                    off.active !== false &&
+                    String(off.code || "").trim().toUpperCase() === appliedCoupon.code &&
+                    (!off.expiresAt || Number(off.expiresAt) > nowCheck)
+                ) || null;
+            if (!freshCoupon) {
+                appliedCoupon = null;
+                saveCart();
+                renderCouponStatus();
+                refreshCart();
+                showFormError("Your applied coupon has expired or is no longer active. Please review your updated total and submit again.");
+                isSubmittingOrder = false;
+                submit.disabled = false;
+                submit.textContent = "Send website order";
+                return;
+            }
+            appliedCoupon = {
+                ...freshCoupon,
+                id: freshCoupon.id,
+                summary: freshCoupon.summary || freshCoupon.title || freshCoupon.code
+            };
+            saveCart();
+            renderCouponStatus();
         }
 
-        // Save non-blocking authenticated user mirror, coupon lock, notifications, and history
-        if (user?.uid) {
-            await set(ref(db, `users/${user.uid}/orders/${orderId}`), {
-                ...order,
-                trackingSaved
-            }).catch((userOrderErr) => {
-                console.warn("Could not mirror order under user profile:", userOrderErr?.message || userOrderErr);
-            });
+        const requested = orderItems();
+        const bill = calculateOrderBill(requested, freshMenu, freshCoupon);
 
-            if (appliedCoupon?.id) {
-                await set(ref(db, `users/${user.uid}/coupons/${appliedCoupon.id}`), {
-                    id: appliedCoupon.id,
-                    code: appliedCoupon.code,
-                    title: appliedCoupon.title,
-                    summary: appliedCoupon.summary,
-                    used: true,
+        if (!bill.ok) {
+            refreshCart();
+            showFormError(bill.errors.join(" "));
+            isSubmittingOrder = false;
+            submit.disabled = false;
+            submit.textContent = "Send website order";
+            return;
+        }
+
+        // Price-drift confirmation guard: if the verified total changed since displayed, pause and ask customer to confirm
+        if (lastConfirmedTotal !== null && lastConfirmedTotal !== bill.totalAmount) {
+            const prev = lastConfirmedTotal;
+            refreshCart();
+            lastConfirmedTotal = bill.totalAmount;
+            showFormError(`Menu price updated (was Rs. ${prev}, now Rs. ${bill.totalAmount}). Please confirm your updated bill and click "Confirm & Send Order".`);
+            isSubmittingOrder = false;
+            submit.disabled = false;
+            submit.textContent = "Confirm & Send Order";
+            return;
+        }
+
+        const { workerUrl } = await getPublicPushConfig().catch(() => ({ workerUrl: "" }));
+        if (!workerUrl) {
+            showFormError("Secure ordering is temporarily unavailable. Please try again later or contact the restaurant on WhatsApp.");
+            isSubmittingOrder = false;
+            submit.disabled = false;
+            submit.textContent = "Try order again";
+            return;
+        }
+
+        const orderIntent = {
+            items: requested.map((item) => ({ id: item.id, quantity: item.quantity })),
+            customerName: values.name,
+            customerPhone: values.phone,
+            orderType: values.method,
+            deliveryAddress: values.address,
+            notes: values.notes,
+            couponCode: bill.coupon?.code || ""
+        };
+        const pendingOrder = await getPendingOrderReference(user.uid, orderIntent);
+        const { orderId, trackingToken } = pendingOrder;
+        submit.textContent = "Verifying and placing securely…";
+        let serverResult;
+        try {
+            const authToken = await user.getIdToken(true);
+            const response = await fetch(workerUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${authToken}`
+                },
+                body: JSON.stringify({
+                    type: "create_order",
                     orderId,
-                    usedAt: now
-                }).catch((couponErr) => {
-                    console.warn("Could not record coupon usage:", couponErr?.message || couponErr);
-                });
+                    trackingToken,
+                    expectedTotal: bill.totalAmount,
+                    customerName: values.name,
+                    customerPhone: values.phone,
+                    orderType: values.method,
+                    deliveryAddress: values.address,
+                    notes: values.notes,
+                    items: requested,
+                    couponCode: bill.coupon?.code || ""
+                })
+            });
+            serverResult = await response.json().catch(() => ({}));
+            if (!response.ok || serverResult?.ok !== true || !serverResult?.order) {
+                if (response.status === 409 && serverResult?.bill?.items) {
+                    const liveItems = Array.isArray(window.__SKG_MENU_ITEMS) ? window.__SKG_MENU_ITEMS : [];
+                    serverResult.bill.items.forEach((verifiedItem) => {
+                        const target = findMenuItem(liveItems, verifiedItem.id || verifiedItem.name);
+                        if (target) {
+                            target.price = Number(verifiedItem.unitPrice);
+                            target.priceUnset = false;
+                        }
+                    });
+                    window.__SKG_MENU_ITEMS = liveItems;
+                    refreshCart();
+                    showFormError(`The live total has changed to Rs. ${Number(serverResult.bill.totalAmount || 0)}. Review the updated bill and submit again to confirm.`);
+                } else {
+                    showFormError(serverResult?.error || `Secure order submission failed (${response.status}). Your order was not submitted.`);
+                }
+                isSubmittingOrder = false;
+                submit.disabled = false;
+                submit.textContent = "Confirm & Send Order";
+                return;
+            }
+        } catch (networkError) {
+            console.error("Secure order request failed:", networkError);
+            showFormError("We could not reach the secure order service. Your order was not submitted. Please try again or contact us on WhatsApp.");
+            isSubmittingOrder = false;
+            submit.disabled = false;
+            submit.textContent = "Try order again";
+            return;
+        }
 
+        const finalOrder = serverResult.order;
+        clearPendingOrderReference(pendingOrder.storageKey);
+        const items = Array.isArray(finalOrder.items) ? finalOrder.items : [];
+        const now = Number(finalOrder.createdAt || Date.now());
+        const trackingSaved = serverResult.trackingSaved === true;
+        const serverVerified = finalOrder.priceStatus === "server_verified" && trackingSaved;
+        if (!serverVerified || finalOrder.id !== orderId || finalOrder.customerUid !== user.uid || finalOrder.customerTrackingToken !== trackingToken) {
+            showFormError("The secure order service returned an invalid confirmation. Please contact the restaurant before retrying.");
+            isSubmittingOrder = false;
+            submit.disabled = false;
+            submit.textContent = "Try order again";
+            return;
+        }
+        if (user?.uid) {
+            if (finalOrder.couponCode) {
                 logCustomerActivity(user.uid, "coupon_used", {
                     orderId,
-                    code: appliedCoupon.code,
-                    summary: appliedCoupon.summary
+                    code: finalOrder.couponCode,
+                    summary: finalOrder.couponSummary || ""
                 }).catch(() => {});
             }
 
@@ -806,7 +1177,8 @@ async function placeOrder(event) {
                 orderId,
                 orderType: values.method,
                 itemCount: items.reduce((s, i) => s + Number(i.quantity || 1), 0),
-                summary: order.summary.slice(0, 140)
+                totalAmount: finalOrder.totalAmount,
+                summary: finalOrder.summary.slice(0, 140)
             }).catch(() => {});
         }
         window.AnalyticsTracker?.trackEvent?.("order_submitted", {
@@ -814,71 +1186,54 @@ async function placeOrder(event) {
             itemCount: items.reduce((s, i) => s + Number(i.quantity || 1), 0)
         });
 
-        // Trigger multi-device push to all approved Owner & authorized Admin devices
-        getPublicPushConfig().then(({ workerUrl }) => {
-            if (!workerUrl) return;
-            return dispatchWorkerPush({
+        if (workerUrl) {
+            dispatchWorkerPush({
                 workerUrl,
                 payload: {
                     type: "new_order_alert",
                     orderId,
                     trackingToken
                 }
-            });
-        }).catch(() => {});
+            }).catch(() => {});
+        }
 
         if (trackingSaved) {
             try {
-                localStorage.setItem(TRACKING_KEY, JSON.stringify({ id: orderId, token: trackingToken }));
+                localStorage.setItem(scopedStorageKey(TRACKING_KEY), JSON.stringify({ id: orderId, token: trackingToken }));
             } catch {}
         }
 
-        // Keep browser-local fallback only for guest convenience on the same device
-        if (!user?.uid) {
-            try {
-                const historyKey = "skg_customer_orders_v1";
-                const history = JSON.parse(localStorage.getItem(historyKey) || "[]");
-                history.unshift({
-                    id: orderId,
-                    token: trackingSaved ? trackingToken : null,
-                    customerName: values.name,
-                    customerPhone: values.phone,
-                    items,
-                    summary: order.summary,
-                    orderType: values.method,
-                    deliveryAddress: values.address,
-                    notes: values.notes,
-                    couponCode: appliedCoupon?.code || "",
-                    status: "pending",
-                    createdAt: now
-                });
-                localStorage.setItem(historyKey, JSON.stringify(history.slice(0, 50)));
-            } catch {}
-        }
 
         cart.clear();
         appliedCoupon = null;
+        lastConfirmedTotal = null;
         saveCart();
         refreshCart();
         renderCouponStatus();
 
+        lastReceiptHtml = renderReceiptCardHtml(finalOrder);
         const result = document.getElementById("skg-result");
         result.hidden = false;
         result.innerHTML = `
-          <strong>Order request received</strong>
+          <strong>Order request received ${serverVerified ? "· Server-verified total" : ""}</strong>
           Your reference is <b>${escapeHTML(orderId.slice(-8).toUpperCase())}</b>.
-          This is not an acceptance confirmation. Our team will contact you to confirm availability,
-          final prices and delivery.
+          Our team will contact you shortly to confirm preparation &amp; ${escapeHTML(finalOrder.orderType.toLowerCase())}.
+          ${lastReceiptHtml}
           <div class="skg-result-actions">
+            <button type="button" id="skg-print-receipt-btn">Print / Save Bill</button>
             ${trackingSaved ? `<button type="button" id="skg-enable-customer-notifications">Enable status alerts</button>` : ""}
             ${user?.uid ? `<a href="account.html#tracking">Track in My Account</a>` : ""}
-            <a href="https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Namaste! I submitted website order ${orderId}. Please confirm it.`)}" target="_blank" rel="noopener noreferrer">Confirm on WhatsApp</a>
+            <a href="https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(`Namaste! I submitted website order ${orderId} (Total Rs. ${finalOrder.totalAmount}). Please confirm it.`)}" target="_blank" rel="noopener noreferrer">Confirm on WhatsApp</a>
             <a href="tel:${BUSINESS.phone}">Call ${BUSINESS.phone}</a>
           </div>
           <div id="skg-customer-tracking" class="skg-tracking">
             ${trackingSaved ? "Current status: Waiting for the restaurant to review your order." : "Your order was received, but live tracking is temporarily unavailable."}
           </div>
         `;
+
+        document.getElementById("skg-print-receipt-btn")?.addEventListener("click", () => {
+            triggerInPlaceReceiptPrint(lastReceiptHtml);
+        });
 
         if (trackingSaved) {
             document.getElementById("skg-enable-customer-notifications")?.addEventListener("click", enableCustomerStatusAlerts);
@@ -894,7 +1249,7 @@ async function placeOrder(event) {
     } finally {
         isSubmittingOrder = false;
         submit.disabled = false;
-        if (submit.textContent === "Sending securely…") {
+        if (submit.textContent === "Sending securely…" || submit.textContent === "Verifying live prices…") {
             submit.textContent = "Send website order";
         }
     }
@@ -965,7 +1320,7 @@ function listenForCustomerUpdates(token, element) {
 
 function restoreTracking() {
     try {
-        const data = JSON.parse(localStorage.getItem(TRACKING_KEY) || "null");
+        const data = JSON.parse(localStorage.getItem(scopedStorageKey(TRACKING_KEY)) || "null");
         if (!data?.token || !data?.id) return;
         const main = document.querySelector("main");
         if (!main || document.getElementById("skg-restored-tracking")) return;
@@ -993,6 +1348,15 @@ document.addEventListener("DOMContentLoaded", () => {
     loadCart();
     mountUI();
 
+    if (!window.__SKG_HAS_MENU_LISTENER) {
+        onValue(ref(db, "menu_items"), (snap) => {
+            const rawMap = snap.exists() ? (snap.val() || {}) : {};
+            window.__SKG_MENU_ITEMS = mergeMenuWithDefaults(rawMap, {});
+            syncAddCartButtonsAvailability();
+            refreshCart();
+        }, () => {});
+    }
+
     const menuContainer = document.getElementById("menu-grid-container");
     if (menuContainer) {
         const observer = new MutationObserver(() => mountUI());
@@ -1008,8 +1372,21 @@ document.addEventListener("DOMContentLoaded", () => {
         link.addEventListener("click", (event) => {
             event.preventDefault();
             const card = link.closest(".dish-card");
-            const dishName = card?.querySelector("h3")?.textContent?.trim();
+            const lookupKey = card?.dataset.dishId || card?.querySelector("h3")?.textContent?.trim();
+            const resolved = lookupKey ? getMenuItemForCardOrName(lookupKey) : null;
+            const dishName = resolved?.name || card?.querySelector("h3")?.textContent?.trim();
             if (dishName) {
+                const { user } = getCustomerState();
+                if (!user?.uid) {
+                    customerLoginRedirect(resolved ? { id: resolved.id || dishName } : { name: dishName });
+                    return;
+                }
+                switchCartStorageScope(user);
+                if (resolved && (!isItemPriceValid(resolved) || resolved.available === false)) {
+                    openCart();
+                    showCartMessage(`${dishName} is ${resolved.available === false ? "currently unavailable" : "Counter / WhatsApp only (price unset)"}.`);
+                    return;
+                }
                 const quantity = cart.get(dishName) || 0;
                 if (quantity < 20) cart.set(dishName, quantity + 1);
                 saveCart();
@@ -1019,12 +1396,19 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    onCustomerAuthChange(() => {
+    onCustomerAuthChange(({ user }) => {
+        switchCartStorageScope(user);
         prefillAuthenticatedCustomer();
         syncNavCount();
+        restorePendingCartIntent(user);
     });
 
     window.addEventListener("skg:availability-updated", syncAddCartButtonsAvailability);
+    window.addEventListener("skg:menu-updated", () => {
+        mountUI();
+        syncAddCartButtonsAvailability();
+        refreshCart();
+    });
     window.addEventListener("skg:store-status-updated", syncStorePausedUI);
 
     restoreTracking();

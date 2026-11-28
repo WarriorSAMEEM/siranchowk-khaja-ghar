@@ -6,7 +6,9 @@ import { db, ref, get } from "../../js/firebase.js";
 import { subscribeToOrders } from "./orders.js";
 import { getAdminSession, hasPermission } from "./auth.js";
 import { getStockHealth } from "../../js/inventory-sync.js";
+import { mergeMenuWithDefaults, isItemPriceValid } from "../../js/menu-catalog.js";
 import { Utils } from "./utils.js";
+import { nptStartOfDayMs } from "./analytics-utils.js";
 import { formatDuration } from "./analytics-utils.js";
 
 const DashboardModule = {
@@ -27,6 +29,7 @@ const DashboardModule = {
           ` : ""}
           <div id="skg-owner-pending-banner"></div>
           <div id="skg-low-stock-banner"></div>
+          <div id="skg-moderation-pending-banner"></div>
           <section class="card">
             <div class="card-header">
               <div>
@@ -39,27 +42,27 @@ const DashboardModule = {
               <div class="metric-card"><div class="metric-info"><span class="metric-label">Total Orders</span><span class="metric-value">—</span><span class="metric-subtext">All website orders</span></div><div class="metric-icon-box">🧾</div></div>
               <div class="metric-card"><div class="metric-info"><span class="metric-label">Pending Review</span><span class="metric-value">—</span><span class="metric-subtext">Awaiting confirmation</span></div><div class="metric-icon-box">🔔</div></div>
               <div class="metric-card"><div class="metric-info"><span class="metric-label">In Kitchen</span><span class="metric-value">—</span><span class="metric-subtext">Accepted or preparing</span></div><div class="metric-icon-box">🍳</div></div>
-              <div class="metric-card"><div class="metric-info"><span class="metric-label">Ready / Delivered</span><span class="metric-value">—</span><span class="metric-subtext">Completed or out</span></div><div class="metric-icon-box">✓</div></div>
-              <div class="metric-card"><div class="metric-info"><span class="metric-label">Menu Products</span><span class="metric-value" id="skg-metric-products">—</span><span class="metric-subtext">Managed dishes</span></div><div class="metric-icon-box">🍽️</div></div>
+              <div class="metric-card"><div class="metric-info"><span class="metric-label">Verified Order Revenue</span><span class="metric-value" id="skg-metric-revenue">—</span><span class="metric-subtext" id="skg-metric-revenue-sub">Non-cancelled billed total</span></div><div class="metric-icon-box">NPR</div></div>
+              <div class="metric-card"><div class="metric-info"><span class="metric-label">Menu Products</span><span class="metric-value" id="skg-metric-products">—</span><span class="metric-subtext" id="skg-metric-products-sub">Managed dishes</span></div><div class="metric-icon-box">🍽</div></div>
               <div class="metric-card"><div class="metric-info"><span class="metric-label">Registered Customers</span><span class="metric-value" id="skg-metric-customers">—</span><span class="metric-subtext">Customer accounts</span></div><div class="metric-icon-box">👥</div></div>
-              <div class="metric-card"><div class="metric-info"><span class="metric-label">Active Coupons</span><span class="metric-value" id="skg-metric-offers">—</span><span class="metric-subtext">Published offers</span></div><div class="metric-icon-box">🏷️</div></div>
+              <div class="metric-card"><div class="metric-info"><span class="metric-label">Active Coupons</span><span class="metric-value" id="skg-metric-offers">—</span><span class="metric-subtext">Published offers</span></div><div class="metric-icon-box">🏷</div></div>
               <div class="metric-card"><div class="metric-info"><span class="metric-label">Low / Out-of-Stock</span><span class="metric-value" id="skg-metric-low-stock">—</span><span class="metric-subtext">Items needing restock</span></div><div class="metric-icon-box">📦</div></div>
+              ${hasPermission("manageCreators") || hasPermission("moderateContent") ? `<div class="metric-card"><div class="metric-info"><span class="metric-label">Community &amp; Moderation</span><span class="metric-value" id="skg-metric-community">—</span><span class="metric-subtext" id="skg-metric-community-sub">Pending reviews &amp; reports</span></div><div class="metric-icon-box">✍</div></div>` : ""}
               ${hasPermission("viewAnalytics") ? `<div class="metric-card"><div class="metric-info"><span class="metric-label">Visitors Today</span><span class="metric-value" id="skg-metric-visitors-today">—</span><span class="metric-subtext" id="skg-metric-visitors-sub">Sessions today</span></div><div class="metric-icon-box">🌐</div></div>` : ""}
               ${hasPermission("viewVisitorAnalytics") ? `<div class="metric-card"><div class="metric-info"><span class="metric-label">Active Visitors (5m)</span><span class="metric-value" id="skg-metric-active-now">—</span><span class="metric-subtext" id="skg-metric-avg-dur">Estimated dwell</span></div><div class="metric-icon-box">🟢</div></div>` : ""}
               ${hasPermission("viewSecurityLogs") ? `<div class="metric-card"><div class="metric-info"><span class="metric-label">Security Alerts (24h)</span><span class="metric-value" id="skg-metric-sec-alerts">—</span><span class="metric-subtext">High/warning events</span></div><div class="metric-icon-box">🚨</div></div>` : ""}
-              ${hasPermission("manageDevices") ? `<div class="metric-card"><div class="metric-info"><span class="metric-label">Approved Devices</span><span class="metric-value" id="skg-metric-devices">—</span><span class="metric-subtext">Trusted admin sessions</span></div><div class="metric-icon-box">🛡️</div></div>` : ""}
+              ${hasPermission("manageDevices") ? `<div class="metric-card"><div class="metric-info"><span class="metric-label">Approved Devices</span><span class="metric-value" id="skg-metric-devices">—</span><span class="metric-subtext">Trusted admin sessions</span></div><div class="metric-icon-box">🛡</div></div>` : ""}
             </div>
             <div class="skg-dashboard-bottom">
               <div>
-                <h3>Daily Operations &amp; Intelligence Desk</h3>
-                <p>Website order requests arrive here in real time. Confirm availability and final pricing directly with the customer before marking orders accepted.</p>
+                <h3>Daily Operations &amp; Revenue Desk</h3>
+                <p>Priced menu items compute itemized NPR bills automatically on checkout and in printable receipts. Any dish with an Unset price (such as Roti before pricing is published) remains blocked from online checkout until an admin saves a valid NPR rate.</p>
               </div>
               <div class="skg-quick-actions">
                 <a href="#orders" class="btn btn-primary">Open Orders →</a>
-                ${hasPermission("viewAnalytics") ? '<a href="#website-analytics" class="btn btn-secondary">Website Analytics</a>' : ""}
-                ${hasPermission("viewOrderAnalytics") ? '<a href="#order-analytics" class="btn btn-secondary">Order Analytics</a>' : ""}
-                ${hasPermission("viewCustomerEngagement") ? '<a href="#customer-engagement" class="btn btn-secondary">Engagement</a>' : ""}
-                ${hasPermission("exportReports") ? '<a href="#reports-exports" class="btn btn-secondary">Reports &amp; Exports</a>' : ""}
+                ${hasPermission("manageProducts") ? '<a href="#products" class="btn btn-secondary">Menu &amp; Pricing</a>' : ""}
+                ${hasPermission("viewAnalytics") ? '<a href="#website-analytics" class="btn btn-secondary">Analytics Hub</a>' : ""}
+                ${hasPermission("exportReports") ? '<a href="#reports-exports" class="btn btn-secondary">Exports</a>' : ""}
               </div>
             </div>
           </section>
@@ -68,7 +71,7 @@ const DashboardModule = {
               <div class="card-header">
                 <div>
                   <h2 class="card-title">Recent Website Orders</h2>
-                  <p class="card-subtitle">Latest incoming customer requests</p>
+                  <p class="card-subtitle">Latest incoming customer requests &amp; verified bills</p>
                 </div>
                 <a href="#orders" class="btn btn-sm btn-secondary">View All</a>
               </div>
@@ -84,33 +87,35 @@ const DashboardModule = {
               </div>
               <div id="skg-recent-audit" class="skg-recent-orders"><p class="form-hint">Loading activity…</p></div>
             </section>
-          </div>
-          <p class="form-hint" style="margin-top:14px">Reminder: Website order requests remain unconfirmed until staff review item availability and confirm the final price with the customer.</p>`;
+          </div>`;
 
         const metrics = container.querySelector("#skg-dashboard-metrics");
         const recent = container.querySelector("#skg-recent-orders");
         const auditBox = container.querySelector("#skg-recent-audit");
         const pendingBanner = container.querySelector("#skg-owner-pending-banner");
         const lowStockBanner = container.querySelector("#skg-low-stock-banner");
+        const modBanner = container.querySelector("#skg-moderation-pending-banner");
 
         (async () => {
             try {
                 const canSeeInventory = hasPermission("viewInventory") || hasPermission("manageInventory") || hasPermission("manageProducts");
-                const todayStart = new Date();
-                todayStart.setHours(0, 0, 0, 0);
-                const todayMs = todayStart.getTime();
+                const canSeeCommunity = hasPermission("manageCreators") || hasPermission("moderateContent");
+                const todayMs = nptStartOfDayMs();
                 const dayAgoMs = Date.now() - 24 * 60 * 60 * 1000;
 
                 const [
-                    productCount,
+                    menuVal,
                     customerCount,
                     offerCount,
                     devices,
                     inventoryItems,
                     sessionsList,
-                    securityList
+                    securityList,
+                    creatorAppsVal,
+                    reportsVal,
+                    publishedVal
                 ] = await Promise.all([
-                    get(ref(db, "menu_items")).then((s) => (s.exists() ? Object.keys(s.val()).length : 0)).catch(() => 0),
+                    get(ref(db, "menu_items")).then((s) => (s.exists() ? s.val() : {})).catch(() => ({})),
                     hasPermission("viewCustomers")
                         ? get(ref(db, "users")).then((s) => (s.exists() ? Object.keys(s.val()).length : 0)).catch(() => "—")
                         : Promise.resolve("Restricted"),
@@ -126,18 +131,60 @@ const DashboardModule = {
                         : Promise.resolve(null),
                     hasPermission("viewSecurityLogs")
                         ? get(ref(db, "securityLogs")).then((s) => (s.exists() ? Object.values(s.val() || {}) : [])).catch(() => [])
-                        : Promise.resolve(null)
+                        : Promise.resolve(null),
+                    canSeeCommunity && hasPermission("manageCreators")
+                        ? get(ref(db, "creatorApplications")).then((s) => (s.exists() ? Object.values(s.val() || {}) : [])).catch(() => [])
+                        : Promise.resolve([]),
+                    canSeeCommunity && hasPermission("moderateContent")
+                        ? get(ref(db, "contentReports")).then((s) => (s.exists() ? Object.values(s.val() || {}) : [])).catch(() => [])
+                        : Promise.resolve([]),
+                    canSeeCommunity
+                        ? get(ref(db, "publishedArticles")).then((s) => (s.exists() ? Object.keys(s.val() || {}).length : 0)).catch(() => 0)
+                        : Promise.resolve(0)
                 ]);
 
+                const mergedMenu = mergeMenuWithDefaults(menuVal, {});
+                const unsetCount = mergedMenu.filter((item) => !isItemPriceValid(item.price)).length;
+
                 const prodEl = container.querySelector("#skg-metric-products");
+                const prodSubEl = container.querySelector("#skg-metric-products-sub");
                 const custEl = container.querySelector("#skg-metric-customers");
                 const offerEl = container.querySelector("#skg-metric-offers");
                 const devEl = container.querySelector("#skg-metric-devices");
                 const lowStockEl = container.querySelector("#skg-metric-low-stock");
+                const commEl = container.querySelector("#skg-metric-community");
+                const commSubEl = container.querySelector("#skg-metric-community-sub");
 
-                if (prodEl) prodEl.textContent = String(productCount);
+                if (prodEl) prodEl.textContent = String(mergedMenu.length);
+                if (prodSubEl) {
+                    prodSubEl.textContent = unsetCount > 0
+                        ? `${unsetCount} item price UNSET (blocked online)`
+                        : "All items priced";
+                }
                 if (custEl) custEl.textContent = String(customerCount);
                 if (offerEl) offerEl.textContent = String(offerCount);
+
+                if (canSeeCommunity && commEl) {
+                    const pendingApps = creatorAppsVal.filter((a) => ["pending", "under_review", "more_info_required"].includes(a?.status)).length;
+                    const openReports = reportsVal.filter((r) => (r?.status || "open") === "open").length;
+                    commEl.textContent = String(pendingApps + openReports);
+                    if (commSubEl) {
+                        commSubEl.textContent = `${pendingApps} creator app(s) · ${openReports} open report(s) · ${publishedVal} live post(s)`;
+                    }
+                    if (modBanner && (pendingApps > 0 || openReports > 0)) {
+                        modBanner.innerHTML = `
+                          <div class="skg-alert-banner info">
+                            <div>
+                              <strong>Community Attention Needed</strong>
+                              <p>${pendingApps} creator application(s) awaiting review and ${openReports} open content moderation report(s).</p>
+                            </div>
+                            <div class="skg-quick-actions">
+                              ${pendingApps > 0 && hasPermission("manageCreators") ? '<a href="#creators" class="btn btn-sm btn-primary">Review Creators</a>' : ""}
+                              ${openReports > 0 && hasPermission("moderateContent") ? '<a href="#moderation" class="btn btn-sm btn-secondary">Moderation Queue</a>' : ""}
+                            </div>
+                          </div>`;
+                    }
+                }
 
                 if (Array.isArray(sessionsList)) {
                     const now = Date.now();
@@ -172,7 +219,7 @@ const DashboardModule = {
                           <div class="skg-alert-banner info">
                             <div>
                               <strong>${pendingDevices.length} Admin Device${pendingDevices.length > 1 ? "s" : ""} Awaiting Approval</strong>
-                              <p>Review newly signed-in devices in Device Management to approve or reject access.</p>
+                              <p>Review newly signed-in devices in Trusted Devices to approve or reject access.</p>
                             </div>
                             <a href="#devices" class="btn btn-sm btn-primary">Review Devices</a>
                           </div>`;
@@ -242,29 +289,54 @@ const DashboardModule = {
             const values = [
                 list.length,
                 count(["pending"]),
-                count(["accepted", "preparing"]),
-                count(["ready", "dispatched", "delivered"])
+                count(["accepted", "preparing", "ready", "dispatched"])
             ];
             metrics.querySelectorAll(".metric-value").forEach((node, index) => {
-                if (index < 4) node.textContent = String(values[index]);
+                if (index < 3) node.textContent = String(values[index]);
             });
+
+            let grossRevenue = 0;
+            let totalDiscounts = 0;
+            let pricedCount = 0;
+            list.forEach(([, order]) => {
+                if (!order || order.status === "cancelled") return;
+                const amt = Number(order.totalAmount || order.amount || 0);
+                const disc = Number(order.discountAmount || 0);
+                if (Number.isFinite(amt) && amt > 0) {
+                    grossRevenue += amt;
+                    pricedCount += 1;
+                }
+                if (Number.isFinite(disc) && disc > 0) totalDiscounts += disc;
+            });
+
+            const revEl = container.querySelector("#skg-metric-revenue");
+            const revSubEl = container.querySelector("#skg-metric-revenue-sub");
+            if (revEl) revEl.textContent = `Rs. ${grossRevenue.toLocaleString()}`;
+            if (revSubEl) {
+                revSubEl.textContent = pricedCount
+                    ? `${pricedCount} priced order(s)${totalDiscounts > 0 ? ` · Rs. ${totalDiscounts.toLocaleString()} discounts` : ""}`
+                    : "Awaiting priced orders";
+            }
 
             if (!list.length) {
                 recent.innerHTML = '<div class="skg-recent-empty">No website orders yet. New requests will appear here live.</div>';
                 return;
             }
 
-            recent.innerHTML = list.slice(0, 5).map(([id, order]) => `
-              <div class="skg-recent-row">
-                <div>
-                  <strong>${Utils.escapeHTML(order.customerName || "Customer")}</strong>
-                  <span>${Utils.escapeHTML(order.summary || id)}</span>
-                </div>
-                <div>
-                  <b>${Utils.escapeHTML(String(order.status || "pending").replaceAll("_", " "))}</b>
-                  <small>${Utils.escapeHTML(Utils.formatDate(order.createdAt))}</small>
-                </div>
-              </div>`).join("");
+            recent.innerHTML = list.slice(0, 5).map(([id, order]) => {
+                const amt = Number(order.totalAmount || order.amount || 0);
+                return `
+                  <div class="skg-recent-row">
+                    <div>
+                      <strong>${Utils.escapeHTML(order.customerName || "Customer")}</strong>
+                      <span>${Utils.escapeHTML(order.summary || id)}</span>
+                    </div>
+                    <div>
+                      <b>${Utils.escapeHTML(String(order.status || "pending").replaceAll("_", " "))}${amt > 0 ? ` · Rs. ${amt.toLocaleString()}` : ""}</b>
+                      <small>${Utils.escapeHTML(Utils.formatDate(order.createdAt))}</small>
+                    </div>
+                  </div>`;
+            }).join("");
         };
 
         if (container._skgDashboardUnsubscribe) container._skgDashboardUnsubscribe();

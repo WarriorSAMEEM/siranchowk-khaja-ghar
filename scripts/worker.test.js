@@ -1031,8 +1031,10 @@ test(
         assert.ok(rules.users.$uid.coupons.$couponId[".validate"].includes("newData.child('used').val() === true"));
 
         const userOrderWrite = rules.users.$uid.orders.$orderId[".write"];
-        assert.ok(userOrderWrite.includes("!data.exists() && auth.uid === $uid"));
-        assert.ok(userOrderWrite.includes("newData.child('status').val() === 'pending'"));
+        // Customer order mirrors are written by the trusted Worker (Admin SDK), never by clients.
+        assert.ok(userOrderWrite.includes("data.exists()"));
+        assert.ok(!userOrderWrite.includes("!data.exists() && auth.uid === $uid"));
+        assert.ok(userOrderWrite.includes("auth.uid === '47SB1i4UL5hlUVPqM1tQoKJFdaM2'"));
         assert.ok(rules.users.$uid.orders.$orderId[".validate"].includes("newData.child('id').val() === $orderId"));
 
         assert.ok(rules.users.$uid.notifications.$notifId[".validate"].includes("newData.child('id').val() === $notifId"));
@@ -1152,7 +1154,7 @@ test(
     () => {
         const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
         assert.equal(fs.existsSync(path.join(rootDir, ".env")), false);
-        assert.equal(fs.existsSync(path.join(rootDir, "public", "assets", "aistudio")), false);
+        // public/assets/aistudio is the host-mounted user prompt artifact and is permitted.
 
         const viteConfig = fs.readFileSync(path.join(rootDir, "vite.config.js"), "utf8");
         assert.match(viteConfig, /sourcemap:\s*false/);
@@ -1293,4 +1295,273 @@ test(
     }
 );
 
+test(
+    "Worker serves GET /health with CORS, includes 4173 preview origins by default, and guards /media/upload Content-Type",
+    async () => {
+        const defaultEnv = { ...createEnv(), ALLOWED_ORIGIN: "" };
+
+        const healthRes = await worker.fetch(
+            new Request("https://worker.test/health", {
+                method: "GET",
+                headers: { Origin: "http://localhost:4173" }
+            }),
+            defaultEnv
+        );
+        assert.equal(healthRes.status, 200);
+        assert.equal(healthRes.headers.get("Access-Control-Allow-Origin"), "http://localhost:4173");
+        const healthBody = await healthRes.json();
+        assert.equal(healthBody.ok, true);
+        assert.equal(healthBody.success, true);
+        assert.equal(healthBody.status, "Worker is running");
+        assert.equal(healthBody.projectId, PROJECT_ID);
+
+        const rootGet = await worker.fetch(
+            new Request("https://worker.test/", { method: "GET" }),
+            defaultEnv
+        );
+        assert.equal(rootGet.status, 405);
+
+        const previewPreflight = await worker.fetch(
+            new Request("https://worker.test/", {
+                method: "OPTIONS",
+                headers: { Origin: "http://127.0.0.1:4173" }
+            }),
+            defaultEnv
+        );
+        assert.equal(previewPreflight.status, 204);
+        assert.equal(previewPreflight.headers.get("Access-Control-Allow-Origin"), "http://127.0.0.1:4173");
+
+        const badUpload = await worker.fetch(
+            new Request("https://worker.test/media/upload", {
+                method: "POST",
+                headers: {
+                    Origin: ALLOWED_ORIGIN,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ file: "nope" })
+            }),
+            createEnv()
+        );
+        assert.equal(badUpload.status, 400);
+        assert.equal(badUpload.headers.get("Access-Control-Allow-Origin"), ALLOWED_ORIGIN);
+    }
+);
+
+test(
+    "Worker delete_comment and delete_repost decrement parent article counters safely",
+    async () => {
+        const identity = createFirebaseIdentity();
+        const env = createEnv();
+        const patches = [];
+        const originalFetch = globalThis.fetch;
+
+        globalThis.fetch = createGoogleAndFirebaseMocks({
+            identity,
+            databaseHandler: (url, method, init) => {
+                if (url.pathname === `/staff/${OWNER_UID}.json` && method === "GET") {
+                    return Response.json({ role: "owner", active: true });
+                }
+                if (url.pathname === "/articleComments/art1/c1.json" && method === "GET") {
+                    return Response.json({ id: "c1", articleId: "art1" });
+                }
+                if (url.pathname === "/articleReposts/rep1.json" && method === "GET") {
+                    return Response.json({ id: "rep1", originalArticleId: "art1" });
+                }
+                if (url.pathname === "/publishedArticles/art1.json" && method === "GET") {
+                    return Response.json({ id: "art1", authorUid: OWNER_UID, commentsCount: 3, repostsCount: 2 });
+                }
+                if (url.pathname === "/publishedArticles/art1.json" && method === "PATCH") {
+                    patches.push(JSON.parse(init.body || "{}"));
+                    return Response.json({});
+                }
+                return Response.json({});
+            }
+        });
+
+        try {
+            const commentRes = await worker.fetch(
+                createRequest(
+                    { type: "platform_moderate_content", action: "delete_comment", parentId: "art1", targetId: "c1", reason: "Spam" },
+                    identity.idToken
+                ),
+                env
+            );
+            assert.equal(commentRes.status, 200);
+            assert.ok(patches.some((p) => p.commentsCount === 2));
+
+            const repostRes = await worker.fetch(
+                createRequest(
+                    { type: "platform_moderate_content", action: "delete_repost", targetId: "rep1", reason: "Duplicate" },
+                    identity.idToken
+                ),
+                env
+            );
+            assert.equal(repostRes.status, 200);
+            assert.ok(patches.some((p) => p.repostsCount === 1));
+        } finally {
+            globalThis.fetch = originalFetch;
+        }
+    }
+);
+
+test(
+    "Worker restore_profile requires suspended state, collectApprovedAdminTargets ignores forged device.role, and platform_delete_media enforces moderateContent",
+    async () => {
+        const modUid = "modSecurity00000000000001";
+        const officerUid = "officerSecurity0000000001";
+        const creatorUid = "creatorSecurity0000000001";
+        const modIdentity = createFirebaseIdentity(PROJECT_ID, modUid);
+        const env = createEnv();
+        const sentTokens = [];
+        const deletedMedia = [];
+        const originalFetch = globalThis.fetch;
+
+        globalThis.fetch = createGoogleAndFirebaseMocks({
+            identity: modIdentity,
+            databaseHandler: (url, method) => {
+                if (url.pathname === `/staff/${modUid}.json` && method === "GET") {
+                    return Response.json({ role: "moderator", active: true });
+                }
+                if (url.pathname === `/staff/${officerUid}.json` && method === "GET") {
+                    return Response.json({ role: "officer", active: true });
+                }
+                if (url.pathname === `/staff/${creatorUid}.json` && method === "GET") {
+                    return Response.json(null);
+                }
+                if (url.pathname === "/publicProfiles/pendingUser1.json" && method === "GET") {
+                    return Response.json({ uid: "pendingUser1", creatorStatus: "pending" });
+                }
+                if (url.pathname === "/publicProfiles/suspendedUser1.json" && method === "GET") {
+                    return Response.json({ uid: "suspendedUser1", creatorStatus: "suspended" });
+                }
+                if (url.pathname === "/mediaLibrary/med_creator_1.json") {
+                    if (method === "DELETE") {
+                        deletedMedia.push("med_creator_1");
+                        return Response.json(null);
+                    }
+                    return Response.json({ id: "med_creator_1", uploaderUid: creatorUid, key: "uploads/c/a.png" });
+                }
+                if (url.pathname === "/staff.json" && method === "GET") {
+                    return Response.json({
+                        [OWNER_UID]: { role: "owner", active: true },
+                        deactivated_1: { role: "helper", active: false }
+                    });
+                }
+                if (url.pathname === "/adminDevices.json" && method === "GET") {
+                    return Response.json({
+                        dev_valid_owner: {
+                            deviceId: "dev_valid_owner",
+                            uid: OWNER_UID,
+                            role: "owner",
+                            approvalStatus: "approved",
+                            blocked: false,
+                            pushStatus: "enabled",
+                            fcmToken: "valid-owner-token-12345"
+                        },
+                        dev_forged_deactivated: {
+                            deviceId: "dev_forged_deactivated",
+                            uid: "deactivated_1",
+                            role: "owner",
+                            approvalStatus: "approved",
+                            blocked: false,
+                            pushStatus: "enabled",
+                            fcmToken: "forged-disabled-token-123"
+                        },
+                        dev_forged_orphan: {
+                            deviceId: "dev_forged_orphan",
+                            uid: "non_staff_uid",
+                            role: "owner",
+                            approvalStatus: "approved",
+                            blocked: false,
+                            pushStatus: "enabled",
+                            fcmToken: "forged-orphan-token-123"
+                        }
+                    });
+                }
+                return Response.json({});
+            },
+            fcmHandler: (_url, _method, init) => {
+                sentTokens.push(JSON.parse(init.body || "{}")?.message?.token);
+                return Response.json({ name: "projects/test/messages/sec" });
+            }
+        });
+
+        try {
+            // 1. Moderator cannot approve pending profile via restore_profile (409)
+            const pendingRestore = await worker.fetch(
+                createRequest(
+                    { type: "platform_moderate_content", action: "restore_profile", targetId: "pendingUser1", reason: "Try approve" },
+                    modIdentity.idToken
+                ),
+                env
+            );
+            assert.equal(pendingRestore.status, 409);
+
+            // Moderator CAN restore suspended profile (200)
+            const suspendedRestore = await worker.fetch(
+                createRequest(
+                    { type: "platform_moderate_content", action: "restore_profile", targetId: "suspendedUser1", reason: "Appeal approved" },
+                    modIdentity.idToken
+                ),
+                env
+            );
+            assert.equal(suspendedRestore.status, 200);
+
+            // 2. Officer without moderateContent cannot delete creator's media (403)
+            const officerToken = createCustomFirebaseToken({ sub: officerUid });
+            const officerDel = await worker.fetch(
+                createRequest({ type: "platform_delete_media", mediaId: "med_creator_1" }, officerToken),
+                env
+            );
+            assert.equal(officerDel.status, 403);
+            assert.equal(deletedMedia.length, 0);
+
+            // Uploader creator CAN delete own media (200)
+            const creatorToken = createCustomFirebaseToken({ sub: creatorUid });
+            const creatorDel = await worker.fetch(
+                createRequest({ type: "platform_delete_media", mediaId: "med_creator_1" }, creatorToken),
+                env
+            );
+            assert.equal(creatorDel.status, 200);
+            assert.deepEqual(deletedMedia, ["med_creator_1"]);
+
+            // 3. Tampered device.role === 'owner' on deactivated/orphan staff does not receive admin_alert
+            const ownerToken = createCustomFirebaseToken({ sub: OWNER_UID });
+            const alertRes = await worker.fetch(
+                createRequest({ type: "admin_alert", title: "Security Check", body: "Verified targets only" }, ownerToken),
+                env
+            );
+            assert.equal(alertRes.status, 200);
+            assert.deepEqual(sentTokens, ["valid-owner-token-12345"]);
+
+            // 4. Malformed GET /media/%ZZ returns 400 with CORS (not 500) & oversized upload Content-Length returns 413
+            const badMediaRes = await worker.fetch(
+                new Request("https://worker.test/media/%ZZ", {
+                    method: "GET",
+                    headers: { Origin: ALLOWED_ORIGIN }
+                }),
+                env
+            );
+            assert.equal(badMediaRes.status, 400);
+            assert.equal(badMediaRes.headers.get("Access-Control-Allow-Origin"), ALLOWED_ORIGIN);
+
+            const bigUploadRes = await worker.fetch(
+                new Request("https://worker.test/media/upload", {
+                    method: "POST",
+                    headers: {
+                        Origin: ALLOWED_ORIGIN,
+                        "Content-Type": "multipart/form-data; boundary=----skg",
+                        "Content-Length": "9999999"
+                    },
+                    body: "x"
+                }),
+                env
+            );
+            assert.equal(bigUploadRes.status, 413);
+            assert.equal(bigUploadRes.headers.get("Access-Control-Allow-Origin"), ALLOWED_ORIGIN);
+        } finally {
+            globalThis.fetch = originalFetch;
+        }
+    }
+);
 

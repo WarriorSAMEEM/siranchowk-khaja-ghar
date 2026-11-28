@@ -4,6 +4,7 @@
 
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 import { onCustomerAuthChange, loginWithGoogle } from "./customer-auth.js";
+import { getPublicPushConfig } from "./notifications-client.js";
 import {
     listSavedPlaces,
     savePlaceToFirestore,
@@ -229,7 +230,7 @@ async function mountInteractiveMap(mapContainer, focusControlButtons = []) {
                 title: wp.title
             });
 
-            marker.addListener("click", () => {
+            marker.addEventListener("gmp-click", () => {
                 map.panTo(wp.position);
                 openInfoForWaypoint(wp, marker);
             });
@@ -379,11 +380,19 @@ function initNearbyGuidePanel() {
                 lng: customCoords ? customCoords.lng : RESTAURANT_COORDS.lng
             };
 
-            const res = await fetch("/api/maps-grounding", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
+            const { workerUrl } = await getPublicPushConfig().catch(() => ({ workerUrl: "" }));
+            const groundingPayload = { type: "maps_grounding", ...payload };
+            const res = workerUrl
+                ? await fetch(workerUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(groundingPayload)
+                })
+                : await fetch("/api/maps-grounding", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
 
             if (res.status === 429) {
                 window.dispatchEvent(new CustomEvent("gmp-quota-exceeded", { detail: { reason: "Grounding 429" } }));

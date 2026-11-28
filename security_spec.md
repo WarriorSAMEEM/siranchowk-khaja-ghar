@@ -1,24 +1,45 @@
-# Firestore Security Architecture Specification — Siranchowk Khaja Ghar
+# Current Security Specification — Siranchowk Khaja Ghar
 
-## 1. Core Data Invariants
-1. **Global Default-Deny**: Any unmatched path under `/databases/{database}/documents` is unconditionally denied (`allow read, write: if false`).
-2. **Verified Identity**: All customer writes require `request.auth != null` and `request.auth.token.email_verified == true`.
-3. **Bootstrapped Admin With Email Spoof Guard**: `isAdmin()` checks `exists(/databases/$(database)/documents/admins/$(request.auth.uid))` OR (`request.auth.token.email == 'minecraftboot411@gmail.com' && request.auth.token.email_verified == true`). Unverified emails never elevate privileges.
-4. **Master Gate Relational Sync**: `/chatSessions/{sessionId}/messages/{messageId}` messages cannot be read via `get` or created unless `/chatSessions/{sessionId}` exists, `ownerId == request.auth.uid`, and on `create`, `status == 'active'` plus atomic batch increment (`getAfter(...).messageCount == get(...).messageCount + 1`).
-5. **Terminal State Locking**: Archived chat sessions (`status == 'archived'`) cannot be modified by standard users (only `isAdmin()` override).
-6. **Temporal Integrity & Immutability**: `createdAt == request.time` on `create`; `updatedAt == request.time` on `update`; `ownerId`/`userId`/`uid`/`sessionId`/`placeId`/`createdAt` are immutable on `update`.
-7. **Query Enforcement**: Every `allow list` rule evaluates `resource.data` directly (`ownerId == request.auth.uid` or `userId == request.auth.uid`) without calling `get()`/`exists()` inside `allow list`.
+## Realtime Database
 
-## 2. The "Dirty Dozen" Adversarial Payloads (All Expected: PERMISSION_DENIED)
-1. **Unauthenticated Write**: `POST chatSessions/sess_1` with `auth = null`.
-2. **Unverified Email Write**: `CREATE savedPlaces/place_1` with `email_verified = false`.
-3. **Admin Email Spoof**: `READ admins/otherUid` with `email = 'minecraftboot411@gmail.com'` and `email_verified = false`.
-4. **Identity Spoofing on Create**: `CREATE chatSessions/sess_2` where `ownerId = 'victim_uid'` != `request.auth.uid`.
-5. **ID Poisoning**: `CREATE savedPlaces/bad.id$1500...` exceeding 128 chars or non-`[a-zA-Z0-9_-]`.
-6. **Ghost / Shadow Field Injection**: `CREATE userPreferences/uid1` including `role: 'admin'` or `isAdmin: true`.
-7. **Timestamp Forgery**: `CREATE chatSessions/sess_3` with client `createdAt: Timestamp(2020-01-01)` instead of `request.time`.
-8. **Orphan Message Write**: `CREATE chatSessions/nonexistent/messages/msg_1` without a parent session.
-9. **Non-Atomic Message Write (Bypassing messageCount)**: `CREATE chatSessions/sess_1/messages/msg_2` without incrementing parent `chatSessions/sess_1.messageCount`.
-10. **Terminal State Bypass**: `UPDATE chatSessions/archived_sess` trying to flip `status: 'archived'` back to `'active'` or rename `title`.
-11. **Array & String Poisoning**: `CREATE chatSessions/sess_1/messages/msg_3` with `groundingUrls: ['https://a', ... 11 items]` or `text` > 4000 chars.
-12. **Blanket List Scraping**: `LIST /chatSessions` or `LIST /savedPlaces` without `.where('ownerId' / 'userId', '==', auth.uid)`.
+- Root `.read` and `.write` remain denied by default.
+- Customer profile, devices, activity, notifications and order mirrors are isolated by Firebase Auth UID.
+- Customers cannot write canonical `/orders`, `/orderTracking`, `/users/{uid}/orders` or coupon-use records directly.
+- Customer orders are created only through the Cloudflare Worker `create_order` action, which verifies the Firebase ID token, current menu/stock/coupon pricing and order inputs before one atomic multi-location RTDB update.
+- The browser fails closed when the Worker is unavailable or the server-calculated total differs from the displayed total.
+- Per-customer idempotency references prevent duplicate order creation after a lost response; cart, coupon and tracking-token local storage is scoped per Firebase UID.
+- Staff order changes require active staff status and effective RBAC permissions; staff cannot create canonical orders or delete existing orders through their update path.
+- Order tracking reads require the 48-character unguessable tracking token.
+- Public menu and explicitly public profile/article data are readable only on their designated paths. Private drafts, customer PII, staff data, orders and analytics remain protected.
+
+## Firestore
+
+- Admin authority is based on the primary owner UID `47SB1i4UL5hlUVPqM1tQoKJFdaM2` and owner-created admin records; no hard-coded email address grants admin access.
+- Only the primary owner can create, update or remove admin records. Other admins cannot grant additional admin access.
+- Customer preferences and saved places are isolated by authenticated UID.
+- Unused concierge chat-session rules and client functions were removed.
+
+## Cloudflare Worker
+
+- `FIREBASE_SERVICE_ACCOUNT_JSON` is a required Worker secret; never place it in frontend code, GitHub or public assets.
+- `GEMINI_API_KEY` is optional and is used only by the Worker-backed Google Maps grounding action.
+- `create_order` requires a valid Firebase ID token and is rate-limited.
+- `maps_grounding` validates input, uses the server-side API key, applies a request limit and returns only HTTPS Google Maps links.
+- Existing staff actions use Worker-side Firebase ID-token verification and RBAC checks.
+
+## Required validation before production
+
+1. Validate `database.rules.json` with the official Firebase Realtime Database Emulator/Rules Playground.
+2. Validate `firestore.rules` with the official Firestore Emulator in a staging project.
+3. Run the full dependency install, `npm run check`, `npm test` and `npm run build`.
+4. Deploy the Worker before publishing the RTDB rules and new Pages frontend.
+5. Run live staging tests for customer login, cart restoration, secure checkout, order tracking, staff order updates, notifications and Maps grounding.
+
+## Known integrity limitations requiring follow-up
+
+- Public browser analytics events/session/profile writes are currently write-only at RTDB but are not routed through the Worker. They can be spoofed or inflated by automated clients; do not treat them as authoritative business or security metrics.
+- Social engagement counters have bounded client-side +/-1 writes but do not have server-side cross-checks against unique like/follow/comment edges. Automated authenticated clients may manipulate counts.
+- Single-use coupon use is checked against RTDB but lacks an atomic reservation across different devices.
+- Inventory is deducted when staff confirms/processes an order, not reserved when a pending order is first created. Multiple pending orders can race against low stock.
+
+These limitations are recorded rather than hidden. A production hardening phase should move these writes behind rate-limited Worker actions and add tested transactional reservation/reconciliation before using the metrics or coupon/stock constraints for high-stakes business decisions.

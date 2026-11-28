@@ -9,8 +9,17 @@ PRIMARY_OWNER_UID = "47SB1i4UL5hlUVPqM1tQoKJFdaM2"
 
 ALLOWED_ORIGINS = "https://siranchowk-khaja-ghar.pages.dev,http://127.0.0.1:4173,http://localhost:4173,http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:3000,http://localhost:3000"
 
-# Configure secrets via CLI (NEVER commit secrets in this file):
-# Secret: FIREBASE_SERVICE_ACCOUNT_JSON (set separately; never commit its value)
+# Configure secrets via CLI or Cloudflare Dashboard (NEVER commit secrets in this file):
+# Required secret: FIREBASE_SERVICE_ACCOUNT_JSON
+#   npx wrangler secret put FIREBASE_SERVICE_ACCOUNT_JSON --name siranchowk-notifications
 # Never put private credentials in this file.
-[secrets]
-required = ["FIREBASE_SERVICE_ACCOUNT_JSON"]
+
+# Optional Cloudflare R2 Media Bucket (uncomment after creating bucket via `wrangler r2 bucket create siranchowk-media`):
+# [[r2_buckets]]
+# binding = "MEDIA_BUCKET"
+# bucket_name = "siranchowk-media"
+
+# Optional secret for Worker-backed Google Maps grounding:
+#   npx wrangler secret put GEMINI_API_KEY
+# Optional model override (default in worker.js: gemini-2.5-flash):
+# GEMINI_MAPS_MODEL = "gemini-2.5-flash"

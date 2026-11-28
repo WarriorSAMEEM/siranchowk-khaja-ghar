@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow, noarchive">
-    <meta name="theme-color" content="#050607">
-    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#eefbfd">
+    <meta name="color-scheme" content="light">
     <title>Admin Login | Siranchowk Khaja Ghar</title>
 
     <!-- ================================================================
@@ -1278,6 +1278,38 @@
             }
         }
 
+    </style>
+
+    <style>
+      /* SKG premium warm login overrides */
+      :root {
+        --bg: #F7F3EB; --bg-soft: #FBF8F1;
+        --surface: rgba(255,252,247,.92); --surface-strong: #FFFCF7;
+        --text: #29363E; --text-soft: #46565E; --muted: #66747A; --muted-2: #758187;
+        --line: rgba(125,104,82,.18); --line-strong: rgba(125,104,82,.28);
+        --aqua: #A8442B; --aqua-soft: #C58B35; --aqua-pale: rgba(168,68,43,.10);
+        --violet: #8C7868; --pink: #B77C67; --gold: #C58B35; --mint: #6E947D;
+        --card-radius: 22px; --input-radius: 13px;
+        --shadow: 0 24px 60px rgba(41,54,62,.13), 0 8px 24px rgba(41,54,62,.07);
+      }
+      .page { background: radial-gradient(circle at 10% 8%, rgba(197,139,53,.12), transparent 34%), radial-gradient(circle at 92% 88%, rgba(168,68,43,.10), transparent 32%), linear-gradient(145deg,#FBF8F1 0%,#F3EADF 55%,#F8F3EB 100%); }
+      .page::before { background: linear-gradient(135deg,rgba(197,139,53,.13),rgba(168,68,43,.08)); }
+      .page::after { background: linear-gradient(135deg,rgba(168,68,43,.10),rgba(197,139,53,.08)); }
+      .login-card { border-color: #E5D9C9; background: linear-gradient(145deg,rgba(255,252,247,.97),rgba(250,245,236,.94)); box-shadow: var(--shadow); }
+      .login-card::before { background: radial-gradient(circle 250px at var(--mouse-glow-x) var(--mouse-glow-y),rgba(197,139,53,.10),transparent 68%); }
+      .brand-mark { border-color: rgba(168,68,43,.20); background: linear-gradient(145deg,rgba(168,68,43,.10),rgba(197,139,53,.12),#FFFCF7); box-shadow: inset 0 1px 0 rgba(255,255,255,.85),0 12px 28px rgba(168,68,43,.10); }
+      .brand h1 { color: #29363E; }
+      .brand p, .form-group label { color: #53636A; }
+      .form-group label { font-size: 12px; }
+      .field-hint { font-size: 10px; color: #69777C; }
+      .input-wrapper input { color: #29363E; caret-color: #A8442B; border-color: #D7CABB; background: #FFFCF7; box-shadow: inset 0 1px 0 rgba(255,255,255,.9); }
+      .input-wrapper input:focus { border-color: #A8442B; box-shadow: 0 0 0 3px rgba(168,68,43,.12); }
+      .submit-btn { min-height: 50px; border-color: #913B25; color: #FFF9F2; background: linear-gradient(120deg,#A8442B 0%,#B75C35 58%,#C58B35 100%); box-shadow: 0 12px 26px rgba(168,68,43,.20); font-size: 14px; letter-spacing: .01em; }
+      .submit-btn:hover { box-shadow: 0 16px 32px rgba(168,68,43,.24); }
+      .submit-btn:focus-visible { outline: 3px solid rgba(168,68,43,.28); outline-offset: 3px; }
+      .secure-status { color: #496058; background: #F0F3EA; border-color: #D9E2D2; }
+      .corner-mark, .shield-icon { color: #A8442B; }
+      @media (max-width: 480px) { .login-card { padding: 24px 18px 20px; } .brand h1 { font-size: 21px; } }
     </style>
 </head>
 

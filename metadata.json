@@ -1,6 +1,6 @@
 {
   "name": "Siranchowk Khaja Ghar",
-  "description": "Official web application for Siranchowk Khaja Ghar (सिरानचोक खाजा घर), a 100% Halal Nepali eatery in Khairahani-6, Parsa, Chitwan — featuring interactive Google Maps locator, nearby grounding guide, 3D Nepali Khaja showcase, Gemini dining concierge, Firebase Auth/Firestore/RTDB, and order tracking.",
+  "description": "Official web application for Siranchowk Khaja Ghar (सिरानचोक खाजा घर), a 100% Halal Nepali eatery in Khairahani-6, Parsa, Chitwan — featuring a responsive menu and ordering system, customer accounts, order tracking, an interactive Google Maps locator, and a secure operations dashboard.",
   "requestFramePermissions": [
     "geolocation"
   ],

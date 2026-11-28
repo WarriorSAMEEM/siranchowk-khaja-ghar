@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#dff8f7">
+  <meta name="color-scheme" content="light">
+  <title>Explore Global Knowledge, Stories &amp; Creators | Siranchowk Khaja Ghar</title>
+  <meta name="description" content="Explore community articles, trending local guides, food craft, Nepal &amp; Chitwan stories, tech, education, and verified creators on Siranchowk Khaja Ghar.">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <link rel="canonical" href="https://siranchowk-khaja-ghar.pages.dev/explore">
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg">
+  <link rel="manifest" href="/assets/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/social-platform.css">
+    <link rel="stylesheet" href="/css/brand-system.css">
+</head>
+<body>
+  <div class="announcement-bar">
+    <div class="container announcement-content">
+      <span>📍 Khairahani-6, Parsa, Chitwan, Nepal (Behind Chaudhary Medical)</span>
+      <span class="announcement-hours">⏰ Open Daily: 6:30 AM – 9:00 PM</span>
+      <a href="tel:9821233154" class="announcement-phone">📞 9821233154</a>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/index.html" class="brand-logo" aria-label="Siranchowk Khaja Ghar Home">
+        <img src="https://i.postimg.cc/HnL4h5rL/siranchowkpng-logo.png" referrerpolicy="no-referrer" alt="Siranchowk Khaja Ghar Logo" class="logo-img">
+        <div class="brand-text">
+          <span class="brand-title">Siranchowk Khaja Ghar</span>
+          <span class="brand-nepali">सिरानचोक खाजा घर</span>
+        </div>
+      </a>
+
+      <button class="mobile-nav-toggle" aria-expanded="false" aria-controls="primary-nav" aria-label="Toggle navigation menu">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+
+      <nav id="primary-nav" class="primary-nav">
+        <ul class="nav-list">
+          <li><a href="/index.html" class="nav-link">Home</a></li>
+          <li><a href="/menu.html" class="nav-link">Menu</a></li>
+          <li><a href="/explore.html" class="nav-link active">Explore</a></li>
+          <li><a href="/blog.html" class="nav-link">Blog</a></li>
+          <li><a href="/about.html" class="nav-link">About</a></li>
+          <li><a href="/contact.html" class="nav-link">Contact</a></li>
+          <li><a href="/account.html?mode=login" class="nav-link">Login</a></li>
+        </ul>
+        <div class="nav-actions">
+          <button type="button" class="btn btn-primary header-cta nav-cart-trigger" id="nav-open-cart-btn">
+            Cart <span class="nav-cart-badge" id="nav-cart-badge">0</span>
+          </button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <section class="skg-discovery-hero">
+    <div class="container skg-discovery-hero-inner">
+      <div>
+        <span class="skg-kicker">Global Knowledge &amp; Community</span>
+        <h1 class="skg-discovery-title">Explore Stories, Guides &amp; Creators</h1>
+        <p class="skg-discovery-subtitle">Read Nepali &amp; English guides across Halal food, Chitwan &amp; Nepal life, technology, AI, student resources, health, and local entrepreneurship.</p>
+      </div>
+      <div class="skg-hero-actions">
+        <a href="/blog.html" class="btn btn-outline">Editorial Blog</a>
+        <a href="/creator-studio.html" class="btn btn-primary">Open Creator Studio</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="skg-platform-main">
+    <div class="container">
+      <div class="skg-toolbar">
+        <div class="skg-tab-strip" role="tablist" aria-label="Discovery Feeds">
+          <button type="button" class="skg-tab-btn active" data-tab="explore">Explore</button>
+          <button type="button" class="skg-tab-btn" data-tab="latest">Latest</button>
+          <button type="button" class="skg-tab-btn" data-tab="trending">Trending</button>
+          <button type="button" class="skg-tab-btn" data-tab="following">Following</button>
+          <button type="button" class="skg-tab-btn" data-tab="recommended">Recommended</button>
+        </div>
+        <div class="skg-search-box">
+          <input type="search" id="discovery-search-input" class="skg-input" placeholder="Search articles, topics, or authors…" aria-label="Search articles">
+        </div>
+      </div>
+
+      <div id="discovery-categories-bar" class="skg-category-bar" aria-label="Topic Categories"></div>
+
+      <div class="skg-discovery-layout">
+        <main id="discovery-feed-ssr-slot" aria-live="polite">
+          <div class="skg-empty-card"><p>Loading published stories…</p></div>
+        </main>
+
+        <aside class="skg-aside-stack">
+          <div class="skg-panel">
+            <h2 class="skg-panel-title">Community Creators</h2>
+            <div id="discovery-creators-aside"></div>
+          </div>
+          <div class="skg-panel">
+            <h2 class="skg-panel-title">Write on Siranchowk</h2>
+            <p class="skg-story-excerpt" style="margin-bottom:0.85rem;">Share verified recipes, East Chitwan travel tips, study notes, or tech tutorials in English or नेपाली.</p>
+            <a href="/creator-studio.html" class="btn btn-primary" style="width:100%;">Go to Creator Studio</a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-grid">
+        <div class="footer-col footer-about">
+          <div class="footer-brand">
+            <img src="https://i.postimg.cc/HnL4h5rL/siranchowkpng-logo.png" referrerpolicy="no-referrer" alt="Siranchowk Khaja Ghar Logo" class="footer-logo">
+            <div>
+              <h3>Siranchowk Khaja Ghar</h3>
+              <p class="nepali-sub">सिरानचोक खाजा घर</p>
+            </div>
+          </div>
+          <p class="tagline">"Your Satisfaction Is Our Satisfaction"</p>
+          <p class="footer-desc">100% Halal restaurant, local khaja ghar, and community knowledge hub in Khairahani-6, Parsa, Chitwan.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Explore Platform</h4>
+          <ul class="footer-links">
+            <li><a href="/explore.html">Explore Feed</a></li>
+            <li><a href="/blog.html">Editorial Blog</a></li>
+            <li><a href="/creator-studio.html">Creator Studio</a></li>
+            <li><a href="/menu.html">Restaurant Menu</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Customer Portal</h4>
+          <ul class="footer-links">
+            <li><a href="/account.html?mode=login">Login</a></li>
+            <li><a href="/account.html?mode=signup">Create Account</a></li>
+            <li><a href="/about.html">About Us</a></li>
+            <li><a href="/contact.html">Contact &amp; Map</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Contact Us</h4>
+          <p class="footer-contact-item">📍 Khairahani 6, Parsa, Chitwan</p>
+          <p class="footer-contact-item">📞 <a href="tel:9821233154">9821233154</a></p>
+          <p class="footer-contact-item">⏰ 6:30 AM – 9:00 PM Daily</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; <span id="current-year">2026</span> Siranchowk Khaja Ghar (सिरानचोक खाजा घर). All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+<script type="module" src="/js/main.js"></script>
+  <script type="module" src="/js/order-system.js"></script>
+  <script type="module" src="/js/explore-page.js"></script>
+  <script type="module" src="/js/analytics-tracker.js"></script>
+</body>
+</html>

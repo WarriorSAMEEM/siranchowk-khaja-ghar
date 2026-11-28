@@ -78,16 +78,63 @@ const SAFE_REDIRECT_PAGES = new Set([
     "menu.html",
     "about.html",
     "contact.html",
-    "account.html"
+    "account.html",
+    "explore.html",
+    "blog.html",
+    "article.html",
+    "profile.html",
+    "creator-studio.html"
 ]);
+
+const SAFE_SSR_PREFIXES = [
+    "/explore",
+    "/blog",
+    "/category/",
+    "/user/",
+    "/creator/studio"
+];
 
 export function getSafeRedirectTarget(search = "") {
     try {
         const raw = new URLSearchParams(search || (typeof window !== "undefined" ? window.location.search : "")).get("redirect") || "";
-        const cleaned = raw.trim().replace(/^\/+/, "");
-        const [pagePart, hashPart] = cleaned.split("#");
-        if (!pagePart || !SAFE_REDIRECT_PAGES.has(pagePart)) return "";
-        return hashPart ? `${pagePart}#${hashPart.replace(/[^a-zA-Z0-9_-]/g, "")}` : pagePart;
+        const trimmed = raw.trim();
+        if (!trimmed) return "";
+        // Reject protocol schemes, protocol-relative URLs, backslashes, credentials, traversal, or control chars
+        if (
+            /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed) ||
+            trimmed.startsWith("//") ||
+            /[\\\r\n\0@]/.test(trimmed) ||
+            /(?:^|\/)\.\.(?:\/|$)/.test(trimmed)
+        ) {
+            return "";
+        }
+
+        const hashIdx = trimmed.indexOf("#");
+        const beforeHash = hashIdx >= 0 ? trimmed.slice(0, hashIdx) : trimmed;
+        const hashRaw = hashIdx >= 0 ? trimmed.slice(hashIdx + 1) : "";
+        const safeHash = hashRaw ? `#${hashRaw.replace(/[^a-zA-Z0-9_-]/g, "")}` : "";
+
+        const qIdx = beforeHash.indexOf("?");
+        const pathRaw = qIdx >= 0 ? beforeHash.slice(0, qIdx) : beforeHash;
+        const queryRaw = qIdx >= 0 ? beforeHash.slice(qIdx) : "";
+        const safeQuery = /^\?[a-zA-Z0-9_=&.%+-]*$/.test(queryRaw) ? queryRaw : "";
+
+        const cleanNoLeadingSlash = pathRaw.replace(/^\/+/, "");
+        if (SAFE_REDIRECT_PAGES.has(cleanNoLeadingSlash)) {
+            return `${cleanNoLeadingSlash}${safeQuery}${safeHash}`;
+        }
+
+        const normalizedPath = `/${cleanNoLeadingSlash}`;
+        if (normalizedPath.startsWith("/admin")) return "";
+        const matchesSsr = SAFE_SSR_PREFIXES.some((prefix) =>
+            prefix.endsWith("/")
+                ? normalizedPath.startsWith(prefix) && normalizedPath.length > prefix.length
+                : normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)
+        );
+        if (matchesSsr) {
+            return `${normalizedPath}${safeQuery}${safeHash}`;
+        }
+        return "";
     } catch {
         return "";
     }
@@ -525,7 +572,12 @@ function notifySubscribers() {
 }
 
 function currentPageSlug() {
-    const file = window.location.pathname.split("/").pop() || "index.html";
+    const path = window.location.pathname || "/";
+    if (path.startsWith("/explore") || path.startsWith("/category/")) return "explore.html";
+    if (path.startsWith("/blog")) return "blog.html";
+    if (path.startsWith("/user/")) return "profile.html";
+    if (path.startsWith("/creator/studio")) return "creator-studio.html";
+    const file = path.split("/").pop() || "index.html";
     return file === "" ? "index.html" : file;
 }
 
@@ -544,12 +596,13 @@ export function renderDynamicNavigation() {
 
     if (!currentUser) {
         navList.innerHTML = `
-            <li><a href="index.html" class="nav-link ${current === "index.html" ? "active" : ""}">Home</a></li>
-            <li><a href="menu.html" class="nav-link ${current === "menu.html" ? "active" : ""}">Menu</a></li>
-            <li><a href="about.html" class="nav-link ${current === "about.html" ? "active" : ""}">About</a></li>
-            <li><a href="contact.html" class="nav-link ${current === "contact.html" ? "active" : ""}">Contact</a></li>
-            <li><a href="account.html?mode=login" class="nav-link ${isAccountPage && !window.location.search.includes("signup") ? "active" : ""}" data-auth-nav="login">Login</a></li>
-            <li><a href="account.html?mode=signup" class="nav-link ${isAccountPage && window.location.search.includes("signup") ? "active" : ""}" data-auth-nav="signup">Sign Up</a></li>
+            <li><a href="/index.html" class="nav-link ${current === "index.html" ? "active" : ""}">Home</a></li>
+            <li><a href="/menu.html" class="nav-link ${current === "menu.html" ? "active" : ""}">Menu</a></li>
+            <li><a href="/explore.html" class="nav-link ${current === "explore.html" ? "active" : ""}">Explore</a></li>
+            <li><a href="/blog.html" class="nav-link ${current === "blog.html" ? "active" : ""}">Blog</a></li>
+            <li><a href="/about.html" class="nav-link ${current === "about.html" ? "active" : ""}">About</a></li>
+            <li><a href="/contact.html" class="nav-link ${current === "contact.html" ? "active" : ""}">Contact</a></li>
+            <li><a href="/account.html?mode=login" class="nav-link ${isAccountPage ? "active" : ""}" data-auth-nav="login">Login</a></li>
         `;
 
         if (navActions) {
@@ -562,17 +615,21 @@ export function renderDynamicNavigation() {
     } else {
         const displayFirst = escapeHTML((currentProfile?.name || currentUser.displayName || "Account").split(" ")[0]);
         navList.innerHTML = `
-            <li><a href="index.html" class="nav-link ${current === "index.html" ? "active" : ""}">Home</a></li>
-            <li><a href="menu.html" class="nav-link ${current === "menu.html" ? "active" : ""}">Menu</a></li>
-            <li><a href="account.html" class="nav-link ${isAccountPage && hash !== "#tracking" ? "active" : ""}" title="${escapeHTML(currentUser.email || displayFirst)}">My Account</a></li>
-            <li><a href="#cart" class="nav-link nav-cart-trigger" id="nav-link-cart">Cart (<span id="nav-cart-inline-count">0</span>)</a></li>
-            <li><a href="account.html#tracking" class="nav-link ${isAccountPage && hash === "#tracking" ? "active" : ""}">Order Tracking</a></li>
+            <li><a href="/index.html" class="nav-link ${current === "index.html" ? "active" : ""}">Home</a></li>
+            <li><a href="/menu.html" class="nav-link ${current === "menu.html" ? "active" : ""}">Menu</a></li>
+            <li><a href="/explore.html" class="nav-link ${current === "explore.html" ? "active" : ""}">Explore</a></li>
+            <li><a href="/blog.html" class="nav-link ${current === "blog.html" ? "active" : ""}">Blog</a></li>
+            <li><a href="/creator-studio.html" class="nav-link ${current === "creator-studio.html" ? "active" : ""}">Studio</a></li>
+            <li><a href="/account.html" class="nav-link ${isAccountPage && hash !== "#tracking" ? "active" : ""}" title="${escapeHTML(currentUser.email || displayFirst)}">Account</a></li>
             <li><button type="button" class="nav-link nav-logout-btn" id="nav-logout-btn">Logout</button></li>
         `;
 
         if (navActions) {
             navActions.innerHTML = `
-                <a href="account.html" class="btn btn-outline header-cta">
+                <button type="button" class="btn btn-outline header-cta nav-cart-trigger" id="nav-open-cart-btn" style="margin-right:0.4rem;">
+                    Cart <span class="nav-cart-badge" id="nav-cart-badge">0</span>
+                </button>
+                <a href="/account.html" class="btn btn-primary header-cta">
                     ${displayFirst}
                 </a>
             `;
@@ -594,7 +651,7 @@ export function renderDynamicNavigation() {
             await logoutCustomer();
             closeMobileDrawer();
             if (currentPageSlug() === "account.html") {
-                window.location.replace("account.html?mode=login");
+                window.location.replace("/account.html?mode=login");
             }
         } catch (err) {
             console.error("Logout failed:", err);

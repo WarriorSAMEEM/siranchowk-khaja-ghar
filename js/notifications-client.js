@@ -65,7 +65,7 @@ export async function getPublicPushConfig() {
             const val = snap.val() || {};
             return {
                 vapidKey: val.vapidKey || envVapid || "",
-                workerUrl: val.workerUrl || envWorker || DEFAULT_PUSH_WORKER_URL
+                workerUrl: envWorker || val.workerUrl || DEFAULT_PUSH_WORKER_URL
             };
         }
     } catch {

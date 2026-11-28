@@ -392,8 +392,8 @@ textarea.form-control {
 }
 
 .toast {
-    background-color: var(--surface-sidebar);
-    color: var(--text-inverse);
+    background-color: #123733;
+    color: #ffffff;
     padding: 0.85rem 1rem;
     border-radius: var(--border-radius-md);
     box-shadow: var(--shadow-lg);

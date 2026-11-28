@@ -33,6 +33,15 @@ import {
     disableCustomerDeviceNotifications
 } from "./notifications-client.js";
 import { logCustomerActivity } from "./activity-logger.js";
+import {
+    ensurePublicProfile,
+    fetchUserBookmarks,
+    fetchMySocialNotifications,
+    markSocialNotificationRead,
+    syncEmailVerificationBadge
+} from "./social-service.js";
+import { renderProfileBadgesHtml } from "./badges.js";
+import { buildArticleUrl, buildProfileUrl } from "./platform-core.js";
 
 const ORDER_LABELS = {
     pending: "Received — awaiting confirmation",
@@ -355,6 +364,31 @@ function renderDashboardShell(user, profile) {
               <p class="account-muted">Loading announcements…</p>
             </div>
           </section>
+
+          <section class="account-card" id="bookmarks-section">
+            <div class="account-card-head">
+              <div>
+                <h2>Saved Article Bookmarks</h2>
+                <p class="account-muted">Private reading list isolated to your account.</p>
+              </div>
+              <a href="/explore.html" class="account-btn secondary">Explore More</a>
+            </div>
+            <div id="account-bookmarks-list">
+              <p class="account-muted">Loading your saved bookmarks…</p>
+            </div>
+          </section>
+
+          <section class="account-card" id="social-notifications-section">
+            <div class="account-card-head">
+              <div>
+                <h2>Community Notifications</h2>
+                <p class="account-muted">New followers, comments, reposts, and creator/badge updates.</p>
+              </div>
+            </div>
+            <div id="account-social-notifs-list">
+              <p class="account-muted">Loading community updates…</p>
+            </div>
+          </section>
         </div>
 
         <aside class="account-side-col">
@@ -382,9 +416,20 @@ function renderDashboardShell(user, profile) {
             </form>
           </section>
 
+          <section class="account-card" id="creator-hub-card">
+            <h2>Community &amp; Creator Profile</h2>
+            <div id="account-public-profile-summary">
+              <p class="account-muted">Loading your public profile &amp; verification badges…</p>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+              <a href="/creator-studio.html" class="account-btn">Open Creator Studio</a>
+              <a href="/explore.html" class="account-btn secondary">Explore Community</a>
+            </div>
+          </section>
+
           <section class="account-card">
             <h2>Notification Preferences</h2>
-            <p class="account-muted">Control how you receive alerts for your orders and promotional offers.</p>
+            <p class="account-muted">Control how you receive alerts for your orders, promotional offers, and community activity.</p>
             <div class="pref-list">
               <label class="pref-toggle">
                 <input type="checkbox" id="pref-order-alerts" ${notifPrefs.orderAlerts ? "checked" : ""}>
@@ -393,6 +438,14 @@ function renderDashboardShell(user, profile) {
               <label class="pref-toggle">
                 <input type="checkbox" id="pref-offers-optin" ${notifPrefs.offersOptIn ? "checked" : ""}>
                 <span>Offers, coupons &amp; announcements</span>
+              </label>
+              <label class="pref-toggle">
+                <input type="checkbox" id="pref-social-followers" ${notifPrefs.notifyFollowers !== false ? "checked" : ""}>
+                <span>New follower notifications</span>
+              </label>
+              <label class="pref-toggle">
+                <input type="checkbox" id="pref-social-interactions" ${notifPrefs.notifyLikesComments !== false ? "checked" : ""}>
+                <span>Article likes, comments &amp; reposts</span>
               </label>
             </div>
             <div class="pref-actions">
@@ -632,14 +685,21 @@ function renderDashboardShell(user, profile) {
     const savePrefsOnly = async () => {
         const orderEl = root.querySelector("#pref-order-alerts");
         const offersEl = root.querySelector("#pref-offers-optin");
+        const followersEl = root.querySelector("#pref-social-followers");
+        const interactionsEl = root.querySelector("#pref-social-interactions");
         const statusEl = root.querySelector("#notif-pref-status");
         const orderAlerts = Boolean(orderEl?.checked);
         const offersOptIn = Boolean(offersEl?.checked);
+        const notifyFollowers = followersEl ? Boolean(followersEl.checked) : true;
+        const notifyLikesComments = interactionsEl ? Boolean(interactionsEl.checked) : true;
 
         try {
             await update(ref(db, `users/${user.uid}/profile/notificationPreferences`), {
                 orderAlerts,
                 offersOptIn,
+                notifyFollowers,
+                notifyLikesComments,
+                notifyReposts: notifyLikesComments,
                 updatedAt: Date.now()
             });
             lastSavedPrefs = { orderAlerts, offersOptIn };
@@ -662,6 +722,68 @@ function renderDashboardShell(user, profile) {
 
     root.querySelector("#pref-order-alerts")?.addEventListener("change", savePrefsOnly);
     root.querySelector("#pref-offers-optin")?.addEventListener("change", savePrefsOnly);
+    root.querySelector("#pref-social-followers")?.addEventListener("change", savePrefsOnly);
+    root.querySelector("#pref-social-interactions")?.addEventListener("change", savePrefsOnly);
+
+    // Load Creator Hub, Verification Badges, Private Bookmarks & Social Notifications
+    (async () => {
+        try {
+            await syncEmailVerificationBadge(user);
+            const pub = await ensurePublicProfile(user);
+            const pubHost = document.getElementById("account-public-profile-summary");
+            if (pubHost && pub) {
+                const badgesHtml = renderProfileBadgesHtml(pub.badges || {}, {
+                    includeEmailVerified: true,
+                    specialtyNote: pub.specialtyNote || ""
+                });
+                pubHost.innerHTML = `
+                  <p class="account-muted">Public handle: <a href="${safe(buildProfileUrl(pub.username))}"><strong>@${safe(pub.username)}</strong></a> · Creator status: <strong>${safe(pub.creatorStatus || "none")}</strong></p>
+                  ${badgesHtml || `<p class="account-muted">Verify your email to show Email Verified status; creator &amp; specialist badges are admin-granted.</p>`}
+                `;
+            }
+
+            const bookmarks = await fetchUserBookmarks(user.uid);
+            const bmHost = document.getElementById("account-bookmarks-list");
+            if (bmHost) {
+                bmHost.innerHTML = bookmarks.length
+                    ? `<div class="coupon-grid">${bookmarks.map((b) => `
+                        <div class="coupon-item">
+                          <div>
+                            <a href="${safe(buildArticleUrl(b.slug || b.articleId))}"><strong>${safe(b.title || "Saved Article")}</strong></a>
+                            <div class="account-muted">${safe(b.authorName || "")} · Saved ${formatDate(b.savedAt)}</div>
+                          </div>
+                          <a href="${safe(buildArticleUrl(b.slug || b.articleId))}" class="account-btn secondary">Read</a>
+                        </div>
+                      `).join("")}</div>`
+                    : `<p class="account-muted">You have not saved any article bookmarks yet.</p>`;
+            }
+
+            const socialNotifs = await fetchMySocialNotifications(user.uid, 20);
+            const snHost = document.getElementById("account-social-notifs-list");
+            if (snHost) {
+                snHost.innerHTML = socialNotifs.length
+                    ? socialNotifs.map((n) => `
+                        <article class="announcement-item" style="${n.read ? "opacity:0.75;" : ""}">
+                          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+                            <strong>${safe(n.title)}</strong>
+                            ${!n.read ? `<button type="button" class="account-btn secondary mark-snotif-read" data-sn-id="${safe(n.id)}" style="padding:4px 10px;font-size:12px;">Mark read</button>` : `<span class="account-muted">Read</span>`}
+                          </div>
+                          ${n.body ? `<p>${safe(n.body)}</p>` : ""}
+                          <small class="account-muted">${formatDate(n.createdAt)}${n.link ? ` · <a href="${safe(n.link)}">Open</a>` : ""}</small>
+                        </article>
+                      `).join("")
+                    : `<p class="account-muted">No community notifications yet.</p>`;
+                snHost.querySelectorAll(".mark-snotif-read").forEach((btn) => {
+                    btn.addEventListener("click", async () => {
+                        await markSocialNotificationRead(user.uid, btn.dataset.snId);
+                        btn.replaceWith(Object.assign(document.createElement("span"), { className: "account-muted", textContent: "Read" }));
+                    });
+                });
+            }
+        } catch {
+            // Non-blocking enrichment
+        }
+    })();
 
     root.querySelector("#enable-notifications")?.addEventListener("click", async () => {
         const statusEl = root.querySelector("#notif-pref-status");
@@ -779,6 +901,76 @@ function watchUserOrderTracking(uid) {
     });
 }
 
+function renderAccountBillHtml(order) {
+    const items = Array.isArray(order.items) ? order.items : [];
+    const shortId = safe(String(order.id).slice(-8).toUpperCase());
+    const subtotal = typeof order.subtotalAmount === "number"
+        ? order.subtotalAmount
+        : items.reduce((sum, i) => sum + Number(i.lineTotal || (Number(i.unitPrice || 0) * Number(i.quantity || 0))), 0);
+    const discount = Number(order.discountAmount || 0);
+    const total = typeof order.totalAmount === "number" ? order.totalAmount : Math.max(0, subtotal - discount);
+    const hasSnapshot = typeof order.totalAmount === "number" || items.some((i) => typeof i.unitPrice === "number");
+
+    return `
+      <div style="max-width:520px;margin:0 auto;font-family:system-ui,-apple-system,sans-serif;border:1px solid #d5e1de;border-radius:12px;padding:18px;background:#fff;color:#122b28;">
+        <div style="display:flex;justify-content:space-between;border-bottom:1px solid #e2ebe8;padding-bottom:8px;margin-bottom:10px;">
+          <div>
+            <h2 style="margin:0;font-size:18px;">Siranchowk Khaja Ghar</h2>
+            <div style="font-size:12px;color:#475569;">Khairahani-6, Parsa, Chitwan · Tel: 9821233154</div>
+          </div>
+          <div style="text-align:right;">
+            <strong>Bill #${shortId}</strong>
+            <div style="font-size:12px;color:#475569;">${formatDate(order.createdAt)}</div>
+          </div>
+        </div>
+        <div style="font-size:13px;margin-bottom:8px;">
+          <strong>${safe(order.customerName || "Customer")}</strong> (${safe(order.customerPhone || "")}) · ${safe(order.orderType || "Order")}
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px;">
+          <thead>
+            <tr style="border-bottom:1px solid #cbd5e1;">
+              <th style="text-align:left;padding:5px 4px;">Item</th>
+              <th style="text-align:center;padding:5px 4px;">Qty</th>
+              <th style="text-align:right;padding:5px 4px;">Rate</th>
+              <th style="text-align:right;padding:5px 4px;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map((i) => `
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:5px 4px;">${safe(i.name)}</td>
+                <td style="text-align:center;padding:5px 4px;">${safe(i.quantity)}</td>
+                <td style="text-align:right;padding:5px 4px;">${typeof i.unitPrice === "number" ? `Rs. ${safe(i.unitPrice)}` : "—"}</td>
+                <td style="text-align:right;padding:5px 4px;">${typeof i.lineTotal === "number" ? `Rs. ${safe(i.lineTotal)}` : (typeof i.unitPrice === "number" ? `Rs. ${safe(i.unitPrice * i.quantity)}` : "—")}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+        ${hasSnapshot ? `
+          <div style="display:grid;gap:4px;font-size:13px;border-top:1px solid #cbd5e1;padding-top:8px;">
+            <div style="display:flex;justify-content:space-between;"><span>Subtotal</span><span>Rs. ${safe(subtotal)}</span></div>
+            ${discount > 0 ? `<div style="display:flex;justify-content:space-between;color:#15803d;"><span>Discount (${safe(order.couponCode || "Coupon")})</span><span>− Rs. ${safe(discount)}</span></div>` : ""}
+            <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;"><span>Total (NPR)</span><span>Rs. ${safe(total)}</span></div>
+          </div>
+        ` : `<p style="font-size:12px;color:#475569;">Legacy order — counter confirmation applied.</p>`}
+      </div>
+    `;
+}
+
+function printAccountBill(order) {
+    let host = document.getElementById("skg-print-host");
+    if (!host) {
+        host = document.createElement("div");
+        host.id = "skg-print-host";
+        host.style.display = "none";
+        document.body.appendChild(host);
+    }
+    host.innerHTML = renderAccountBillHtml(order);
+    host.style.display = "block";
+    window.print();
+    host.style.display = "none";
+}
+
 function renderOrdersSection() {
     const totalEl = document.getElementById("account-total");
     const activeEl = document.getElementById("account-active");
@@ -818,9 +1010,16 @@ function renderOrdersSection() {
     host.innerHTML = cachedOrders.map((order) => {
         const status = order.status || "pending";
         const shortId = safe(String(order.id).slice(-8).toUpperCase());
-        const itemsHtml = Array.isArray(order.items) && order.items.length
-            ? order.items.map((i) => `<li>${safe(i.quantity)} × ${safe(i.name)}</li>`).join("")
+        const items = Array.isArray(order.items) ? order.items : [];
+        const itemsHtml = items.length
+            ? items.map((i) => {
+                const lineRate = typeof i.unitPrice === "number"
+                    ? ` — Rs. ${safe(i.unitPrice)} × ${safe(i.quantity)} = <strong>Rs. ${safe(i.lineTotal ?? i.unitPrice * i.quantity)}</strong>`
+                    : "";
+                return `<li>${safe(i.quantity)} × ${safe(i.name)}${lineRate}</li>`;
+            }).join("")
             : `<li>${safe(order.summary || "Order items")}</li>`;
+        const hasTotal = typeof order.totalAmount === "number";
         const isExpanded = selectedOrderId === order.id;
         const stepIdx = STEP_ORDER.indexOf(status);
 
@@ -836,14 +1035,24 @@ function renderOrdersSection() {
 
             <ul class="account-items-list">${itemsHtml}</ul>
 
+            ${hasTotal ? `
+              <div class="account-muted" style="margin:6px 0;font-weight:700;color:#123f3b;">
+                ${Number(order.discountAmount || 0) > 0 ? `Subtotal: Rs. ${safe(order.subtotalAmount ?? order.totalAmount)} · Discount: − Rs. ${safe(order.discountAmount)} · ` : ""}
+                Total: Rs. ${safe(order.totalAmount)} (NPR)
+              </div>
+            ` : ""}
+
             ${order.couponCode ? `<div class="account-muted">Coupon applied: <strong>${safe(order.couponCode)}</strong> (${safe(order.couponSummary || "")})</div>` : ""}
             ${order.customerMessage ? `<div class="account-order-note">${safe(order.customerMessage)}</div>` : ""}
 
             <div class="account-order-bottom">
               <span class="account-muted">${order.deliveryAddress ? `Delivery: ${safe(order.deliveryAddress)}` : "Counter pickup / dine-in"}</span>
-              <button type="button" class="account-btn secondary toggle-order-track" data-order-id="${safe(order.id)}">
-                ${isExpanded ? "Hide Tracking" : "View Tracking"}
-              </button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="button" class="account-btn secondary print-account-bill" data-order-id="${safe(order.id)}">Print / Save Bill</button>
+                <button type="button" class="account-btn secondary toggle-order-track" data-order-id="${safe(order.id)}">
+                  ${isExpanded ? "Hide Tracking" : "View Tracking"}
+                </button>
+              </div>
             </div>
 
             ${isExpanded ? `
@@ -868,6 +1077,13 @@ function renderOrdersSection() {
             const id = btn.dataset.orderId;
             selectedOrderId = selectedOrderId === id ? null : id;
             renderOrdersSection();
+        });
+    });
+
+    host.querySelectorAll(".print-account-bill").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const order = cachedOrders.find((o) => o.id === btn.dataset.orderId);
+            if (order) printAccountBill(order);
         });
     });
 }

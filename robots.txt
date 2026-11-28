@@ -1,5 +1,9 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
+Disallow: /creator/
+Disallow: /creator-studio.html
+Disallow: /account.html
+Disallow: /api/
 
 Sitemap: https://siranchowk-khaja-ghar.pages.dev/sitemap.xml

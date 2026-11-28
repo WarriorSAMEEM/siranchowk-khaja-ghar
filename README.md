@@ -16,8 +16,10 @@
   - Protected behind Firebase Authentication (Email/Password, Google Sign-In, Password Reset).
   - Unauthenticated visitors never see dashboard metrics or customer records.
   - Per-UID isolated profile editing, order history & expandable live status timelines, available & redeemed coupons, published customer announcements, and notification opt-in preferences.
-- **Guest & Logged-In Checkout (`/js/order-system.js`):**
-  - Preserves guest ordering (`orders/`, 48-char `orderTracking/`) alongside coupon code verification and customer-UID syncing (`users/{uid}/orders/`).
+- **Authenticated Checkout (`/js/order-system.js`):**
+  - Customers must sign in before adding items to the cart or submitting an order. A pending Add-to-cart action is preserved across the login redirect.
+  - The browser never writes canonical orders or tracking records directly. The Cloudflare Worker verifies the Firebase ID token, current menu/stock/coupon prices, and writes the order, tracking record, customer history mirror, and coupon-use record in one Realtime Database multi-location update.
+  - Checkout fails closed if the Worker is unavailable or the server total differs from the displayed total.
 
 ### 2. Owner-Controlled Enterprise Admin Panel (`/admin/login.html` & `/admin/admin.html`)
 Organized into dedicated, RBAC-enforced sections:
@@ -46,7 +48,7 @@ Organized into dedicated, RBAC-enforced sections:
 - **`database.rules.json`**: Enforces strict per-UID customer isolation (`users/$uid`, `users/$uid/devices`), append-only customer timelines (`users/$uid/activity`), write-only public visitor telemetry (`visitorSessions`, `visitorProfiles`, `analytics/events`), append-only `loginHistory`, `auditLogs`, and `securityLogs`; role-restricted notification history and editable notification templates; 25-permission RBAC checks across 5 roles (`Owner > Admin > Moderator > Officer > Helper`), and permanent protection for primary Owner UID (`47SB1i4UL5hlUVPqM1tQoKJFdaM2`).
 - **`ANALYTICS-ARCHITECTURE.md`**: Complete RTDB schema, privacy guarantees (DNT + footer opt-out, zero fingerprinting, zero secret logging), and Spark-plan data retention guide.
 - **`public/firebase-messaging-sw.js`**: Background Web Push service worker.
-- **`cloudflare-worker/worker.js`**: Zero-dependency Cloudflare Worker supporting `new_order_alert` (server-side order & idempotency verification), `admin_alert`, `customer_order_update`, and `customer_campaign`, honoring per-device approval & notification category preferences via FCM HTTP v1 API using the single Cloudflare secret `FIREBASE_SERVICE_ACCOUNT_JSON` (the full service-account JSON is stored only in Worker Secrets, never in the website bundle).
+- **`cloudflare-worker/worker.js`**: Zero-dependency Cloudflare Worker supporting authenticated `create_order`, `maps_grounding`, `new_order_alert`, `admin_alert`, `customer_order_update`, and `customer_campaign`; it honors per-device approval and notification preferences. `FIREBASE_SERVICE_ACCOUNT_JSON` stays in Worker Secrets. `GEMINI_API_KEY` is an optional Worker secret for Google Maps grounding.
 
 ---
 
@@ -59,7 +61,7 @@ npm test
 npm run dev
 ```
 
-The development server is local-only at `http://127.0.0.1:5173/`.
+The Express/Vite development server is local-only at `http://127.0.0.1:3000/`.
 
 Build production assets:
 
@@ -68,6 +70,11 @@ npm run build
 npm run preview
 ```
 
-The production preview is local-only at `http://127.0.0.1:4173/`. Vite 8 requires Node.js 22.12+ (or 20.19+).
+The static Vite production preview is local-only at `http://127.0.0.1:4173/`. Vite 8 requires Node.js 22.12+ (or 20.19+).
 
 See `DEPLOYMENT-GUIDE.md` for complete GitHub + Cloudflare Pages + Cloudflare Worker + Firebase Console setup instructions.
+
+
+## Final review and deployment
+
+See `FINAL-LOCAL-REVIEW.md` for the latest local code review, implemented fixes, verification results and remaining staging requirements. Follow `DEPLOYMENT-GUIDE.md` for the safe Worker → Firebase rules → Pages rollout order.

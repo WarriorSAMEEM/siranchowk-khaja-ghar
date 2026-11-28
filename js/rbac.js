@@ -64,7 +64,12 @@ export const PERMISSION_CATALOG = Object.freeze([
     { key: "manageStaff", label: "Manage Staff", description: "Create and manage staff accounts and assign permitted roles." },
     { key: "manageDevices", label: "Manage Devices", description: "Approve, reject, block, unblock, or revoke admin devices." },
     { key: "manageRoles", label: "Configure Roles & Permissions", description: "Customize role permissions and individual staff overrides." },
-    { key: "manageSettings", label: "Manage Settings", description: "Update business settings and push notification configuration." }
+    { key: "manageSettings", label: "Manage Settings", description: "Update business settings and push notification configuration." },
+    { key: "manageCreators", label: "Manage Creators", description: "Review creator applications, approve publishing access, and suspend creators." },
+    { key: "manageBadges", label: "Manage Verification Badges", description: "Grant or revoke Verified Creator, Official, and Specialist badges with audit trails." },
+    { key: "moderateContent", label: "Moderate Community Content", description: "Review reported posts, comments, reposts, and profiles and apply moderation actions." },
+    { key: "manageSeo", label: "Manage SEO & Categories", description: "Configure global categories, slug redirects, indexability, and sitemap controls." },
+    { key: "viewContentAnalytics", label: "View Platform Content Analytics", description: "Inspect aggregated article, creator, and engagement performance metrics." }
 ]);
 
 export const DEFAULT_ROLE_PERMISSIONS = Object.freeze({
@@ -93,7 +98,12 @@ export const DEFAULT_ROLE_PERMISSIONS = Object.freeze({
         manageStaff: true,
         manageDevices: true,
         manageRoles: true,
-        manageSettings: true
+        manageSettings: true,
+        manageCreators: true,
+        manageBadges: true,
+        moderateContent: true,
+        manageSeo: true,
+        viewContentAnalytics: true
     },
     admin: {
         viewOrders: true,
@@ -120,7 +130,12 @@ export const DEFAULT_ROLE_PERMISSIONS = Object.freeze({
         manageStaff: true,
         manageDevices: false,
         manageRoles: false,
-        manageSettings: false
+        manageSettings: false,
+        manageCreators: true,
+        manageBadges: true,
+        moderateContent: true,
+        manageSeo: true,
+        viewContentAnalytics: true
     },
     moderator: {
         viewOrders: true,
@@ -147,7 +162,12 @@ export const DEFAULT_ROLE_PERMISSIONS = Object.freeze({
         manageStaff: false,
         manageDevices: false,
         manageRoles: false,
-        manageSettings: false
+        manageSettings: false,
+        manageCreators: false,
+        manageBadges: false,
+        moderateContent: true,
+        manageSeo: false,
+        viewContentAnalytics: false
     },
     officer: {
         viewOrders: true,
@@ -174,7 +194,12 @@ export const DEFAULT_ROLE_PERMISSIONS = Object.freeze({
         manageStaff: false,
         manageDevices: false,
         manageRoles: false,
-        manageSettings: false
+        manageSettings: false,
+        manageCreators: false,
+        manageBadges: false,
+        moderateContent: false,
+        manageSeo: false,
+        viewContentAnalytics: false
     },
     helper: {
         viewOrders: true,
@@ -201,7 +226,12 @@ export const DEFAULT_ROLE_PERMISSIONS = Object.freeze({
         manageStaff: false,
         manageDevices: false,
         manageRoles: false,
-        manageSettings: false
+        manageSettings: false,
+        manageCreators: false,
+        manageBadges: false,
+        moderateContent: false,
+        manageSeo: false,
+        viewContentAnalytics: false
     }
 });
 

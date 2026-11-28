@@ -14,8 +14,15 @@ import {
     onValue
 } from "./firebase.js";
 import "./customer-auth.js";
-import "./firestore-service.js";
 import "./maps-locator.js";
+import {
+    CANONICAL_MENU_ITEMS,
+    slugifyDishKey,
+    mergeMenuWithDefaults,
+    findMenuItem,
+    isItemPriceValid,
+    formatPriceLabel
+} from "./menu-catalog.js";
 
 
 // ============================================================================
@@ -40,203 +47,13 @@ const SITE_CONFIG = {
 // 2. DEFAULT / FALLBACK MENU DATA
 // ============================================================================
 
-const DEFAULT_MENU_ITEMS = [
-    {
-        id: "momo-chicken",
-        category: "momo",
-        categoryLabel: "Momo",
-        name: "Chicken Momo",
-        nepaliName: "चिकेन म:म",
-        description: "Steamed dumplings filled with spiced minced chicken, fresh herbs, and served with signature chutney.",
-        priceNote: "Price available at counter",
-        available: true,
-        availabilityNote: "Prepared fresh daily",
-        image: "https://i.postimg.cc/B67vSQNg/chicken-momo.jpg",
-        alt: "Steamed Nepali Chicken Momo served with spicy chutney"
-    },
-    {
-        id: "momo-buff",
-        category: "momo",
-        categoryLabel: "Momo",
-        name: "Buff Momo",
-        nepaliName: "बफ म:म",
-        description: "Traditional Nepali buff dumplings steamed hot and served with fresh tomato-sesame chutney.",
-        priceNote: "Price available at counter",
-        available: true,
-        availabilityNote: "Prepared fresh daily",
-        image: "https://i.postimg.cc/3ryGkPpY/buff-momo.jpg",
-        alt: "Steamed Nepali Buff Momo with spicy sauce"
-    },
-    {
-        id: "chowmein-veg",
-        category: "chowmein",
-        categoryLabel: "Chowmein",
-        name: "Veg Chowmein",
-        nepaliName: "भेज चाउमिन",
-        description: "Stir-fried Nepali-style noodles tossed with crisp cabbage, carrots, onion, and savory spices.",
-        priceNote: "Price available at counter",
-        available: true,
-        availabilityNote: "Prepared fresh daily",
-        image: "https://i.postimg.cc/5yGj3NCL/veg-choumin.jpg",
-        alt: "Nepali Vegetable Chowmein noodles"
-    },
-    {
-        id: "chowmein-chicken",
-        category: "chowmein",
-        categoryLabel: "Chowmein",
-        name: "Chicken Chowmein",
-        nepaliName: "चिकेन चाउमिन",
-        description: "Fresh wok-fried noodles tossed with spiced chicken strips, mixed vegetables, and local seasonings.",
-        priceNote: "Price available at counter",
-        available: true,
-        availabilityNote: "Prepared fresh daily",
-        image: "https://i.postimg.cc/MTHWFJxD/chicken-choumin.jpg",
-        alt: "Nepali Chicken Chowmein noodles"
-    },
-    {
-        id: "roti-plain",
-        category: "roti",
-        categoryLabel: "Bread / Roti",
-        name: "Roti",
-        nepaliName: "रोटी",
-        description: "Soft whole wheat flatbread made warm on the griddle upon request.",
-        priceNote: "Price available at counter",
-        available: true,
-        availabilityNote: "Available all day",
-        image: "https://i.postimg.cc/qqYgLM3x/roti.jpg",
-        alt: "Fresh hot whole wheat Nepali Roti"
-    },
-    {
-        id: "roti-paratha",
-        category: "roti",
-        categoryLabel: "Bread / Roti",
-        name: "Paratha",
-        nepaliName: "पराठा",
-        description: "Warm, layered flatbread fried lightly with ghee/oil. Ideal with morning tea or curry.",
-        priceNote: "Price available at counter",
-        available: true,
-        availabilityNote: "Available all day",
-        image: "https://i.postimg.cc/6617wz1b/parathaa.jpg",
-        alt: "Golden crispy Nepali Paratha"
-    },
-    {
-        id: "tea-milk",
-        category: "tea",
-        categoryLabel: "Tea",
-        name: "Milk Tea",
-        nepaliName: "चिया (दुध)",
-        description: "Traditional Nepali milk tea brewed hot with quality CTC tea leaves and fresh milk.",
-        priceNote: "Price available at counter",
-        available: true,
-        availabilityNote: "Freshly brewed",
-        image: "https://i.postimg.cc/sx1v7Z1t/milk-tea.jpg",
-        alt: "Hot Nepali milk tea in a glass cup"
-    },
-    {
-        id: "tea-black",
-        category: "tea",
-        categoryLabel: "Tea",
-        name: "Black Tea",
-        nepaliName: "कालो चिया",
-        description: "Aromatic black tea brewed hot with optional ginger or lemon touch.",
-        priceNote: "Price available at counter",
-        available: true,
-        availabilityNote: "Freshly brewed",
-        image: "https://i.postimg.cc/FFfSY2cL/black-tea.jpg",
-        alt: "Fresh hot black tea in a glass"
-    },
-    {
-        id: "special-biryani",
-        category: "special",
-        categoryLabel: "Rice & Special",
-        name: "Biryani",
-        nepaliName: "बिरयानी",
-        description: "Fragrant rice dish cooked with herbs, rich spices, and marinated chicken.",
-        priceNote: "Available on Fridays and special days",
-        available: true,
-        availabilityNote: "Friday & Special Days Only",
-        image: "https://i.postimg.cc/wMs9951T/biryani.jpg",
-        alt: "Special Chicken Biryani rice dish"
-    },
-    {
-        id: "snack-chana",
-        category: "snacks",
-        categoryLabel: "Snacks / Other",
-        name: "Chana",
-        nepaliName: "चना",
-        description: "Spiced chickpeas sauteed with onions, green chilies, and Nepali masalas.",
-        priceNote: "Price available at counter",
-        available: true,
-        availabilityNote: "Great with hot tea",
-        image: "https://i.postimg.cc/Dmkn0WGQ/chana.jpg",
-        alt: "Spiced Nepali Chana snack"
-    },
-    {
-        id: "snack-keema",
-        category: "snacks",
-        categoryLabel: "Snacks / Other",
-        name: "Keema",
-        nepaliName: "कीमा",
-        description: "Minced meat cooked with garlic, onions, and spicy gravy.",
-        priceNote: "Price available at counter",
-        available: true,
-        availabilityNote: "Prepared fresh",
-        image: "https://i.postimg.cc/CxbdG0LF/keema.jpg",
-        alt: "Spiced Keema fry"
-    },
-    {
-        id: "snack-sukuti",
-        category: "snacks",
-        categoryLabel: "Snacks / Other",
-        name: "Sukuti",
-        nepaliName: "सुकुटी",
-        description: "Traditional seasoned local fried dish enjoyed with tea or snacks.",
-        priceNote: "Price available at counter",
-        available: true,
-        availabilityNote: "Local favorite",
-        image: "https://i.postimg.cc/YCg6PT8C/sukuti.jpg",
-        alt: "Nepali local snack dish"
-    },
-    {
-        id: "snack-boiled-egg",
-        category: "snacks",
-        categoryLabel: "Snacks / Other",
-        name: "Boiled Egg",
-        nepaliName: "उसिनेको अण्डा",
-        description: "Fresh boiled eggs served with salt and chili pepper seasoning.",
-        priceNote: "Price available at counter",
-        available: true,
-        availabilityNote: "Quick healthy option",
-        image: "https://i.postimg.cc/hjZGDPMz/egg.jpg",
-        alt: "Fresh Boiled Eggs with salt and pepper"
-    },
-    {
-        id: "snack-fried-chicken",
-        category: "snacks",
-        categoryLabel: "Snacks / Other",
-        name: "Fried Chicken",
-        nepaliName: "फ्राइड चिकेन",
-        description: "Crispy seasoned chicken pieces fried to golden perfection.",
-        priceNote: "Price available at counter",
-        available: true,
-        availabilityNote: "Crispy and fresh",
-        image: "https://i.postimg.cc/d1V1cTR8/fried-chicken.jpg",
-        alt: "Golden crispy fried chicken"
-    }
-];
+const DEFAULT_MENU_ITEMS = CANONICAL_MENU_ITEMS;
 
-let liveMenuItems = [...DEFAULT_MENU_ITEMS];
+let liveRtdbMenuMap = {};
 let liveStockAvailability = {};
+let liveMenuItems = mergeMenuWithDefaults({}, {});
 let activeCategory = "all";
 let menuSearchQuery = "";
-
-function slugifyDishKey(name) {
-    return String(name || "")
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)+/g, "");
-}
 
 function escapeText(value) {
     return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -248,31 +65,51 @@ function escapeText(value) {
     }[char]));
 }
 
-function syncUnavailableDishSet() {
+function rebuildMergedMenuAndHydrate() {
+    liveMenuItems = mergeMenuWithDefaults(liveRtdbMenuMap, liveStockAvailability);
+    window.__SKG_MENU_ITEMS = liveMenuItems;
+
     const unavailable = new Set();
-    Object.values(liveStockAvailability || {}).forEach((entry) => {
-        if (entry && entry.available === false) {
-            const key = slugifyDishKey(entry.key || entry.name);
-            if (key) unavailable.add(key);
-        }
-    });
     liveMenuItems.forEach((item) => {
-        const key = slugifyDishKey(item?.name);
-        if (key && item?.available === false) {
-            unavailable.add(key);
+        if (item && item.available === false) {
+            const key = slugifyDishKey(item.name);
+            if (key) unavailable.add(key);
+            if (item.id) unavailable.add(slugifyDishKey(item.id));
         }
     });
     window.__SKG_UNAVAILABLE_DISHES = unavailable;
 
-    // Also update static featured dish cards outside #menu-grid-container (e.g. home page)
+    // Hydrate static featured dish cards outside #menu-grid-container (e.g., index.html)
     document.querySelectorAll(".dish-card").forEach((card) => {
         if (card.closest("#menu-grid-container")) return;
-        const name = card.querySelector("h3")?.textContent?.trim();
-        const key = slugifyDishKey(name);
-        const isUnavailable = Boolean(key && unavailable.has(key));
+        const cardId = card.dataset.dishId || card.querySelector("h3")?.textContent?.trim();
+        const item = findMenuItem(liveMenuItems, cardId);
+        if (!item) return;
+
+        card.dataset.dishId = item.id;
+        const titleEl = card.querySelector("h3");
+        if (titleEl) titleEl.textContent = item.name;
+        const nepaliEl = card.querySelector(".dish-nepali");
+        if (nepaliEl && item.nepaliName) nepaliEl.textContent = item.nepaliName;
+        const descEl = card.querySelector(".dish-desc");
+        if (descEl && item.description) descEl.textContent = item.description;
+
+        const priceEl = card.querySelector(".dish-price");
+        if (priceEl) {
+            priceEl.textContent = formatPriceLabel(item);
+        }
+
+        const isUnavailable = item.available === false;
+        const isUnpriced = !isItemPriceValid(item);
         card.classList.toggle("dish-sold-out", isUnavailable);
+        card.classList.toggle("dish-price-unset", !isUnavailable && isUnpriced);
+
         const imgWrapper = card.querySelector(".dish-img-wrapper");
         if (imgWrapper) {
+            const img = imgWrapper.querySelector("img");
+            if (img && item.image && img.getAttribute("src") !== item.image) {
+                img.setAttribute("src", item.image);
+            }
             let badge = imgWrapper.querySelector(".soldout-badge");
             if (isUnavailable && !badge) {
                 badge = document.createElement("span");
@@ -285,19 +122,30 @@ function syncUnavailableDishSet() {
         }
     });
 
+    if (document.getElementById("menu-grid-container")) {
+        renderMenuItems(activeCategory);
+    }
+
     window.dispatchEvent(new CustomEvent("skg:availability-updated", { detail: { unavailable } }));
+    window.dispatchEvent(new CustomEvent("skg:menu-updated", { detail: { items: liveMenuItems } }));
 }
 
 function initLiveStoreAndStockListeners() {
     window.__SKG_STORE_OPEN = true;
-    window.__SKG_UNAVAILABLE_DISHES = new Set();
+    window.__SKG_HAS_MENU_LISTENER = true;
+    rebuildMergedMenuAndHydrate();
+
+    onValue(ref(db, "menu_items"), (snap) => {
+        liveRtdbMenuMap = snap.exists() ? (snap.val() || {}) : {};
+        rebuildMergedMenuAndHydrate();
+    }, () => {
+        liveRtdbMenuMap = {};
+        rebuildMergedMenuAndHydrate();
+    });
 
     onValue(ref(db, "inventory/stockAvailability"), (snap) => {
         liveStockAvailability = snap.exists() ? (snap.val() || {}) : {};
-        syncUnavailableDishSet();
-        if (document.getElementById("menu-grid-container")) {
-            renderMenuItems(activeCategory);
-        }
+        rebuildMergedMenuAndHydrate();
     }, () => {});
 
     onValue(ref(db, "settings/business/storeOpen"), (snap) => {
@@ -312,7 +160,7 @@ function initLiveStoreAndStockListeners() {
                 banner.id = "skg-store-paused-banner";
                 banner.className = "container";
                 banner.style.cssText = "margin-top:14px;padding:12px 16px;border:1px solid #f0c38a;border-radius:12px;background:#fff8eb;color:#7a4d0c;font-size:14px;font-weight:600;";
-                banner.innerHTML = `Website ordering is temporarily paused. For current availability or inquiries, please call <a href="tel:${SITE_CONFIG.phone}" style="color:#087f78;text-decoration:underline;">${SITE_CONFIG.phone}</a> or message us on WhatsApp.`;
+                banner.innerHTML = `Website ordering is temporarily paused. For current availability or inquiries, please call <a href="tel:${SITE_CONFIG.phone}" style="color:var(--color-primary, #A8442B);text-decoration:underline;">${SITE_CONFIG.phone}</a> or message us on WhatsApp.`;
                 main.prepend(banner);
             }
         } else if (banner) {
@@ -465,29 +313,6 @@ function initCountdown() {
 // 7. MENU PAGE + LIVE FIREBASE MENU SYNC
 // ============================================================================
 
-function normalizeRemoteMenuItem(id, raw) {
-    if (!raw || !raw.name) return null;
-    const numericPrice = Number(raw.price);
-    const priceLabel = Number.isFinite(numericPrice) && numericPrice > 0
-        ? `Rs. ${numericPrice}`
-        : (raw.priceNote || "Price available at counter");
-
-    return {
-        id: raw.id || id,
-        category: String(raw.category || "snacks").toLowerCase(),
-        categoryLabel: raw.categoryLabel || raw.category || "Menu",
-        name: raw.name,
-        nepaliName: raw.nepaliName || "",
-        description: raw.description || "",
-        price: Number.isFinite(numericPrice) && numericPrice > 0 ? numericPrice : null,
-        priceNote: priceLabel,
-        available: raw.available !== false,
-        availabilityNote: raw.availabilityNote || "",
-        image: raw.imageUrl || raw.image || "",
-        alt: raw.alt || raw.name
-    };
-}
-
 function initMenuPage() {
     const menuContainer = document.getElementById("menu-grid-container");
     if (!menuContainer) return;
@@ -506,7 +331,7 @@ function initMenuPage() {
     bindCategoryButtons();
     renderMenuItems(activeCategory);
 
-    // Sync categories & menu items from Firebase RTDB when available
+    // Sync categories from Firebase RTDB when available
     onValue(ref(db, "categories"), (catSnap) => {
         if (!catSnap.exists()) return;
         const cats = Object.entries(catSnap.val() || {})
@@ -526,23 +351,6 @@ function initMenuPage() {
         `;
         bindCategoryButtons();
     }, () => {});
-
-    onValue(ref(db, "menu_items"), (snap) => {
-        if (!snap.exists()) {
-            liveMenuItems = [...DEFAULT_MENU_ITEMS];
-        } else {
-            const entries = Object.entries(snap.val() || {})
-                .map(([id, raw]) => normalizeRemoteMenuItem(id, raw))
-                .filter(Boolean);
-            liveMenuItems = entries.length ? entries : [...DEFAULT_MENU_ITEMS];
-        }
-        syncUnavailableDishSet();
-        renderMenuItems(activeCategory);
-    }, () => {
-        liveMenuItems = [...DEFAULT_MENU_ITEMS];
-        syncUnavailableDishSet();
-        renderMenuItems(activeCategory);
-    });
 }
 
 function bindCategoryButtons() {
@@ -590,14 +398,15 @@ function renderMenuItems(category = "all") {
 
     filteredItems.forEach((item) => {
         const isSpecial = item.category === "special";
-        const dishKey = slugifyDishKey(item.name);
-        const stockFlag = dishKey && liveStockAvailability[dishKey]?.available === false;
-        const isUnavailable = item.available === false || Boolean(stockFlag);
+        const isUnavailable = item.available === false;
+        const isUnpriced = !isItemPriceValid(item);
 
         const card = document.createElement("article");
         card.className = "dish-card";
+        card.dataset.dishId = item.id;
         if (isSpecial) card.classList.add("special-dish-card");
         if (isUnavailable) card.classList.add("dish-sold-out");
+        else if (isUnpriced) card.classList.add("dish-price-unset");
 
         const imageWrapper = document.createElement("div");
         imageWrapper.className = "dish-img-wrapper";
@@ -628,7 +437,12 @@ function renderMenuItems(category = "all") {
         } else if (isSpecial) {
             const badge = document.createElement("span");
             badge.className = "dish-badge special-badge";
-            badge.textContent = "Friday & Special Days";
+            badge.textContent = item.badge || "Friday & Special Days";
+            imageWrapper.appendChild(badge);
+        } else if (item.badge) {
+            const badge = document.createElement("span");
+            badge.className = "dish-badge";
+            badge.textContent = item.badge;
             imageWrapper.appendChild(badge);
         }
 
@@ -651,15 +465,21 @@ function renderMenuItems(category = "all") {
         description.className = "dish-desc";
         description.textContent = item.description || "";
 
+        const metaNote = document.createElement("span");
+        metaNote.className = "dish-availability-note";
+        metaNote.textContent = isUnpriced
+            ? "Online ordering opens once counter price is set by admin."
+            : (item.availabilityNote || "100% Halal · Freshly prepared");
+
         const footer = document.createElement("div");
         footer.className = "dish-footer";
 
         const price = document.createElement("span");
         price.className = "dish-price";
-        price.textContent = item.priceNote || "Price at counter";
+        price.textContent = formatPriceLabel(item);
 
         footer.append(price);
-        info.append(titleRow, description, footer);
+        info.append(titleRow, description, metaNote, footer);
         card.append(imageWrapper, info);
         menuContainer.appendChild(card);
     });

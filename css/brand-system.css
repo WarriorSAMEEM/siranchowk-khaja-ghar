@@ -1,0 +1,160 @@
+/* Siranchowk Khaja Ghar — unified premium hospitality design system */
+:root {
+  color-scheme: light;
+  --color-primary: #A8442B;
+  --color-primary-dark: #85351F;
+  --color-secondary: #C58B35;
+  --color-dark: #29363E;
+  --color-dark-surface: #35434C;
+  --color-bg-light: #F7F3EB;
+  --color-surface-light: #FFFCF7;
+  --color-card-bg: #F1E8DC;
+  --color-text-main: #29363E;
+  --color-text-muted: #58676D;
+  --color-light-muted: #D8D1C7;
+  --color-border: #E5D9C9;
+  --color-border-dark: #CDBDA7;
+  --color-whatsapp: #1F9D61;
+  --color-whatsapp-dark: #177B4B;
+  --shadow-sm: 0 2px 8px rgba(41, 54, 62, .055);
+  --shadow-md: 0 10px 28px rgba(41, 54, 62, .085);
+  --shadow-lg: 0 18px 46px rgba(41, 54, 62, .12);
+  --border-radius-sm: 10px;
+  --border-radius-md: 16px;
+  --border-radius-lg: 22px;
+}
+
+html { background: var(--color-bg-light); }
+body { color: var(--color-text-main); background: var(--color-bg-light); }
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(168, 68, 43, .28);
+  outline-offset: 3px;
+}
+
+.site-header {
+  background: rgba(249, 246, 239, .94);
+  border-bottom-color: rgba(205, 189, 167, .72);
+  box-shadow: 0 4px 18px rgba(41, 54, 62, .035);
+}
+.brand-title, .section-title, .hero-title, .dish-title-row h3 { color: var(--color-dark); }
+.brand-nepali, .hero-title-nepali, .dish-nepali { color: var(--color-primary); }
+.nav-link { color: #35434B; }
+.nav-link:hover, .nav-link.active { color: var(--color-primary); }
+.nav-link.active::after { background: var(--color-primary); }
+
+.btn { border-radius: 12px; font-weight: 750; }
+.btn-primary {
+  color: #FFF9F2;
+  background: var(--color-primary);
+  box-shadow: 0 5px 14px rgba(168, 68, 43, .18);
+}
+.btn-primary:hover { color: #FFF9F2; background: var(--color-primary-dark); }
+.btn-outline { border-color: #A9A092; color: var(--color-dark); }
+.btn-outline:hover { color: #FFF9F2; background: var(--color-dark); border-color: var(--color-dark); }
+
+.hero-section {
+  background: linear-gradient(135deg, #F8F3E9 0%, #F1E7D9 54%, #F8F2E9 100%);
+  border-bottom-color: var(--color-border);
+}
+.hero-description, .section-desc, .dish-desc { color: var(--color-text-muted); }
+.hero-visual-card { gap: 1.15rem; }
+.countdown-card, .feature-card {
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background: linear-gradient(145deg, #FFFCF7, #F4EADD);
+  box-shadow: var(--shadow-md);
+}
+.page-banner {
+  color: var(--color-dark);
+  background: linear-gradient(135deg, #F8F1E6, #EFE2D1);
+  border-bottom-color: var(--color-border);
+}
+.dish-card {
+  background: var(--color-surface-light);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.dish-card:hover { box-shadow: var(--shadow-lg); }
+.dish-img-wrapper { background: var(--color-card-bg); }
+.dish-badge { background: var(--color-dark); border-radius: 999px; }
+.special-badge { background: var(--color-primary); }
+.dish-footer { border-top-color: var(--color-border); }
+
+.site-footer {
+  color: #F7F1E8;
+  background: linear-gradient(145deg, #29363E 0%, #35434C 100%);
+  border-top-color: #56616A;
+}
+.site-footer .footer-desc,
+.site-footer .footer-links a,
+.site-footer .footer-contact-item,
+.site-footer .footer-bottom,
+.site-footer .footer-subtext { color: #D8D1C7; }
+.site-footer .footer-col h4,
+.site-footer .footer-brand h3,
+.site-footer .footer-contact-item a { color: #FFF9F2; }
+.site-footer .footer-links a:hover { color: #F2C77F; }
+.site-footer .footer-col h4::after { background: var(--color-secondary); }
+.site-footer .footer-bottom { border-top-color: rgba(238, 226, 209, .2); }
+
+input, select, textarea {
+  color: var(--color-text-main);
+  border-color: #CFC4B5;
+  background-color: #FFFCF7;
+}
+input::placeholder, textarea::placeholder { color: #68757A; opacity: 1; }
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(168, 68, 43, .12);
+}
+
+/* Editorial and community pages use the same warm surfaces and brand accents. */
+.skg-platform-main { color: var(--color-text-main); }
+.skg-discovery-hero {
+  color: var(--color-text-main);
+  background: linear-gradient(135deg, #F8F2E8, #F0E6D9);
+  border-bottom-color: var(--color-border);
+}
+.skg-discovery-title, .skg-story-title, .skg-article-header h1 { color: var(--color-dark); }
+.skg-discovery-subtitle, .skg-story-excerpt, .skg-article-subtitle { color: var(--color-text-muted); }
+.skg-tab-btn, .skg-cat-link, .skg-input, .skg-select, .skg-textarea {
+  color: var(--color-text-main);
+  background: var(--color-surface-light);
+  border-color: var(--color-border-dark);
+  border-radius: 12px;
+}
+.skg-tab-btn:hover, .skg-cat-link:hover { color: var(--color-primary-dark); background: #F5E9DD; border-color: #D8BDA7; }
+.skg-tab-btn.active, .skg-cat-link.active {
+  color: #FFF9F2;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.skg-story-card, .skg-article-sheet, .skg-article-ssr, .skg-profile-ssr,
+.skg-empty-card, .skg-editor-card {
+  color: var(--color-text-main);
+  background: var(--color-surface-light);
+  border-color: var(--color-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+}
+.skg-story-card:hover { box-shadow: var(--shadow-md); }
+.skg-story-meta, .skg-story-stats { color: #647178; }
+.skg-story-meta a, .skg-article-prose a { color: var(--color-primary-dark); }
+.skg-action-btn { color: var(--color-dark); background: #F5EEE4; border-color: var(--color-border-dark); border-radius: 999px; }
+.skg-action-btn:hover, .skg-action-btn.is-active { color: #FFF9F2; background: var(--color-primary); border-color: var(--color-primary); }
+.skg-article-prose { color: #35434B; }
+.skg-article-prose blockquote { border-left-color: var(--color-secondary); background: #F6EFE5; }
+.skg-article-prose code { background: #F0E8DC; color: #713B2C; }
+
+@media (max-width: 640px) {
+  .site-header { backdrop-filter: blur(14px); }
+  .hero-section { padding-block: 2rem; }
+  .dish-card { border-radius: 17px; }
+  .skg-platform-main { padding-top: 1.25rem; }
+  .skg-toolbar { gap: .75rem; }
+  .skg-search-box { max-width: none; flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

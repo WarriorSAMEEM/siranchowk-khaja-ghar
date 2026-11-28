@@ -1,42 +1,46 @@
-# Siranchowk Khaja Ghar — Update notes
+# Siranchowk Khaja Ghar — Final Local Review Update Notes
 
-## Applied in this package
+## लागू गरिएका सुधारहरू
 
-1. The shared cart/checkout UI now initializes on the homepage as well as the Menu page.
-2. Homepage dish cards get the same Add to cart control used on the Menu page.
-3. Customer-facing WhatsApp order CTAs outside the footer now open the shared cart/checkout instead of bypassing it. If the CTA belongs to a dish card, that dish is added to the cart first.
-4. WhatsApp checkout now requires the customer's name and phone number and checks delivery address when Delivery is selected.
-5. Admin responsive CSS has extra small-screen overflow, card, navigation, and metric-grid handling.
+1. सबै public pages, Admin dashboard र Admin Login मा एउटै premium warm-neutral design system लागू गरिएको छ। मुख्य palette terracotta, warm cream, slate ink र muted gold हो। Admin dashboard light theme मै राखिएको छ।
+2. Text/background contrast, focus states, cards, navigation, forms, buttons र responsive layouts का overrides थपिएका छन्।
+3. Cart का hard-coded teal/green brand colors लाई नयाँ design system सँग मिलाइएको छ; WhatsApp र success/error status colors भने तिनको अर्थ स्पष्ट राख्न अलग छन्।
+4. Customer ले Add to cart गर्नुअघि sign in गर्नुपर्छ। Login redirect गर्दा pending item सुरक्षित राखिन्छ र login पछि cart मा restore हुन्छ। Checkout र WhatsApp order action पनि sign-in gated छन्।
+5. Browser बाट canonical `/orders`, `/orderTracking`, customer order mirror र coupon-use records मा direct write हटाइएको छ। अब Worker को authenticated `create_order` endpoint ले current menu/stock/coupon price verify गरेर यी records atomic multi-location update मार्फत लेख्छ। Worker unavailable भए checkout fail-closed हुन्छ।
+6. Customer ले order total मा mismatch देखेमा नयाँ server total confirm नगरेसम्म order create हुँदैन।
+7. Firebase RTDB rules मा customer direct order/tracking/mirror/coupon writes बन्द गरिएको छ; staff/owner permission flow कायम राखिएको छ।
+8. Firestore rules मा hard-coded admin email हटाएर primary owner UID authority बनाइएको छ। Admin records सिर्जना/अपडेट/हटाउने अधिकार primary owner मा सीमित गरिएको छ।
+9. Maps grounding request static Cloudflare Pages बाट पनि चलोस् भनेर Worker endpoint थपिएको छ। यसको लागि `GEMINI_API_KEY` Worker secret optional रूपमा राख्नुपर्छ।
+10. `public/_headers` मा same-origin geolocation अनुमति, frame blocking र safer opener policy थपिएको छ।
+11. Vite preview र Node development server default रूपमा localhost मा bind हुन्छन्।
+12. Cart/order, Worker, Maps grounding, menu prices र rules behavior जाँच्ने verification checks/tests थपिएका छन्।
 
-## Important limitations — not yet implemented
+## जस्ताको तस्तै राखिएका business details
 
-- Google/email customer sign-in and requiring sign-in before ordering. This needs a customer authentication flow, Firebase Auth provider configuration, account UI, and database rules migration.
-- Full account order history. The current site stores a latest-order tracking token locally; it is not a multi-order authenticated account history.
-- Push notifications when the browser is closed. Current order notifications are foreground/browser-page notifications only. True background push needs Firebase Cloud Messaging, a VAPID key, a service worker, notification permission, and server-side/admin send logic.
-- Full analytics dashboard, visitor identity, date-range reporting, IP/device bans, forced logout/kick, and timed lockouts. These need a secure backend and strict database rules. A browser-only site must not be trusted to enforce bans or expose IP addresses. IP collection should be limited, disclosed in a privacy notice, and protected with access controls.
+- Chicken Momo Rs.130; Buff Momo Rs.140; Veg Chowmein Rs.100; Chicken Chowmein Rs.150.
+- Roti को online price unset नै राखिएको छ।
+- Paratha Rs.30; Milk Tea Rs.25; Black Tea Rs.19; Biryani Rs.350; Chana Rs.30; Keema Rs.120; Sukuti Rs.120; Boiled Egg Rs.30; Fried Chicken Rs.200.
+- Restaurant location, phone, halal positioning र opening hours परिवर्तन गरिएको छैन।
 
-## Build and deploy
+## स्थानीय जाँचको नतिजा
 
-This ZIP contains source files, not `node_modules` or generated `dist`. Run `npm install`, then `npm run build`. Deploy the generated `dist` folder using the same hosting workflow as the previous version.
+- `npm run check`: PASS — 20 project checks; 68 JavaScript files syntax-checked.
+- `node --test scripts/worker-hardening.test.js`: PASS — 21/21 tests.
+- `node --check cloudflare-worker/worker.js`, `js/order-system.js`, `js/maps-locator.js`: PASS.
+- `database.rules.json`: JSON parse PASS.
+- `npm ci`: यस execution environment मा timeout भयो; dependencies पूर्ण रूपमा install भएनन्।
+- त्यसैले पूर्ण `npm test`, `npm run build`, Rules simulator र browser end-to-end tests यहाँ सफलतापूर्वक चलाइएको भनेर दाबी गरिएको छैन।
 
-The build could not be verified in this environment because the ZIP's bundled native Rolldown dependency did not include a compatible Linux binding. JavaScript syntax checks passed for the changed order system and existing main/admin scripts. Please run the build on your Windows machine before deploying.
+## Publish अघि आवश्यक बाहिरी काम
 
-## Test before publishing
+1. यदि पुरानो ZIP/repository मा Firebase service-account private key कहिल्यै थियो भने पुरानो key revoke गरेर नयाँ key बनाउनुहोस्। पुरानो key पुनः प्रयोग नगर्नुहोस्।
+2. Cloudflare Worker मा `FIREBASE_SERVICE_ACCOUNT_JSON` secret सेट गरी नयाँ Worker deploy गर्नुहोस्।
+3. Maps grounding चाहिने हो भने `GEMINI_API_KEY` Worker secret पनि सेट गर्नुहोस्।
+4. Firebase Console मा `database.rules.json` publish गर्नुहोस्; Firestore features ашигിക്കുന്നുവെങ്കിൽ `firestore.rules` पनि emulator-ээр шалгаेर deploy गर्नुहोस्।
+5. Cloudflare Pages मा `VITE_PUSH_WORKER_URL`, Firebase web config र `VITE_GOOGLE_MAPS_API_KEY` आवश्यकतानुसार सेट गर्नुहोस्। Browser Firebase API key र Maps key सार्वजनिक bundle मा जान सक्छन्; HTTP referrer restrictions अनिवार्य छन्।
+6. `npm ci`, `npm run check`, `npm test`, `npm run build` आफ्नै Windows/Node 22.12+ environment मा पूरा चलाएर मात्रै publish गर्नुहोस्।
+7. Live test: sign-in → Add to cart → server-priced checkout → customer history → tracking → staff status update → admin push → Maps grounding.
 
-1. Open the homepage and confirm the floating cart button appears.
-2. Click Add to cart on a homepage dish and confirm its name/quantity appears.
-3. Click a homepage dish's WhatsApp Order button and confirm it adds that dish and opens checkout.
-4. Try WhatsApp with blank name/phone; it should ask for the missing details.
-5. Enter name, phone, items, and delivery address if needed; confirm the WhatsApp message contains the details.
-6. Repeat on Menu page and check the existing website order submission and admin order status flow.
-7. Check admin at phone width and tablet width before deployment.
+## महत्त्वपूर्ण सीमा
 
-
-## नयाँ अपडेट: Customer Profile / My Orders (Pre-login UI)
-- सबै मुख्य public pages मा My Account navigation link थपिएको छ।
-- `account.html` मा order summary, previous orders र order status section थपिएको छ।
-- नयाँ सफल website orders को विवरण browser-local history मा save हुन्छ।
-- Firebase orderTracking token उपलब्ध भए status realtime मा update हुन्छ।
-- Browser notification permission माग्ने UI छ; यो page खुला हुँदा status परिवर्तनमा मात्र notification दिन्छ।
-- यो login integration होइन: history हाल सोही browser/device मा मात्र देखिन्छ। पुराना order records को पूरा विवरण Firebase बाट ग्राहकले पढ्न पाउने व्यवस्था अझै छैन।
-- Google/Email login, cross-device history र background push notifications अर्को चरणमा जोड्नुपर्छ।
+Cloudflare Pages मा `dist/` static site deploy हुन्छ; `server.ts` र `server-platform.ts` का Express/SSR routes त्यहाँ स्वतः deploy हुँदैनन्। Frontend Firebase र Cloudflare Worker बाट चल्ने paths अलग राखिएका छन्, तर article/profile-specific server-rendered SEO metadata अझै Pages static build मा पूर्ण रूपमा उपलब्ध छैन। त्यसलाई production SEO को लागि छुट्टै Pages Functions/Worker SSR implementation चाहिन्छ।

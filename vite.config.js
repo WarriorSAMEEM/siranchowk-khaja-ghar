@@ -36,15 +36,15 @@ export default defineConfig({
     plugins: [copyStaticProductionFiles()],
 
     server: {
-        host: "0.0.0.0",
+        host: "127.0.0.1",
         port: 3000,
-        allowedHosts: true,
+        allowedHosts: ["localhost", "127.0.0.1"],
         hmr: false,
         ws: false
     },
 
     preview: {
-        host: "0.0.0.0",
+        host: "127.0.0.1",
         port: 4173,
         strictPort: true
     },
@@ -58,6 +58,11 @@ export default defineConfig({
                 menu: resolve("menu.html"),
                 about: resolve("about.html"),
                 contact: resolve("contact.html"),
+                explore: resolve("explore.html"),
+                blog: resolve("blog.html"),
+                article: resolve("article.html"),
+                profile: resolve("profile.html"),
+                creatorStudio: resolve("creator-studio.html"),
                 adminLogin: resolve("admin/login.html"),
                 adminDashboard: resolve("admin/admin.html")
             }

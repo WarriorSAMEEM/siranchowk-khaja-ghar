@@ -18,6 +18,7 @@
   <meta name="ICBM" content="27.6087174620, 84.5682702860">
   <meta name="format-detection" content="telephone=yes">
   <meta name="theme-color" content="#dff8f7">
+  <meta name="color-scheme" content="light">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Siranchowk Khaja Ghar">
@@ -144,6 +145,7 @@
     ]
   }
   </script>
+    <link rel="stylesheet" href="/css/brand-system.css">
 </head>
 <body>
 
@@ -177,10 +179,11 @@
         <ul class="nav-list">
           <li><a href="index.html" class="nav-link active">Home</a></li>
           <li><a href="menu.html" class="nav-link">Menu</a></li>
+          <li><a href="explore.html" class="nav-link">Explore</a></li>
+          <li><a href="blog.html" class="nav-link">Blog</a></li>
           <li><a href="about.html" class="nav-link">About</a></li>
           <li><a href="contact.html" class="nav-link">Contact</a></li>
           <li><a href="account.html?mode=login" class="nav-link">Login</a></li>
-          <li><a href="account.html?mode=signup" class="nav-link">Sign Up</a></li>
         </ul>
         <div class="nav-actions">
           <button type="button" class="btn btn-primary header-cta nav-cart-trigger" id="nav-open-cart-btn">
@@ -306,7 +309,7 @@
 
         <div class="dish-cards-grid">
           
-          <div class="dish-card">
+          <div class="dish-card" data-dish-id="momo-chicken">
             <div class="dish-img-wrapper">
               <img src="https://i.postimg.cc/B67vSQNg/chicken-momo.jpg" alt="Steamed Nepali Chicken Momo served with spicy chutney" loading="lazy">
               <span class="dish-badge">Popular</span>
@@ -318,16 +321,12 @@
               </div>
               <p class="dish-desc">Steamed dumplings stuffed with seasoned minced chicken, served with homemade chutney.</p>
               <div class="dish-footer">
-                <span class="dish-price">Price at counter</span>
+                <span class="dish-price">Rs. 130</span>
               </div>
             </div>
           </div>
 
-
-
-
-
-          <div class="dish-card">
+          <div class="dish-card" data-dish-id="momo-buff">
             <div class="dish-img-wrapper">
               <img src="https://i.postimg.cc/3ryGkPpY/buff-momo.jpg" alt="Buff momo at Siranchowk Khaja Ghar in Khairahani, Chitwan" loading="lazy">
               <span class="dish-badge">Favorite</span>
@@ -339,16 +338,12 @@
               </div>
               <p class="dish-desc">Traditional spiced minced buff wrapped in thin dough and steamed hot.</p>
               <div class="dish-footer">
-                <span class="dish-price">Price at counter</span>
+                <span class="dish-price">Rs. 140</span>
               </div>
             </div>
           </div>
 
-
-
-
-
-          <div class="dish-card">
+          <div class="dish-card" data-dish-id="chowmein-chicken">
             <div class="dish-img-wrapper">
               <img src="https://i.postimg.cc/MTHWFJxD/chicken-choumin.jpg" alt="Chicken chowmein at Siranchowk Khaja Ghar, Khairahani Chitwan" loading="lazy">
             </div>
@@ -359,37 +354,28 @@
               </div>
               <p class="dish-desc">Stir-fried noodles with crisp local vegetables, seasoned chicken, and aromatic spices.</p>
               <div class="dish-footer">
-                <span class="dish-price">Price at counter</span>
+                <span class="dish-price">Rs. 150</span>
               </div>
             </div>
           </div>
 
-
-
-
-
-
-          <div class="dish-card">
+          <div class="dish-card" data-dish-id="roti-paratha">
             <div class="dish-img-wrapper">
               <img src="https://i.postimg.cc/6617wz1b/parathaa.jpg" alt="Fresh paratha at Siranchowk Khaja Ghar, Khairahani Chitwan" loading="lazy">
             </div>
             <div class="dish-info">
               <div class="dish-title-row">
-                <h3>Fresh Paratha</h3>
+                <h3>Paratha</h3>
                 <span class="dish-nepali">पराठा</span>
               </div>
               <p class="dish-desc">Warm, layered flatbread made fresh on the griddle. Perfect for breakfast or snacks.</p>
               <div class="dish-footer">
-                <span class="dish-price">Price at counter</span>
+                <span class="dish-price">Rs. 30</span>
               </div>
             </div>
           </div>
 
-
-
-
-
-          <div class="dish-card">
+          <div class="dish-card" data-dish-id="tea-milk">
             <div class="dish-img-wrapper">
               <img src="https://i.postimg.cc/sx1v7Z1t/milk-tea.jpg" alt="Hot milk tea at Siranchowk Khaja Ghar in Khairahani, Chitwan" loading="lazy">
             </div>
@@ -400,28 +386,24 @@
               </div>
               <p class="dish-desc">Rich milk tea prepared with CTC tea leaves and subtle warmth.</p>
               <div class="dish-footer">
-                <span class="dish-price">Price at counter</span>
+                <span class="dish-price">Rs. 25</span>
               </div>
             </div>
           </div>
 
-
-
-
-
-          <div class="dish-card special-dish-card">
+          <div class="dish-card special-dish-card" data-dish-id="special-biryani">
             <div class="dish-img-wrapper">
               <img src="https://i.postimg.cc/wMs9951T/biryani.jpg" alt="Biryani served at Siranchowk Khaja Ghar in Khairahani, Chitwan" loading="lazy">
               <span class="dish-badge special-badge">Friday & Special Days</span>
             </div>
             <div class="dish-info">
               <div class="dish-title-row">
-                <h3>Special Biryani</h3>
+                <h3>Biryani</h3>
                 <span class="dish-nepali">बिरयानी</span>
               </div>
               <p class="dish-desc">Fragrant spiced rice dish prepared specially on Fridays and local festive occasions.</p>
               <div class="dish-footer">
-                <span class="dish-price">Available Friday</span>
+                <span class="dish-price">Rs. 350</span>
               </div>
             </div>
           </div>
@@ -444,6 +426,47 @@
         </div>
         <div id="public-offers-grid" class="public-offers-grid">
           <div class="offer-empty-note">Loading current offers…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stories, Guides & Community Platform Section -->
+    <section class="section" id="community-stories" aria-labelledby="community-stories-title">
+      <div class="container">
+        <div class="section-header-flex">
+          <div>
+            <span class="section-subtitle">Stories &amp; Global Community</span>
+            <h2 id="community-stories-title" class="section-title">Guides, Nepali Stories &amp; Creator Publishing</h2>
+            <p class="section-desc">Read local Khairahani food guides, bilingual Nepali &amp; English articles, and verified creator writing—or publish your own articles in Creator Studio.</p>
+          </div>
+          <div class="hero-cta-group" style="margin-top:0;">
+            <a href="explore.html" class="btn btn-primary">Explore Stories</a>
+            <a href="blog.html" class="btn btn-outline">Read Blog</a>
+            <a href="creator-studio.html" class="btn btn-outline">Creator Studio</a>
+          </div>
+        </div>
+
+        <div class="features-grid">
+          <article class="feature-card">
+            <span class="section-subtitle">Chitwan Guide · EN</span>
+            <h3>Halal Khaja &amp; Fresh Momo Guide in Khairahani-6, Parsa</h3>
+            <p>How daily fresh dough, halal kitchen sourcing, and sesame-tomato achar come together behind Chaudhary Medical from 6:30 AM.</p>
+            <p style="margin-top:0.75rem;"><a href="article.html?slug=halal-khaja-and-fresh-momo-guide-khairahani-parsa-chitwan" class="btn btn-outline">Read Guide →</a></p>
+          </article>
+
+          <article class="feature-card">
+            <span class="section-subtitle">खाना र परिकार · नेपाली</span>
+            <h3>ताजा म:म र तिल-टमाटर अचार: स्वाद र स्वच्छताको सन्तुलन</h3>
+            <p>खैरहनी र चितवनको दैनिक खाजा संस्कृतिमा ताजा म:म, सन्तुलित मसला र भान्साको सरसफाइ किन महत्वपूर्ण छ।</p>
+            <p style="margin-top:0.75rem;"><a href="article.html?slug=%E0%A4%B8%E0%A4%BF%E0%A4%B0%E0%A4%BE%E0%A4%A8%E0%A5%87-%E0%A4%AE%E0%A4%AE-%E0%A4%B0-%E0%A4%A4%E0%A4%BE%E0%A4%9C%E0%A4%BE-%E0%A4%9F%E0%A4%AE%E0%A4%BE%E0%A4%9F%E0%A4%B0-%E0%A4%85%E0%A4%9A%E0%A4%BE%E0%A4%B0-%E0%A4%AC%E0%A4%A8%E0%A4%BE%E0%A4%89%E0%A4%A8%E0%A5%87-%E0%A4%AA%E0%A4%B0%E0%A4%AE%E0%A5%8D%E0%A4%AA%E0%A4%B0%E0%A4%BE%E0%A4%97%E0%A4%A4-%E0%A4%B5%E0%A4%BF%E0%A4%A7%E0%A4%BF" class="btn btn-outline">पढ्नुहोस् →</a></p>
+          </article>
+
+          <article class="feature-card">
+            <span class="section-subtitle">Write &amp; Publish</span>
+            <h3>Publish Across Food, Tech, Education &amp; Travel</h3>
+            <p>Apply in Creator Studio to draft with Markdown live preview, manage custom SEO slugs, and connect with readers globally.</p>
+            <p style="margin-top:0.75rem;"><a href="profile.html?username=siranchowk" class="btn btn-outline">Official Profile →</a></p>
+          </article>
         </div>
       </div>
     </section>
@@ -554,8 +577,11 @@
           <ul class="footer-links">
             <li><a href="index.html">Home</a></li>
             <li><a href="menu.html">Our Menu</a></li>
+            <li><a href="explore.html">Explore Stories</a></li>
+            <li><a href="blog.html">Editorial Blog</a></li>
+            <li><a href="creator-studio.html">Creator Studio</a></li>
             <li><a href="about.html">About Us</a></li>
-            <li><a href="contact.html">Contact & Map</a></li>
+            <li><a href="contact.html">Contact &amp; Map</a></li>
           </ul>
         </div>
 
